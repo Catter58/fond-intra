@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Carbon Design System - Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 214 100% 50%; /* Carbon Blue 60: #0f62fe */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%; /* Carbon Gray 10 */
+    --secondary-foreground: 0 0% 9%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 354 70% 48%; /* Carbon Red 60: #da1e28 */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 78%; /* Carbon Gray 30 */
+    --input: 0 0% 78%;
+    --ring: 214 100% 50%;
+
+    /* Carbon minimal radius */
+    --radius: 0px;
+  }
+
+  .dark {
+    /* Carbon Design System - Dark Theme (Gray 100) */
+    --background: 0 0% 9%; /* Carbon Gray 100: #161616 */
+    --foreground: 0 0% 96%;
+
+    --card: 0 0% 15%; /* Carbon Gray 90 */
+    --card-foreground: 0 0% 96%;
+
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 214 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 22%; /* Carbon Gray 80 */
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 0 0% 22%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 0 0% 22%;
+    --accent-foreground: 0 0% 96%;
+
+    --destructive: 354 70% 48%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 32%; /* Carbon Gray 70 */
+    --input: 0 0% 32%;
+    --ring: 214 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Carbon Typography */
+  h1 {
+    @apply text-carbon-4xl font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply text-carbon-3xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-carbon-2xl font-semibold;
+  }
+
+  h4 {
+    @apply text-carbon-xl font-medium;
+  }
+
+  /* Carbon Form Elements - 48px height */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    @apply h-12;
+  }
+
+  /* Focus states - Carbon 2px blue border */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-0;
+  }
+}
+
+@layer components {
+  /* Carbon Button styles */
+  .btn-carbon-primary {
+    @apply h-12 px-4 bg-primary text-primary-foreground font-medium
+           hover:bg-carbon-blue-70 active:bg-carbon-blue-70
+           focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  .btn-carbon-secondary {
+    @apply h-12 px-4 bg-secondary text-secondary-foreground font-medium
+           border border-border hover:bg-carbon-gray-20
+           focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  .btn-carbon-ghost {
+    @apply h-12 px-4 bg-transparent text-foreground font-medium
+           hover:bg-carbon-gray-10 dark:hover:bg-carbon-gray-80
+           focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  .btn-carbon-danger {
+    @apply h-12 px-4 bg-destructive text-destructive-foreground font-medium
+           hover:bg-red-700 active:bg-red-800
+           focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2;
+  }
+
+  /* Carbon Card */
+  .card-carbon {
+    @apply bg-card border border-border p-6;
+  }
+
+  /* Carbon Table */
+  .table-carbon {
+    @apply w-full border-collapse;
+  }
+
+  .table-carbon th {
+    @apply text-left text-carbon-sm font-semibold text-muted-foreground
+           bg-carbon-gray-10 dark:bg-carbon-gray-90 px-4 py-3;
+  }
+
+  .table-carbon td {
+    @apply px-4 py-3 border-b border-border;
+  }
+
+  .table-carbon tr:hover td {
+    @apply bg-carbon-gray-10 dark:bg-carbon-gray-90;
+  }
+
+  /* Carbon Tag */
+  .tag-carbon {
+    @apply inline-flex items-center px-2 py-1 text-carbon-xs font-medium rounded-none;
+  }
+
+  .tag-carbon-blue {
+    @apply tag-carbon bg-carbon-blue-60/10 text-carbon-blue-60;
+  }
+
+  .tag-carbon-green {
+    @apply tag-carbon bg-carbon-green-50/10 text-carbon-green-50;
+  }
+
+  .tag-carbon-red {
+    @apply tag-carbon bg-carbon-red-60/10 text-carbon-red-60;
+  }
+
+  .tag-carbon-gray {
+    @apply tag-carbon bg-carbon-gray-20 text-carbon-gray-70 dark:bg-carbon-gray-70 dark:text-carbon-gray-20;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
