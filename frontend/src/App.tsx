@@ -34,6 +34,7 @@ const NewsPage = lazy(() => import('@/pages/news/NewsPage').then(m => ({ default
 const NewsDetailPage = lazy(() => import('@/pages/news/NewsDetailPage').then(m => ({ default: m.NewsDetailPage })))
 const NewsCreatePage = lazy(() => import('@/pages/news/NewsCreatePage').then(m => ({ default: m.NewsCreatePage })))
 const NewsEditPage = lazy(() => import('@/pages/news/NewsEditPage').then(m => ({ default: m.NewsEditPage })))
+const NewsDraftsPage = lazy(() => import('@/pages/news/NewsDraftsPage').then(m => ({ default: m.NewsDraftsPage })))
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const NotificationSettingsPage = lazy(() => import('@/pages/notifications/NotificationSettingsPage').then(m => ({ default: m.NotificationSettingsPage })))
 const OrganizationPage = lazy(() => import('@/pages/organization/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
@@ -101,6 +102,7 @@ function App() {
             <Route path="/employees/:id" element={<EmployeeDetailPage />} />
             <Route path="/achievements" element={<AchievementsPage />} />
             <Route path="/news" element={<NewsPage />} />
+            <Route path="/news/drafts" element={<NewsDraftsPage />} />
             <Route path="/news/create" element={<NewsCreatePage />} />
             <Route path="/news/:id" element={<NewsDetailPage />} />
             <Route path="/news/:id/edit" element={<NewsEditPage />} />

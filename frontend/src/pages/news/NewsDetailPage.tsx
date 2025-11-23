@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, Loading } from '@carbon/react'
+import { Tile, Button, Loading, Tag } from '@carbon/react'
 import { ArrowLeft, Favorite, FavoriteFilled, Chat, Send, Attachment, Edit } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
+import { RichTextViewer } from '@/components/ui/EditorJSViewer'
+import { ImageGallery } from '@/components/ui/ImageGallery'
+import { MentionInput } from '@/components/ui/MentionInput'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
 
@@ -129,20 +132,40 @@ export function NewsDetailPage() {
           )}
         </div>
 
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>{news.title}</h1>
-        <div style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>
-          {news.content}
-        </div>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>{news.title}</h1>
 
-        {/* Attachments */}
-        {news.attachments && news.attachments.length > 0 && (
+        {/* Tags */}
+        {news.tags && news.tags.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            {news.tags.map((tag) => (
+              <Tag
+                key={tag.id}
+                type={tag.color as 'gray' | 'blue' | 'green' | 'red' | 'purple' | 'cyan' | 'teal' | 'magenta'}
+                onClick={() => navigate(`/news?tag=${tag.slug}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                {tag.name}
+              </Tag>
+            ))}
+          </div>
+        )}
+
+        <RichTextViewer content={news.content} />
+
+        {/* Image Gallery */}
+        {news.images && news.images.length > 0 && (
+          <ImageGallery images={news.images} />
+        )}
+
+        {/* Non-image Attachments */}
+        {news.attachments && news.attachments.filter(a => !a.is_image).length > 0 && (
           <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--cds-border-subtle-01)' }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Attachment size={16} />
               Вложения
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {news.attachments.map((attachment) => (
+              {news.attachments.filter(a => !a.is_image).map((attachment) => (
                 <a
                   key={attachment.id}
                   href={attachment.file}
@@ -202,13 +225,12 @@ export function NewsDetailPage() {
               getInitials(user?.full_name || 'U')
             )}
           </div>
-          <TextInput
+          <MentionInput
             id="comment"
-            labelText=""
             hideLabel
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Написать комментарий..."
+            onChange={setComment}
+            placeholder="Написать комментарий... (@ для упоминания)"
             size="sm"
           />
           <Button

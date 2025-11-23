@@ -5,6 +5,7 @@ import { Tile, Button, ContentSwitcher, Switch, Loading } from '@carbon/react'
 import { Notification, Checkmark, CheckmarkOutline, Settings } from '@carbon/icons-react'
 import { notificationsApi } from '@/api/endpoints/notifications'
 import { formatDate } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { Notification as NotificationType } from '@/types'
 
 export function NotificationsPage() {
@@ -131,12 +132,16 @@ export function NotificationsPage() {
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <Notification size={48} style={{ color: 'var(--cds-text-helper)', marginBottom: '0.75rem' }} />
-            <p style={{ color: 'var(--cds-text-secondary)' }}>
-              {filter === 1 ? 'Нет непрочитанных уведомлений' : 'Уведомлений пока нет'}
-            </p>
-          </div>
+          <EmptyState
+            icon={Notification}
+            title={filter === 1 ? 'Нет непрочитанных уведомлений' : 'Уведомлений пока нет'}
+            description={
+              filter === 1
+                ? 'Все уведомления прочитаны!'
+                : 'Здесь будут появляться уведомления о важных событиях.'
+            }
+            size="sm"
+          />
         )}
       </Tile>
     </div>

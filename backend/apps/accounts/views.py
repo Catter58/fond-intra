@@ -33,6 +33,7 @@ from .serializers import (
     BirthdaySerializer,
 )
 from .permissions import IsHROrAdmin, CanViewPrivateData
+from .filters import UserFilter, AdminUserFilter
 
 
 # =============================================================================
@@ -218,7 +219,7 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['first_name', 'last_name', 'patronymic', 'email']
-    filterset_fields = ['department', 'position']
+    filterset_class = UserFilter
     ordering_fields = ['last_name', 'first_name', 'hire_date']
     ordering = ['last_name', 'first_name']
 
@@ -226,7 +227,7 @@ class UserListView(generics.ListAPIView):
         return User.objects.filter(
             is_active=True,
             is_archived=False
-        ).select_related('department', 'position')
+        ).select_related('department', 'position').prefetch_related('user_skills')
 
 
 class UserDetailView(generics.RetrieveAPIView):
@@ -321,9 +322,11 @@ class BirthdayListView(generics.ListAPIView):
 class AdminUserViewSet(ModelViewSet):
     """Admin CRUD for users (HR only)."""
     permission_classes = [IsAuthenticated, IsHROrAdmin]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['first_name', 'last_name', 'email']
-    filterset_fields = ['is_active', 'is_archived', 'department']
+    filterset_class = AdminUserFilter
+    ordering_fields = ['last_name', 'first_name', 'hire_date', 'created_at']
+    ordering = ['last_name', 'first_name']
 
     def get_queryset(self):
         return User.objects.all().select_related('department', 'position')

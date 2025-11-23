@@ -1,0 +1,153 @@
+.editorjs-viewer {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--cds-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+
+  > * + * {
+    margin-top: 0.75rem;
+  }
+}
+
+.editorjs-paragraph {
+  margin: 0;
+
+  a {
+    color: var(--cds-link-primary);
+    text-decoration: underline;
+
+    &:hover {
+      color: var(--cds-link-primary-hover);
+    }
+  }
+
+  b, strong {
+    font-weight: 600;
+  }
+
+  i, em {
+    font-style: italic;
+  }
+
+  u {
+    text-decoration: underline;
+  }
+
+  mark {
+    background: rgba(255, 224, 0, 0.3);
+    padding: 0.1em 0;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--cds-layer-02);
+    padding: 0.1em 0.3em;
+    border-radius: 2px;
+    font-size: 0.9em;
+  }
+}
+
+.editorjs-header {
+  font-weight: 600;
+  margin: 0;
+  color: var(--cds-text-primary);
+
+  &:is(h2) {
+    font-size: 1.25rem;
+  }
+
+  &:is(h3) {
+    font-size: 1.125rem;
+  }
+
+  &:is(h4) {
+    font-size: 1rem;
+  }
+}
+
+.editorjs-list {
+  margin: 0;
+  padding-left: 1.5rem;
+
+  &:is(ul) {
+    list-style-type: disc;
+  }
+
+  &:is(ol) {
+    list-style-type: decimal;
+  }
+}
+
+.editorjs-list-item {
+  padding: 0.125rem 0;
+
+  a {
+    color: var(--cds-link-primary);
+    text-decoration: underline;
+  }
+
+  b, strong {
+    font-weight: 600;
+  }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--cds-layer-02);
+    padding: 0.1em 0.3em;
+    border-radius: 2px;
+    font-size: 0.9em;
+  }
+}
+
+.editorjs-quote {
+  margin: 0;
+  border-left: 3px solid var(--cds-border-interactive);
+  padding: 0.5rem 0 0.5rem 1rem;
+
+  p {
+    margin: 0;
+    font-style: italic;
+    color: var(--cds-text-primary);
+  }
+
+  cite {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--cds-text-secondary);
+    font-style: normal;
+
+    &::before {
+      content: '— ';
+    }
+  }
+}
+
+.editorjs-code {
+  margin: 0;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+  padding: 1rem;
+  overflow-x: auto;
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--cds-text-primary);
+    white-space: pre;
+  }
+}
+
+.editorjs-delimiter {
+  margin: 1.5rem 0;
+  border: none;
+  text-align: center;
+
+  &::before {
+    content: '***';
+    color: var(--cds-text-secondary);
+    font-size: 1.25rem;
+    letter-spacing: 0.5rem;
+  }
+}

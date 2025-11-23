@@ -5,6 +5,7 @@ import { Add, Trophy, ChartLineSmooth } from '@carbon/icons-react'
 import { AwardAchievementModal } from '@/components/features/achievements/AwardAchievementModal'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { formatDate } from '@/lib/utils'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 const getInitials = (name: string) => {
   return name
@@ -173,9 +174,16 @@ export function AchievementsPage() {
               )}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
-              Пока нет достижений. Будьте первым!
-            </div>
+            <EmptyState
+              icon={Trophy}
+              title="Пока нет достижений"
+              description="Наградите коллегу за отличную работу и станьте первым!"
+              action={{
+                label: 'Наградить коллегу',
+                onClick: () => setShowCreateModal(true),
+              }}
+              size="sm"
+            />
           )}
         </Tile>
       </div>

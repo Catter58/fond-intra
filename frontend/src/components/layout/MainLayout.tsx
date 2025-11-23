@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -27,16 +27,36 @@ import {
   Password,
   Menu,
   Close,
+  Search as SearchIcon,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
-import { usersApi } from '@/api/endpoints/users'
+import { searchApi, type SearchResult } from '@/api/endpoints/search'
 import { notificationsApi } from '@/api/endpoints/notifications'
+
+// Carbon lg breakpoint
+const MOBILE_BREAKPOINT = 1056
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < MOBILE_BREAKPOINT)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  return isMobile
+}
 
 export function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const [sideNavOpen, setSideNavOpen] = useState(true)
+  const isMobile = useIsMobile()
+  const [sideNavOpen, setSideNavOpen] = useState(!isMobile)
+  const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [showUserPanel, setShowUserPanel] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -44,11 +64,35 @@ export function MainLayout() {
 
   const isAdmin = user?.role?.is_admin || user?.is_superuser
 
-  const { data: searchResults } = useQuery({
-    queryKey: ['user-search', searchQuery],
-    queryFn: () => usersApi.search(searchQuery),
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    if (isMobile) {
+      setSideNavOpen(false)
+      setShowMobileSearch(false)
+    }
+  }, [location.pathname, isMobile])
+
+  // Update sidebar state when switching between mobile/desktop
+  useEffect(() => {
+    setSideNavOpen(!isMobile)
+  }, [isMobile])
+
+  const { data: searchData } = useQuery({
+    queryKey: ['global-search', searchQuery],
+    queryFn: () => searchApi.globalSearch(searchQuery, undefined, 5),
     enabled: searchQuery.length >= 2,
   })
+
+  // Flatten search results for display
+  const searchResults: SearchResult[] = searchData
+    ? [
+        ...(searchData.results.users || []),
+        ...(searchData.results.news || []),
+        ...(searchData.results.departments || []),
+        ...(searchData.results.achievements || []),
+        ...(searchData.results.skills || []),
+      ]
+    : []
 
   const { data: unreadCount } = useQuery({
     queryKey: ['notifications', 'unread-count'],
@@ -56,24 +100,38 @@ export function MainLayout() {
     refetchInterval: 30000,
   })
 
-  const handleSelectUser = (userId: number) => {
+  const handleSelectResult = (result: SearchResult) => {
     setShowSearchResults(false)
     setSearchQuery('')
-    navigate(`/employees/${userId}`)
+    setShowMobileSearch(false)
+    navigate(result.url)
+  }
+
+  const getResultIcon = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'user': return <UserMultiple size={16} />
+      case 'news': return <Document size={16} />
+      case 'department': return <Building size={16} />
+      case 'achievement': return <Trophy size={16} />
+      case 'skill': return <Settings size={16} />
+      default: return null
+    }
+  }
+
+  const getResultTypeLabel = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'user': return 'Сотрудник'
+      case 'news': return 'Новость'
+      case 'department': return 'Отдел'
+      case 'achievement': return 'Достижение'
+      case 'skill': return 'Навык'
+      default: return ''
+    }
   }
 
   const handleLogout = () => {
     logout()
     window.location.href = '/login'
-  }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
   }
 
   const isActive = (path: string) => {
@@ -96,52 +154,67 @@ export function MainLayout() {
           Fond Intra
         </HeaderName>
 
-        {/* Search in header */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '1rem', position: 'relative' }}>
-          <div style={{ width: '300px', position: 'relative' }}>
-            <Search
-              size="sm"
-              placeholder="Поиск сотрудников..."
-              labelText="Search"
-              closeButtonLabelText="Clear"
-              value={searchQuery}
-              onChange={(e) => {
-                const value = typeof e === 'string' ? e : e.target.value
-                setSearchQuery(value)
-                setShowSearchResults(value.length >= 2)
-              }}
-              onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-            />
-            {showSearchResults && searchResults && searchResults.length > 0 && (
-              <div className="search-results">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    onClick={() => handleSelectUser(result.id)}
-                    className="search-result-item"
-                  >
-                    <div className="list-item-avatar">
-                      {result.avatar ? (
-                        <img src={result.avatar} alt={result.full_name} />
-                      ) : (
-                        getInitials(result.full_name)
-                      )}
-                    </div>
-                    <div className="list-item-content">
-                      <div className="list-item-title">{result.full_name}</div>
-                      <div className="list-item-subtitle">
-                        {result.position?.name || result.department?.name || ''}
+        {/* Search in header - desktop */}
+        {!isMobile && (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '1rem', position: 'relative' }}>
+            <div style={{ width: '300px', position: 'relative' }}>
+              <Search
+                size="sm"
+                placeholder="Поиск..."
+                labelText="Search"
+                closeButtonLabelText="Clear"
+                value={searchQuery}
+                onChange={(e) => {
+                  const value = typeof e === 'string' ? e : e.target.value
+                  setSearchQuery(value)
+                  setShowSearchResults(value.length >= 2)
+                }}
+                onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+                onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
+              />
+              {showSearchResults && searchResults.length > 0 && (
+                <div className="search-results">
+                  {searchResults.map((result) => (
+                    <button
+                      key={`${result.type}-${result.id}`}
+                      onClick={() => handleSelectResult(result)}
+                      className="search-result-item"
+                    >
+                      <div className="list-item-avatar" style={{ background: 'var(--cds-layer-02)' }}>
+                        {result.avatar ? (
+                          <img src={result.avatar} alt={result.title} />
+                        ) : (
+                          getResultIcon(result.type)
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+                      <div className="list-item-content">
+                        <div className="list-item-title">{result.title}</div>
+                        <div className="list-item-subtitle">
+                          {result.subtitle || getResultTypeLabel(result.type)}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Spacer for mobile */}
+        {isMobile && <div style={{ flex: 1 }} />}
 
         <HeaderGlobalBar>
+          {/* Mobile search button */}
+          {isMobile && (
+            <HeaderGlobalAction
+              aria-label="Search"
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+            >
+              <SearchIcon size={20} />
+            </HeaderGlobalAction>
+          )}
+
           <HeaderGlobalAction
             aria-label="Notifications"
             onClick={() => {
@@ -252,8 +325,81 @@ export function MainLayout() {
         </>
       )}
 
+      {/* Mobile search panel */}
+      {isMobile && showMobileSearch && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '48px',
+            left: 0,
+            right: 0,
+            background: 'var(--cds-layer-01)',
+            padding: '1rem',
+            zIndex: 8000,
+            borderBottom: '1px solid var(--cds-border-subtle-01)',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <Search
+              size="lg"
+              placeholder="Поиск..."
+              labelText="Search"
+              closeButtonLabelText="Clear"
+              value={searchQuery}
+              onChange={(e) => {
+                const value = typeof e === 'string' ? e : e.target.value
+                setSearchQuery(value)
+                setShowSearchResults(value.length >= 2)
+              }}
+              onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+              autoFocus
+            />
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map((result) => (
+                  <button
+                    key={`${result.type}-${result.id}`}
+                    onClick={() => handleSelectResult(result)}
+                    className="search-result-item"
+                  >
+                    <div className="list-item-avatar" style={{ background: 'var(--cds-layer-02)' }}>
+                      {result.avatar ? (
+                        <img src={result.avatar} alt={result.title} />
+                      ) : (
+                        getResultIcon(result.type)
+                      )}
+                    </div>
+                    <div className="list-item-content">
+                      <div className="list-item-title">{result.title}</div>
+                      <div className="list-item-subtitle">
+                        {result.subtitle || getResultTypeLabel(result.type)}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main content area */}
       <div style={{ display: 'flex', flex: 1, marginTop: '48px' }}>
+        {/* Mobile sidebar backdrop */}
+        {isMobile && sideNavOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              top: '48px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 5999,
+            }}
+            onClick={() => setSideNavOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
         <SideNav
           aria-label="Side navigation"
@@ -403,8 +549,8 @@ export function MainLayout() {
         <main
           style={{
             flex: 1,
-            marginLeft: sideNavOpen ? '256px' : '0',
-            padding: '2rem',
+            marginLeft: isMobile ? 0 : (sideNavOpen ? '256px' : '0'),
+            padding: isMobile ? '1rem' : '2rem',
             transition: 'margin-left 0.11s cubic-bezier(0.2, 0, 1, 0.9)',
             background: 'var(--cds-background)',
             minHeight: 'calc(100vh - 48px)',

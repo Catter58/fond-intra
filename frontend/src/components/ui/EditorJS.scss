@@ -1,0 +1,17 @@
+.editorjs-wrapper {
+  width: 100%;
+}
+
+.editorjs-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--cds-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.editorjs-container {
+  border: 1px solid var(--cds-border-strong-01);
+  background: var(--cds-field-01);
+  min-height: 200px;
+}

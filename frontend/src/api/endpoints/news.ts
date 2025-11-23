@@ -1,8 +1,17 @@
 import apiClient from '../client'
-import type { News, Comment, Reaction, PaginatedResponse } from '@/types'
+import type { News, NewsTag, Comment, Reaction, PaginatedResponse } from '@/types'
+
+export interface NewsListParams {
+  page?: number
+  page_size?: number
+  tag?: string
+  tag_id?: number
+  drafts?: boolean
+  status?: 'draft' | 'scheduled' | 'published'
+}
 
 export const newsApi = {
-  getList: async (params: { page?: number; page_size?: number } = {}): Promise<PaginatedResponse<News>> => {
+  getList: async (params: NewsListParams = {}): Promise<PaginatedResponse<News>> => {
     const response = await apiClient.get<PaginatedResponse<News>>('/news/', { params })
     return response.data
   },
@@ -28,6 +37,30 @@ export const newsApi = {
 
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/news/${id}/`)
+  },
+
+  // Publishing actions
+  publish: async (id: number): Promise<{ detail: string; status: string }> => {
+    const response = await apiClient.post<{ detail: string; status: string }>(`/news/${id}/publish/`)
+    return response.data
+  },
+
+  unpublish: async (id: number): Promise<{ detail: string; status: string }> => {
+    const response = await apiClient.post<{ detail: string; status: string }>(`/news/${id}/unpublish/`)
+    return response.data
+  },
+
+  schedule: async (id: number, publishAt: string): Promise<{ detail: string; status: string; publish_at: string }> => {
+    const response = await apiClient.post<{ detail: string; status: string; publish_at: string }>(
+      `/news/${id}/schedule/`,
+      { publish_at: publishAt }
+    )
+    return response.data
+  },
+
+  autosave: async (id: number, data: { title?: string; content?: object; tag_ids?: number[] }): Promise<{ detail: string; updated_at: string }> => {
+    const response = await apiClient.patch<{ detail: string; updated_at: string }>(`/news/${id}/autosave/`, data)
+    return response.data
   },
 
   // Comments
@@ -63,5 +96,25 @@ export const newsApi = {
 
   removeReaction: async (newsId: number): Promise<void> => {
     await apiClient.delete(`/news/${newsId}/reactions/`)
+  },
+
+  // Tags
+  getTags: async (): Promise<NewsTag[]> => {
+    const response = await apiClient.get<PaginatedResponse<NewsTag>>('/news/tags/')
+    return response.data.results
+  },
+
+  createTag: async (data: { name: string; color?: string }): Promise<NewsTag> => {
+    const response = await apiClient.post<NewsTag>('/news/tags/', data)
+    return response.data
+  },
+
+  updateTag: async (id: number, data: { name?: string; color?: string }): Promise<NewsTag> => {
+    const response = await apiClient.patch<NewsTag>(`/news/tags/${id}/`, data)
+    return response.data
+  },
+
+  deleteTag: async (id: number): Promise<void> => {
+    await apiClient.delete(`/news/tags/${id}/`)
   },
 }

@@ -11,9 +11,10 @@ import {
   Select,
   SelectItem,
 } from '@carbon/react'
-import { Add, ArrowLeft } from '@carbon/icons-react'
+import { Add, ArrowLeft, Education } from '@carbon/icons-react'
 import { skillsApi } from '@/api/endpoints/skills'
 import { AddSkillForm, levelLabels } from '@/components/features/skills'
+import { EmptyState } from '@/components/ui/EmptyState'
 import type { UserSkill } from '@/types'
 
 export function ProfileSkillsPage() {
@@ -119,17 +120,15 @@ export function ProfileSkillsPage() {
 
       <Tile style={{ padding: '1.5rem' }}>
         {mySkills.length === 0 && !isLoading ? (
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <p style={{ fontSize: '1.125rem', marginBottom: '1rem', color: 'var(--cds-text-secondary)' }}>
-              У вас пока нет добавленных навыков
-            </p>
-            <p style={{ marginBottom: '1.5rem', color: 'var(--cds-text-secondary)' }}>
-              Добавьте навыки, чтобы коллеги могли узнать о ваших компетенциях
-            </p>
-            <Button renderIcon={Add} onClick={() => setShowAddForm(true)}>
-              Добавить первый навык
-            </Button>
-          </div>
+          <EmptyState
+            icon={Education}
+            title="У вас пока нет добавленных навыков"
+            description="Добавьте навыки, чтобы коллеги могли узнать о ваших компетенциях"
+            action={{
+              label: 'Добавить первый навык',
+              onClick: () => setShowAddForm(true),
+            }}
+          />
         ) : (
           <div>
             <p style={{ marginBottom: '1rem', color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>

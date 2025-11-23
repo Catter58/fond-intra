@@ -29,9 +29,15 @@ export const usersApi = {
     search?: string
     department?: number
     position?: number
+    skill?: number
+    skill_level?: string
+    status?: string
+    role?: number
+    hired_after?: string
+    hired_before?: string
     page?: number
     page_size?: number
-    is_archived?: boolean
+    ordering?: string
   }): Promise<PaginatedResponse<UserBasic>> => {
     const response = await apiClient.get<PaginatedResponse<UserBasic>>('/users/', { params })
     return response.data

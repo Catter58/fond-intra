@@ -3,7 +3,8 @@ Views for news app.
 """
 import json
 
-from django.db.models import Count
+from django.db.models import Count, Max
+from django.db import models
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +16,8 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.audit.models import AuditLog
 from apps.notifications.models import Notification
-from .models import News, NewsAttachment, Comment, Reaction
+from core.utils import generate_thumbnail
+from .models import News, NewsAttachment, Comment, Reaction, Tag
 from .serializers import (
     NewsListSerializer,
     NewsDetailSerializer,
@@ -25,6 +27,8 @@ from .serializers import (
     CommentSerializer,
     CommentCreateSerializer,
     ReactionSerializer,
+    TagSerializer,
+    TagCreateSerializer,
 )
 from .permissions import CanEditNews, CanPinNews
 
@@ -35,12 +39,32 @@ class NewsViewSet(ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
-        queryset = News.objects.select_related('author').annotate(
+        queryset = News.objects.select_related('author').prefetch_related('tags').annotate(
             comments_count=Count('comments')
         )
         if self.action == 'list':
-            queryset = queryset.filter(is_published=True)
-        return queryset.order_by('-is_pinned', '-created_at')
+            # Check if user wants to see their own drafts
+            show_drafts = self.request.query_params.get('drafts') == 'true'
+            if show_drafts and self.request.user.is_authenticated:
+                # Show user's own drafts
+                queryset = queryset.filter(author=self.request.user)
+            else:
+                # Only published news
+                queryset = queryset.filter(status='published')
+
+            # Filter by status
+            status_filter = self.request.query_params.get('status')
+            if status_filter and show_drafts:
+                queryset = queryset.filter(status=status_filter)
+
+            # Filter by tag
+            tag = self.request.query_params.get('tag')
+            if tag:
+                queryset = queryset.filter(tags__slug=tag)
+            tag_id = self.request.query_params.get('tag_id')
+            if tag_id:
+                queryset = queryset.filter(tags__id=tag_id)
+        return queryset.order_by('-is_pinned', '-created_at').distinct()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -61,14 +85,30 @@ class NewsViewSet(ModelViewSet):
 
         # Handle attachments
         attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            NewsAttachment.objects.create(
+        for idx, file in enumerate(attachments):
+            attachment = NewsAttachment(
                 news=news,
                 file=file,
                 file_name=file.name,
                 file_type=file.content_type,
-                file_size=file.size
+                file_size=file.size,
+                order=idx
             )
+
+            # Generate thumbnail for images
+            if file.content_type.startswith('image/'):
+                thumbnail = generate_thumbnail(file)
+                if thumbnail:
+                    attachment.thumbnail.save(
+                        f'thumb_{file.name}.jpg',
+                        thumbnail,
+                        save=False
+                    )
+                # Set first image as cover if none set
+                if idx == 0:
+                    attachment.is_cover = True
+
+            attachment.save()
 
         AuditLog.log(
             user=self.request.user,
@@ -85,14 +125,32 @@ class NewsViewSet(ModelViewSet):
 
         # Handle new attachments
         attachments = self.request.FILES.getlist('attachments')
-        for file in attachments:
-            NewsAttachment.objects.create(
+        # Get max order for existing attachments
+        max_order = news.attachments.aggregate(
+            max_order=models.Max('order')
+        )['max_order'] or 0
+
+        for idx, file in enumerate(attachments):
+            attachment = NewsAttachment(
                 news=news,
                 file=file,
                 file_name=file.name,
                 file_type=file.content_type,
-                file_size=file.size
+                file_size=file.size,
+                order=max_order + idx + 1
             )
+
+            # Generate thumbnail for images
+            if file.content_type.startswith('image/'):
+                thumbnail = generate_thumbnail(file)
+                if thumbnail:
+                    attachment.thumbnail.save(
+                        f'thumb_{file.name}.jpg',
+                        thumbnail,
+                        save=False
+                    )
+
+            attachment.save()
 
         # Handle deleted attachments
         delete_attachments = self.request.data.get('delete_attachments')
@@ -132,6 +190,129 @@ class NewsViewSet(ModelViewSet):
         news.save()
         return Response({'detail': 'News unpinned.'})
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanEditNews])
+    def publish(self, request, pk=None):
+        """Publish a news post."""
+        from django.utils import timezone
+        news = self.get_object()
+        news.status = News.Status.PUBLISHED
+        news.publish_at = timezone.now()
+        news.save()
+        return Response({'detail': 'News published.', 'status': news.status})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanEditNews])
+    def unpublish(self, request, pk=None):
+        """Unpublish a news post (move to drafts)."""
+        news = self.get_object()
+        news.status = News.Status.DRAFT
+        news.save()
+        return Response({'detail': 'News moved to drafts.', 'status': news.status})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanEditNews])
+    def schedule(self, request, pk=None):
+        """Schedule a news post for future publishing."""
+        from django.utils import timezone
+        from django.utils.dateparse import parse_datetime
+        news = self.get_object()
+        publish_at = request.data.get('publish_at')
+        if not publish_at:
+            return Response(
+                {'detail': 'publish_at is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        parsed_date = parse_datetime(publish_at)
+        if not parsed_date:
+            return Response(
+                {'detail': 'Invalid date format.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if parsed_date <= timezone.now():
+            return Response(
+                {'detail': 'Scheduled date must be in the future.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        news.status = News.Status.SCHEDULED
+        news.publish_at = parsed_date
+        news.save()
+        return Response({
+            'detail': 'News scheduled.',
+            'status': news.status,
+            'publish_at': news.publish_at.isoformat()
+        })
+
+    @action(detail=True, methods=['patch'], url_path='autosave')
+    def autosave(self, request, pk=None):
+        """Autosave draft content without validation."""
+        news = self.get_object()
+        # Check permission
+        if news.author != request.user and not request.user.has_permission('news.edit_all'):
+            return Response(
+                {'detail': 'Permission denied.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Only allow autosave for drafts
+        if news.status == News.Status.PUBLISHED:
+            return Response(
+                {'detail': 'Cannot autosave published news.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Update fields without full validation
+        if 'title' in request.data:
+            news.title = request.data['title']
+        if 'content' in request.data:
+            news.content = request.data['content']
+        if 'tag_ids' in request.data:
+            tag_ids = request.data['tag_ids']
+            if isinstance(tag_ids, str):
+                try:
+                    tag_ids = json.loads(tag_ids)
+                except:
+                    tag_ids = []
+            if tag_ids:
+                news.tags.set(tag_ids)
+        news.save()
+        return Response({
+            'detail': 'Draft saved.',
+            'updated_at': news.updated_at.isoformat()
+        })
+
+    @action(detail=True, methods=['post'], url_path='attachments/(?P<attachment_id>[^/.]+)/set-cover')
+    def set_cover(self, request, pk=None, attachment_id=None):
+        """Set an attachment as cover image."""
+        news = self.get_object()
+        try:
+            attachment = news.attachments.get(pk=attachment_id)
+            if not attachment.is_image:
+                return Response(
+                    {'detail': 'Only images can be set as cover.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            attachment.is_cover = True
+            attachment.save()
+            return Response({'detail': 'Cover image set.'})
+        except NewsAttachment.DoesNotExist:
+            return Response(
+                {'detail': 'Attachment not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=True, methods=['post'], url_path='attachments/reorder')
+    def reorder_attachments(self, request, pk=None):
+        """Reorder attachments."""
+        news = self.get_object()
+        order_data = request.data.get('order', [])
+
+        if not isinstance(order_data, list):
+            return Response(
+                {'detail': 'Invalid order data.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        for idx, attachment_id in enumerate(order_data):
+            news.attachments.filter(pk=attachment_id).update(order=idx)
+
+        return Response({'detail': 'Attachments reordered.'})
+
 
 class NewsAttachmentView(APIView):
     """Upload attachments to news."""
@@ -162,13 +343,31 @@ class NewsAttachmentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        attachment = NewsAttachment.objects.create(
+        # Get max order for existing attachments
+        max_order = news.attachments.aggregate(
+            max_order=Max('order')
+        )['max_order'] or 0
+
+        attachment = NewsAttachment(
             news=news,
             file=file,
             file_name=file.name,
             file_type=file.content_type,
-            file_size=file.size
+            file_size=file.size,
+            order=max_order + 1
         )
+
+        # Generate thumbnail for images
+        if file.content_type.startswith('image/'):
+            thumbnail = generate_thumbnail(file)
+            if thumbnail:
+                attachment.thumbnail.save(
+                    f'thumb_{file.name}.jpg',
+                    thumbnail,
+                    save=False
+                )
+
+        attachment.save()
 
         return Response(
             NewsAttachmentSerializer(attachment).data,
@@ -224,30 +423,51 @@ class CommentViewSet(ModelViewSet):
             author=self.request.user
         )
 
-        # Notify news author
+        # Track notified users to avoid duplicates
         news = comment.news
+        notified_users = set()
+
+        # Notify news author
         if news.author and news.author != self.request.user:
             Notification.objects.create(
                 user=news.author,
                 type=Notification.NotificationType.COMMENT,
-                title=">2K9 :><<5=B0@89",
-                message=f"{self.request.user.get_full_name()} ?@>:><<5=B8@>20; 20HC =>2>ABL",
+                title="Новый комментарий",
+                message=f"{self.request.user.get_full_name()} прокомментировал вашу новость",
                 link=f"/news/{news.id}",
                 related_object_type='Comment',
                 related_object_id=comment.id
             )
+            notified_users.add(news.author.id)
 
         # If reply, notify parent comment author
-        if comment.parent and comment.parent.author != self.request.user:
-            Notification.objects.create(
-                user=comment.parent.author,
-                type=Notification.NotificationType.COMMENT,
-                title="B25B =0 :><<5=B0@89",
-                message=f"{self.request.user.get_full_name()} >B25B8; =0 20H :><<5=B0@89",
-                link=f"/news/{news.id}",
-                related_object_type='Comment',
-                related_object_id=comment.id
-            )
+        if comment.parent and comment.parent.author and comment.parent.author != self.request.user:
+            if comment.parent.author.id not in notified_users:
+                Notification.objects.create(
+                    user=comment.parent.author,
+                    type=Notification.NotificationType.COMMENT,
+                    title="Ответ на комментарий",
+                    message=f"{self.request.user.get_full_name()} ответил на ваш комментарий",
+                    link=f"/news/{news.id}",
+                    related_object_type='Comment',
+                    related_object_id=comment.id
+                )
+                notified_users.add(comment.parent.author.id)
+
+        # Notify mentioned users
+        mentioned_users = comment.get_mentioned_users()
+        for user in mentioned_users:
+            if user != self.request.user and user.id not in notified_users:
+                Notification.objects.create(
+                    user=user,
+                    type=Notification.NotificationType.COMMENT,
+                    title="Упоминание в комментарии",
+                    message=f"{self.request.user.get_full_name()} упомянул вас в комментарии",
+                    link=f"/news/{news.id}",
+                    related_object_type='Comment',
+                    related_object_id=comment.id
+                )
+                notified_users.add(user.id)
 
     def destroy(self, request, *args, **kwargs):
         comment = self.get_object()
@@ -296,8 +516,8 @@ class ReactionView(APIView):
                     Notification.objects.create(
                         user=news.author,
                         type=Notification.NotificationType.REACTION,
-                        title=">20O @50:F8O",
-                        message=f"{request.user.get_full_name()} >B@5038@>20; =0 20HC =>2>ABL",
+                        title="Новая реакция",
+                        message=f"{request.user.get_full_name()} отреагировал на вашу новость",
                         link=f"/news/{news.id}",
                         related_object_type='Reaction',
                         related_object_id=reaction.id
@@ -324,3 +544,20 @@ class ReactionView(APIView):
                 {'detail': 'Reaction not found.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class TagViewSet(ModelViewSet):
+    """CRUD for news tags."""
+    permission_classes = [IsAuthenticated]
+    queryset = Tag.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TagCreateSerializer
+        return TagSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Only users with permission can manage tags
+            return [IsAuthenticated(), CanEditNews()]
+        return [IsAuthenticated()]

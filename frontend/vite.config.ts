@@ -9,6 +9,24 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react', 'react-dom', 'react-router-dom'],
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@editorjs/editorjs',
+      '@editorjs/header',
+      '@editorjs/list',
+      '@editorjs/quote',
+      '@editorjs/code',
+      '@editorjs/delimiter',
+      '@editorjs/marker',
+      '@editorjs/underline',
+      '@editorjs/paragraph',
+      '@editorjs/inline-code',
+    ],
   },
   server: {
     port: 5173,

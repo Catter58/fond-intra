@@ -32,6 +32,14 @@ export const skillsApi = {
     return response.data.results
   },
 
+  // Get all skills for filters/catalogs (alias)
+  getCatalog: async (): Promise<Skill[]> => {
+    const response = await apiClient.get<PaginatedResponse<Skill>>('/skills/', {
+      params: { page_size: 1000 }, // Get all skills
+    })
+    return response.data.results
+  },
+
   getSkillById: async (id: number): Promise<Skill> => {
     const response = await apiClient.get<Skill>(`/skills/${id}/`)
     return response.data

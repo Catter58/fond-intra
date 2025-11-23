@@ -54,37 +54,6 @@
   }
 }
 
-// Card grid layout
-.dashboard-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 672px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1056px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.dashboard-cards {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 1056px) {
-  .dashboard-cards {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 // Stats tile
 .stat-tile {
   display: flex;
@@ -294,4 +263,68 @@
   color: var(--cds-text-helper);
   text-transform: uppercase;
   letter-spacing: 0.32px;
+}
+
+// Mobile responsive styles
+@media (max-width: 1055px) {
+  // Ensure touch targets are at least 44x44px
+  .user-menu-item,
+  .search-result-item,
+  .list-item {
+    min-height: 44px;
+  }
+
+  // Larger page title on mobile
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  // Form inputs - prevent zoom on iOS
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+// Small mobile adjustments
+@media (max-width: 671px) {
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .stat-tile {
+    padding: 0.75rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  // User menu - make full width on very small screens
+  .user-menu {
+    width: calc(100vw - 32px);
+    max-width: 280px;
+    right: 16px !important;
+  }
+}
+
+// Cards and tiles on mobile
+@media (max-width: 671px) {
+  .cds--tile {
+    padding: 0.75rem;
+  }
 }

@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   Search,
-  Tile,
   ClickableTile,
   Pagination,
   ContentSwitcher,
@@ -10,17 +10,58 @@ import {
   Tag,
   Loading,
 } from '@carbon/react'
-import { Grid, List } from '@carbon/icons-react'
+import { Grid, List, UserMultiple, SearchLocate } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { EmployeeFilters } from '@/components/features/employees'
+
+interface Filters {
+  department?: number
+  position?: number
+  skill?: number
+  status?: string
+  hired_after?: string
+  hired_before?: string
+}
 
 export function EmployeesPage() {
-  const [search, setSearch] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get('search') || '')
   const [viewMode, setViewMode] = useState(0) // 0 = grid, 1 = list
   const [page, setPage] = useState(1)
 
+  // Parse filters from URL
+  const filters = useMemo<Filters>(() => ({
+    department: searchParams.get('department') ? Number(searchParams.get('department')) : undefined,
+    position: searchParams.get('position') ? Number(searchParams.get('position')) : undefined,
+    skill: searchParams.get('skill') ? Number(searchParams.get('skill')) : undefined,
+    status: searchParams.get('status') || undefined,
+    hired_after: searchParams.get('hired_after') || undefined,
+    hired_before: searchParams.get('hired_before') || undefined,
+  }), [searchParams])
+
+  const updateFilters = (newFilters: Filters) => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.set(key, String(value))
+      }
+    })
+    setSearchParams(params)
+    setPage(1)
+  }
+
+  const resetFilters = () => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    setSearchParams(params)
+    setPage(1)
+  }
+
   const { data, isLoading } = useQuery({
-    queryKey: ['employees', { search, page }],
-    queryFn: () => usersApi.getList({ search, page, page_size: 20 }),
+    queryKey: ['employees', { search, page, ...filters }],
+    queryFn: () => usersApi.getList({ search, page, page_size: 20, ...filters }),
   })
 
   const getInitials = (name: string) => {
@@ -70,7 +111,7 @@ export function EmployeesPage() {
       </div>
 
       {/* Search */}
-      <div style={{ maxWidth: '400px', marginBottom: '2rem' }}>
+      <div style={{ maxWidth: '400px', marginBottom: '1rem' }}>
         <Search
           labelText="Search"
           placeholder="Поиск по имени или должности..."
@@ -83,6 +124,22 @@ export function EmployeesPage() {
           closeButtonLabelText="Clear search"
         />
       </div>
+
+      {/* Filters */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <EmployeeFilters
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onReset={resetFilters}
+        />
+      </div>
+
+      {/* Results count */}
+      {data && (
+        <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginBottom: '1rem' }}>
+          Найдено: {data.count} {data.count === 1 ? 'сотрудник' : data.count < 5 ? 'сотрудника' : 'сотрудников'}
+        </p>
+      )}
 
       {/* Employees grid/list */}
       {isLoading ? (
@@ -205,11 +262,16 @@ export function EmployeesPage() {
           )}
         </>
       ) : (
-        <Tile>
-          <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--cds-text-secondary)' }}>
-            {search ? 'Сотрудники не найдены' : 'Список сотрудников пуст'}
-          </p>
-        </Tile>
+        <EmptyState
+          icon={search ? SearchLocate : UserMultiple}
+          title={search ? 'Сотрудники не найдены' : 'Список сотрудников пуст'}
+          description={
+            search
+              ? `По запросу "${search}" ничего не найдено. Попробуйте изменить поисковый запрос.`
+              : 'В системе пока нет зарегистрированных сотрудников.'
+          }
+          action={search ? { label: 'Сбросить поиск', onClick: () => setSearch(''), kind: 'tertiary' } : undefined}
+        />
       )}
     </div>
   )

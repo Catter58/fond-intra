@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Tile } from '@carbon/react'
+import { Grid, Column, Tile } from '@carbon/react'
 import {
   UserMultiple,
   Trophy,
@@ -57,60 +57,69 @@ export function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
-        <Tile>
-          <div className="stat-tile">
-            <div className="stat-icon stat-icon--blue">
-              <UserMultiple size={24} />
+      <Grid style={{ marginBottom: '2rem' }}>
+        <Column sm={4} md={2} lg={4}>
+          <Tile>
+            <div className="stat-tile">
+              <div className="stat-icon stat-icon--blue">
+                <UserMultiple size={24} />
+              </div>
+              <div>
+                <div className="stat-value">{statsData?.users_count ?? '--'}</div>
+                <div className="stat-label">Сотрудников</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{statsData?.users_count ?? '--'}</div>
-              <div className="stat-label">Сотрудников</div>
-            </div>
-          </div>
-        </Tile>
+          </Tile>
+        </Column>
 
-        <Tile>
-          <div className="stat-tile">
-            <div className="stat-icon stat-icon--green">
-              <Trophy size={24} />
+        <Column sm={4} md={2} lg={4}>
+          <Tile>
+            <div className="stat-tile">
+              <div className="stat-icon stat-icon--green">
+                <Trophy size={24} />
+              </div>
+              <div>
+                <div className="stat-value">{statsData?.achievements_count ?? '--'}</div>
+                <div className="stat-label">Достижений</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{statsData?.achievements_count ?? '--'}</div>
-              <div className="stat-label">Достижений</div>
-            </div>
-          </div>
-        </Tile>
+          </Tile>
+        </Column>
 
-        <Tile>
-          <div className="stat-tile">
-            <div className="stat-icon stat-icon--purple">
-              <Document size={24} />
+        <Column sm={4} md={2} lg={4}>
+          <Tile>
+            <div className="stat-tile">
+              <div className="stat-icon stat-icon--purple">
+                <Document size={24} />
+              </div>
+              <div>
+                <div className="stat-value">{statsData?.news_count ?? '--'}</div>
+                <div className="stat-label">Новостей</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{statsData?.news_count ?? '--'}</div>
-              <div className="stat-label">Новостей</div>
-            </div>
-          </div>
-        </Tile>
+          </Tile>
+        </Column>
 
-        <Tile>
-          <div className="stat-tile">
-            <div className="stat-icon stat-icon--orange">
-              <Events size={24} />
+        <Column sm={4} md={2} lg={4}>
+          <Tile>
+            <div className="stat-tile">
+              <div className="stat-icon stat-icon--orange">
+                <Events size={24} />
+              </div>
+              <div>
+                <div className="stat-value">{birthdaysData?.length || 0}</div>
+                <div className="stat-label">ДР на этой неделе</div>
+              </div>
             </div>
-            <div>
-              <div className="stat-value">{birthdaysData?.length || 0}</div>
-              <div className="stat-label">ДР на этой неделе</div>
-            </div>
-          </div>
-        </Tile>
-      </div>
+          </Tile>
+        </Column>
+      </Grid>
 
       {/* Content Cards */}
-      <div className="dashboard-cards">
+      <Grid>
         {/* Birthdays */}
-        <Tile>
+        <Column sm={4} md={4} lg={5}>
+          <Tile>
           <h3 style={{
             display: 'flex',
             alignItems: 'center',
@@ -152,9 +161,11 @@ export function DashboardPage() {
             </p>
           )}
         </Tile>
+        </Column>
 
         {/* Latest news */}
-        <Tile>
+        <Column sm={4} md={4} lg={5}>
+          <Tile>
           <h3 style={{
             display: 'flex',
             alignItems: 'center',
@@ -195,10 +206,12 @@ export function DashboardPage() {
               Нет новостей
             </p>
           )}
-        </Tile>
+          </Tile>
+        </Column>
 
         {/* Latest achievements */}
-        <Tile>
+        <Column sm={4} md={4} lg={6}>
+          <Tile>
           <h3 style={{
             display: 'flex',
             alignItems: 'center',
@@ -237,8 +250,9 @@ export function DashboardPage() {
               Нет достижений
             </p>
           )}
-        </Tile>
-      </div>
+          </Tile>
+        </Column>
+      </Grid>
     </div>
   )
 }

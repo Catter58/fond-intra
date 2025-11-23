@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-import { Tile, Button, TextInput, TextArea, InlineNotification, Checkbox } from '@carbon/react'
-import { ArrowLeft, Attachment, Close, Upload } from '@carbon/icons-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Tile, Button, TextInput, InlineNotification, Checkbox, MultiSelect, Tag } from '@carbon/react'
+import { ArrowLeft, Attachment, Close, Upload, DocumentBlank, Send } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
+import { RichTextEditor } from '@/components/ui/EditorJS'
+import type { NewsTag, EditorJSContent, NewsStatus } from '@/types'
 
 interface FileWithPreview {
   file: File
@@ -14,29 +16,57 @@ interface FileWithPreview {
 export function NewsCreatePage() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [isPublished, setIsPublished] = useState(true)
+  const [content, setContent] = useState<EditorJSContent>({ blocks: [] })
   const [isPinned, setIsPinned] = useState(false)
+  const [selectedTags, setSelectedTags] = useState<NewsTag[]>([])
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [error, setError] = useState('')
 
+  const { data: tagsData } = useQuery({
+    queryKey: ['news-tags'],
+    queryFn: newsApi.getTags,
+  })
+
   const createNewsMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (publishStatus: NewsStatus) => {
       const formData = new FormData()
       formData.append('title', title)
-      formData.append('content', content)
-      formData.append('is_published', String(isPublished))
+      formData.append('content', JSON.stringify(content))
+      formData.append('status', publishStatus)
       formData.append('is_pinned', String(isPinned))
+      if (selectedTags.length > 0) {
+        formData.append('tag_ids', JSON.stringify(selectedTags.map(t => t.id)))
+      }
       files.forEach((f) => {
         formData.append('attachments', f.file)
       })
       return newsApi.create(formData)
     },
     onSuccess: (data) => {
-      navigate(`/news/${data.id}`)
+      if (data.status === 'draft') {
+        navigate('/news/drafts')
+      } else {
+        navigate(`/news/${data.id}`)
+      }
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || 'Ошибка при создании новости')
+      const data = err.response?.data
+      if (data?.detail) {
+        setError(data.detail)
+      } else if (data?.title) {
+        setError(`Заголовок: ${data.title[0]}`)
+      } else if (data?.content) {
+        setError(`Содержание: ${data.content[0]}`)
+      } else if (typeof data === 'object') {
+        const firstError = Object.entries(data)[0]
+        if (firstError) {
+          setError(`${firstError[0]}: ${firstError[1]}`)
+        } else {
+          setError('Ошибка при создании новости')
+        }
+      } else {
+        setError('Ошибка при создании новости')
+      }
     },
   })
 
@@ -61,7 +91,17 @@ export function NewsCreatePage() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSaveDraft = () => {
+    setError('')
+    // For drafts, only title is required (minimal validation)
+    if (!title.trim()) {
+      setError('Заголовок обязателен даже для черновика')
+      return
+    }
+    createNewsMutation.mutate('draft')
+  }
+
+  const handlePublish = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -70,12 +110,12 @@ export function NewsCreatePage() {
       return
     }
 
-    if (!content.trim()) {
-      setError('Содержание обязательно')
+    if (!content.blocks || content.blocks.length === 0) {
+      setError('Содержание обязательно для публикации')
       return
     }
 
-    createNewsMutation.mutate()
+    createNewsMutation.mutate('published')
   }
 
   const formatFileSize = (bytes: number) => {
@@ -99,7 +139,7 @@ export function NewsCreatePage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handlePublish}>
         <Tile>
           <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Новая публикация</h3>
 
@@ -126,16 +166,42 @@ export function NewsCreatePage() {
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <TextArea
-              id="content"
-              labelText="Содержание"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <RichTextEditor
+              data={content}
+              onChange={setContent}
               placeholder="Напишите текст новости..."
-              rows={10}
-              required
+              label="Содержание"
             />
           </div>
+
+          {/* Tags selection */}
+          {tagsData && tagsData.length > 0 && (
+            <div style={{ marginBottom: '1rem' }}>
+              <MultiSelect
+                id="tags"
+                titleText="Теги"
+                label="Выберите теги"
+                items={tagsData}
+                itemToString={(item) => item?.name || ''}
+                selectedItems={selectedTags}
+                onChange={({ selectedItems }) => setSelectedTags(selectedItems as NewsTag[])}
+              />
+              {selectedTags.length > 0 && (
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {selectedTags.map((tag) => (
+                    <Tag
+                      key={tag.id}
+                      type={tag.color as 'gray' | 'blue' | 'green' | 'red' | 'purple' | 'cyan' | 'teal' | 'magenta'}
+                      filter
+                      onClose={() => setSelectedTags(selectedTags.filter(t => t.id !== tag.id))}
+                    >
+                      {tag.name}
+                    </Tag>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* File attachments */}
           <div style={{ marginBottom: '1.5rem' }}>
@@ -214,26 +280,38 @@ export function NewsCreatePage() {
           </div>
 
           {/* Options */}
-          <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
-            <Checkbox
-              id="is_published"
-              labelText="Опубликована"
-              checked={isPublished}
-              onChange={(_, { checked }) => setIsPublished(checked)}
-            />
+          <div style={{ marginBottom: '1.5rem' }}>
             <Checkbox
               id="is_pinned"
-              labelText="Закреплена"
+              labelText="Закрепить новость"
               checked={isPinned}
               onChange={(_, { checked }) => setIsPinned(checked)}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Button type="submit" disabled={createNewsMutation.isPending}>
-              {createNewsMutation.isPending ? 'Сохранение...' : 'Сохранить'}
+          <div style={{
+            display: 'flex',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            paddingTop: '1rem',
+            borderTop: '1px solid var(--cds-border-subtle-01)'
+          }}>
+            <Button
+              type="submit"
+              renderIcon={Send}
+              disabled={createNewsMutation.isPending}
+            >
+              {createNewsMutation.isPending ? 'Публикация...' : 'Опубликовать'}
             </Button>
-            <Button kind="secondary" onClick={() => navigate(-1)}>
+            <Button
+              kind="secondary"
+              renderIcon={DocumentBlank}
+              onClick={handleSaveDraft}
+              disabled={createNewsMutation.isPending}
+            >
+              Сохранить как черновик
+            </Button>
+            <Button kind="ghost" onClick={() => navigate(-1)}>
               Отмена
             </Button>
           </div>

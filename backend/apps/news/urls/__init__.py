@@ -9,9 +9,11 @@ from apps.news.views import (
     NewsAttachmentView,
     CommentViewSet,
     ReactionView,
+    TagViewSet,
 )
 
 router = DefaultRouter()
+router.register('tags', TagViewSet, basename='news-tags')
 router.register('', NewsViewSet, basename='news')
 
 urlpatterns = [

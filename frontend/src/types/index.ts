@@ -132,13 +132,39 @@ export interface AchievementAward {
 }
 
 // News types
+export interface NewsTag {
+  id: number
+  name: string
+  slug: string
+  color: 'gray' | 'blue' | 'green' | 'red' | 'purple' | 'cyan' | 'teal' | 'magenta'
+}
+
+// Editor.js content format
+export interface EditorJSBlock {
+  id?: string
+  type: string
+  data: Record<string, unknown>
+}
+
+export interface EditorJSContent {
+  time?: number
+  blocks: EditorJSBlock[]
+  version?: string
+}
+
+export type NewsStatus = 'draft' | 'scheduled' | 'published'
+
 export interface News {
   id: number
   title: string
-  content: string
+  content: EditorJSContent
   author: UserBasic
+  tags?: NewsTag[]
+  status: NewsStatus
+  status_display?: string
   is_pinned: boolean
   is_published: boolean
+  publish_at?: string | null
   created_at: string
   updated_at: string
   comments_count: number
@@ -146,15 +172,27 @@ export interface News {
   reactions_summary: Record<string, number>
   user_reaction: string | null
   attachments?: NewsAttachment[]
+  images?: NewsAttachment[]
+  cover_image?: NewsCoverImage | null
 }
 
 export interface NewsAttachment {
   id: number
   file: string
+  thumbnail?: string | null
   file_name: string
   file_type: string
   file_size: number
+  order: number
+  is_cover: boolean
+  is_image: boolean
   uploaded_at: string
+}
+
+export interface NewsCoverImage {
+  id: number
+  file: string
+  thumbnail?: string | null
 }
 
 export interface Comment {

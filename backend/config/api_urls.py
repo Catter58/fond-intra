@@ -4,6 +4,9 @@ API URL configuration for version 1.
 from django.urls import path, include
 
 urlpatterns = [
+    # Global search
+    path('', include('core.urls')),
+
     # Authentication
     path('auth/', include('apps.accounts.urls.auth_urls')),
 
