@@ -1,13 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Award, Cake, Newspaper, Users } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tile } from '@carbon/react'
+import {
+  UserMultiple,
+  Trophy,
+  Document,
+  Events,
+} from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersApi } from '@/api/endpoints/users'
 import { newsApi } from '@/api/endpoints/news'
 import { achievementsApi } from '@/api/endpoints/achievements'
-import { formatDate, getInitials } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 
 export function DashboardPage() {
   const { user } = useAuthStore()
@@ -32,192 +36,208 @@ export function DashboardPage() {
     queryFn: () => usersApi.getDashboardStats(),
   })
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">
           Добро пожаловать, {user?.first_name}!
         </h1>
-        <p className="text-text-secondary mt-1">
+        <p className="page-subtitle">
           Главная страница корпоративного портала
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-interactive-primary/10 rounded">
-                <Users className="h-6 w-6 text-interactive-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{statsData?.users_count ?? '--'}</p>
-                <p className="text-sm text-text-secondary">Сотрудников</p>
-              </div>
+      {/* Stats Grid */}
+      <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
+        <Tile>
+          <div className="stat-tile">
+            <div className="stat-icon stat-icon--blue">
+              <UserMultiple size={24} />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="stat-value">{statsData?.users_count ?? '--'}</div>
+              <div className="stat-label">Сотрудников</div>
+            </div>
+          </div>
+        </Tile>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-support-success/10 rounded">
-                <Award className="h-6 w-6 text-support-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{statsData?.achievements_count ?? '--'}</p>
-                <p className="text-sm text-text-secondary">Достижений</p>
-              </div>
+        <Tile>
+          <div className="stat-tile">
+            <div className="stat-icon stat-icon--green">
+              <Trophy size={24} />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="stat-value">{statsData?.achievements_count ?? '--'}</div>
+              <div className="stat-label">Достижений</div>
+            </div>
+          </div>
+        </Tile>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-support-info/10 rounded">
-                <Newspaper className="h-6 w-6 text-support-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{statsData?.news_count ?? '--'}</p>
-                <p className="text-sm text-text-secondary">Новостей</p>
-              </div>
+        <Tile>
+          <div className="stat-tile">
+            <div className="stat-icon stat-icon--purple">
+              <Document size={24} />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="stat-value">{statsData?.news_count ?? '--'}</div>
+              <div className="stat-label">Новостей</div>
+            </div>
+          </div>
+        </Tile>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-support-warning/10 rounded">
-                <Cake className="h-6 w-6 text-support-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">
-                  {birthdaysData?.length || 0}
-                </p>
-                <p className="text-sm text-text-secondary">ДР на этой неделе</p>
-              </div>
+        <Tile>
+          <div className="stat-tile">
+            <div className="stat-icon stat-icon--orange">
+              <Events size={24} />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="stat-value">{birthdaysData?.length || 0}</div>
+              <div className="stat-label">ДР на этой неделе</div>
+            </div>
+          </div>
+        </Tile>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Content Cards */}
+      <div className="dashboard-cards">
         {/* Birthdays */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Cake className="h-5 w-5" />
-              Ближайшие дни рождения
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {birthdaysData && birthdaysData.length > 0 ? (
-              <div className="space-y-3">
-                {birthdaysData.map((person) => (
-                  <Link
-                    key={person.id}
-                    to={`/employees/${person.id}`}
-                    className="flex items-center gap-3 p-2 rounded hover:bg-layer-hover transition-colors"
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={person.avatar || undefined} />
-                      <AvatarFallback>
-                        {getInitials(person.full_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {person.full_name}
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {person.birth_date && formatDate(person.birth_date)}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-text-secondary">
-                Нет ближайших дней рождения
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Latest news */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Newspaper className="h-5 w-5" />
-              Последние новости
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {newsData?.results && newsData.results.length > 0 ? (
-              <div className="space-y-3">
-                {newsData.results.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/news/${item.id}`}
-                    className="block p-2 rounded hover:bg-layer-hover transition-colors"
-                  >
-                    <p className="text-sm font-medium line-clamp-2">
-                      {item.title}
-                    </p>
-                    <p className="text-xs text-text-secondary mt-1">
-                      {formatDate(item.created_at)}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-text-secondary">Нет новостей</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Latest achievements */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Последние достижения
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {achievementsData?.results && achievementsData.results.length > 0 ? (
-              <div className="space-y-3">
-                {achievementsData.results.map((award) => (
-                  <div
-                    key={award.id}
-                    className="p-2 rounded hover:bg-layer-hover transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={award.recipient?.avatar || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(award.recipient?.full_name || '')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {award.recipient?.full_name || 'Неизвестный'}
-                        </p>
-                        <p className="text-xs text-text-secondary truncate">
-                          {award.achievement?.name || 'Достижение'}
-                        </p>
-                      </div>
+        <Tile>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '1rem',
+            fontSize: '1rem',
+            fontWeight: 600
+          }}>
+            <Events size={20} />
+            Ближайшие дни рождения
+          </h3>
+          {birthdaysData && birthdaysData.length > 0 ? (
+            <div>
+              {birthdaysData.map((person) => (
+                <Link
+                  key={person.id}
+                  to={`/employees/${person.id}`}
+                  className="list-item"
+                >
+                  <div className="list-item-avatar">
+                    {person.avatar ? (
+                      <img src={person.avatar} alt={person.full_name} />
+                    ) : (
+                      getInitials(person.full_name)
+                    )}
+                  </div>
+                  <div className="list-item-content">
+                    <div className="list-item-title">{person.full_name}</div>
+                    <div className="list-item-subtitle">
+                      {person.birth_date && formatDate(person.birth_date)}
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-text-secondary">Нет достижений</p>
-            )}
-          </CardContent>
-        </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+              Нет ближайших дней рождения
+            </p>
+          )}
+        </Tile>
+
+        {/* Latest news */}
+        <Tile>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '1rem',
+            fontSize: '1rem',
+            fontWeight: 600
+          }}>
+            <Document size={20} />
+            Последние новости
+          </h3>
+          {newsData?.results && newsData.results.length > 0 ? (
+            <div>
+              {newsData.results.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/news/${item.id}`}
+                  className="list-item"
+                  style={{ flexDirection: 'column', alignItems: 'flex-start' }}
+                >
+                  <div className="list-item-title" style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    whiteSpace: 'normal'
+                  }}>
+                    {item.title}
+                  </div>
+                  <div className="list-item-subtitle" style={{ marginTop: '0.25rem' }}>
+                    {formatDate(item.created_at)}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+              Нет новостей
+            </p>
+          )}
+        </Tile>
+
+        {/* Latest achievements */}
+        <Tile>
+          <h3 style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '1rem',
+            fontSize: '1rem',
+            fontWeight: 600
+          }}>
+            <Trophy size={20} />
+            Последние достижения
+          </h3>
+          {achievementsData?.results && achievementsData.results.length > 0 ? (
+            <div>
+              {achievementsData.results.map((award) => (
+                <div key={award.id} className="list-item">
+                  <div className="list-item-avatar">
+                    {award.recipient?.avatar ? (
+                      <img src={award.recipient.avatar} alt={award.recipient.full_name} />
+                    ) : (
+                      getInitials(award.recipient?.full_name || '')
+                    )}
+                  </div>
+                  <div className="list-item-content">
+                    <div className="list-item-title">
+                      {award.recipient?.full_name || 'Неизвестный'}
+                    </div>
+                    <div className="list-item-subtitle">
+                      {award.achievement?.name || 'Достижение'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+              Нет достижений
+            </p>
+          )}
+        </Tile>
       </div>
     </div>
   )

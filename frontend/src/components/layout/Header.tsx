@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, Menu, Search, User, Key } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button, Search } from '@carbon/react'
+import { Menu, Logout, UserAvatar, Password } from '@carbon/icons-react'
 import { NotificationDropdown } from '@/components/features/notifications/NotificationDropdown'
 import { useAuthStore } from '@/store/authStore'
 import { usersApi } from '@/api/endpoints/users'
@@ -50,83 +48,113 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="h-12 border-b bg-layer-01 flex items-center px-4 fixed top-0 left-0 right-0 z-50">
-      <div className="flex items-center gap-4 flex-1">
+    <header
+      style={{
+        height: '48px',
+        borderBottom: '1px solid var(--cds-border-subtle-01)',
+        background: 'var(--cds-layer-01)',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 1rem',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
         <Button
-          variant="ghost"
-          size="icon"
+          kind="ghost"
+          hasIconOnly
+          renderIcon={Menu}
+          iconDescription="Меню"
           onClick={onMenuClick}
-          className="lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+          className="lg-hide"
+          style={{ display: 'none' }}
+        />
 
-        <Link to="/" className="font-semibold text-lg text-text-primary">
+        <Link to="/" style={{ fontWeight: 600, fontSize: '1.125rem', color: 'var(--cds-text-primary)', textDecoration: 'none' }}>
           Fond Intra
         </Link>
 
-        <div className="hidden md:flex items-center flex-1 max-w-md ml-8" ref={searchRef}>
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-placeholder" />
-            <Input
-              type="search"
-              placeholder="Поиск сотрудников..."
-              className="pl-10 h-10"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                setShowSearchResults(true)
-              }}
-              onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-            />
-            {showSearchResults && searchResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-sm shadow-lg z-50 max-h-80 overflow-auto">
-                {searchResults.map((result) => (
-                  <button
-                    key={result.id}
-                    onClick={() => handleSelectUser(result.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary transition-colors text-left"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={result.avatar || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(result.full_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{result.full_name}</p>
-                      <p className="text-xs text-text-secondary truncate">
-                        {result.position?.name || result.department?.name || ''}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-            {showSearchResults && searchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-card border rounded-sm shadow-lg z-50 p-4 text-center text-sm text-muted-foreground">
-                Сотрудники не найдены
-              </div>
-            )}
-          </div>
+        <div ref={searchRef} style={{ position: 'relative', flex: 1, maxWidth: '400px', marginLeft: '2rem' }} className="hide-mobile">
+          <Search
+            id="header-search"
+            placeholder="Поиск сотрудников..."
+            labelText=""
+            closeButtonLabelText="Очистить"
+            size="sm"
+            value={searchQuery}
+            onChange={(e) => {
+              const value = typeof e === 'string' ? e : e.target.value
+              setSearchQuery(value)
+              setShowSearchResults(true)
+            }}
+            onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
+          />
+          {showSearchResults && searchResults && searchResults.length > 0 && (
+            <div className="search-results">
+              {searchResults.map((result) => (
+                <button
+                  key={result.id}
+                  onClick={() => handleSelectUser(result.id)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.5rem 0.75rem',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                  className="list-item"
+                >
+                  <div className="list-item-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
+                    {result.avatar ? (
+                      <img src={result.avatar} alt={result.full_name} />
+                    ) : (
+                      getInitials(result.full_name)
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {result.full_name}
+                    </p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {result.position?.name || result.department?.name || ''}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+          {showSearchResults && searchQuery.length >= 2 && searchResults && searchResults.length === 0 && (
+            <div className="search-results" style={{ padding: '1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+              Сотрудники не найдены
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <NotificationDropdown />
 
-        <div className="relative">
+        <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1 rounded hover:bg-secondary transition-colors"
+            className="user-menu"
           >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.avatar || undefined} alt={user?.full_name} />
-              <AvatarFallback className="text-xs">
-                {user ? getInitials(user.full_name) : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden md:block text-sm font-medium">
+            <div className="list-item-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.full_name} />
+              ) : (
+                getInitials(user?.full_name || 'U')
+              )}
+            </div>
+            <span className="hide-mobile" style={{ fontSize: '0.875rem', fontWeight: 500 }}>
               {user?.full_name}
             </span>
           </button>
@@ -134,32 +162,74 @@ export function Header({ onMenuClick }: HeaderProps) {
           {showUserMenu && (
             <>
               <div
-                className="fixed inset-0 z-40"
+                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
                 onClick={() => setShowUserMenu(false)}
               />
-              <div className="absolute right-0 top-full mt-1 w-48 bg-card border rounded-sm shadow-lg z-50">
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '100%',
+                  marginTop: '0.25rem',
+                  width: '200px',
+                  background: 'var(--cds-layer-01)',
+                  border: '1px solid var(--cds-border-subtle-01)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                  zIndex: 50,
+                }}
+              >
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-secondary transition-colors"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                  }}
                   onClick={() => setShowUserMenu(false)}
+                  className="list-item"
                 >
-                  <User className="h-4 w-4" />
-                  <span className="text-sm">Мой профиль</span>
+                  <UserAvatar size={16} />
+                  Мой профиль
                 </Link>
                 <Link
                   to="/profile/change-password"
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-secondary transition-colors"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                  }}
                   onClick={() => setShowUserMenu(false)}
+                  className="list-item"
                 >
-                  <Key className="h-4 w-4" />
-                  <span className="text-sm">Сменить пароль</span>
+                  <Password size={16} />
+                  Сменить пароль
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-secondary transition-colors text-destructive"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.75rem 1rem',
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-support-error)',
+                  }}
+                  className="list-item"
                 >
-                  <LogOut className="h-4 w-4" />
-                  <span className="text-sm">Выйти</span>
+                  <Logout size={16} />
+                  Выйти
                 </button>
               </div>
             </>

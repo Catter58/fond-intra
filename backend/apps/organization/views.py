@@ -24,6 +24,7 @@ class DepartmentViewSet(ModelViewSet):
     """CRUD for departments."""
     queryset = Department.objects.all().select_related('parent', 'head')
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Few departments, no pagination needed
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -80,6 +81,7 @@ class PositionViewSet(ModelViewSet):
     """CRUD for positions."""
     queryset = Position.objects.all()
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Few positions, no pagination needed
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

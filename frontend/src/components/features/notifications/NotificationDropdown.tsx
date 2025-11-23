@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, Check, ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@carbon/react'
+import { Notification, Checkmark, ArrowRight } from '@carbon/icons-react'
 import { notificationsApi } from '@/api/endpoints/notifications'
 import { formatDate } from '@/lib/utils'
-import type { Notification } from '@/types'
+import type { Notification as NotificationType } from '@/types'
 
 export function NotificationDropdown() {
   const queryClient = useQueryClient()
@@ -14,7 +14,7 @@ export function NotificationDropdown() {
   const { data: notifications } = useQuery({
     queryKey: ['notifications', 'dropdown'],
     queryFn: () => notificationsApi.getList({ page_size: 5 }),
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: 30000,
   })
 
   const { data: unreadCount } = useQuery({
@@ -40,7 +40,7 @@ export function NotificationDropdown() {
     }
   }
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = (notification: NotificationType) => {
     if (!notification.is_read) {
       markAsReadMutation.mutate(notification.id)
     }
@@ -48,16 +48,32 @@ export function NotificationDropdown() {
   }
 
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       <Button
-        variant="ghost"
-        size="icon"
+        kind="ghost"
+        hasIconOnly
+        renderIcon={Notification}
+        iconDescription="Уведомления"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative"
+        style={{ position: 'relative' }}
       >
-        <Bell className="h-5 w-5" />
         {unreadCount && unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 h-5 w-5 bg-support-error text-white text-xs rounded-full flex items-center justify-center">
+          <span
+            style={{
+              position: 'absolute',
+              top: '-4px',
+              right: '-4px',
+              width: '20px',
+              height: '20px',
+              background: 'var(--cds-support-error)',
+              color: 'white',
+              fontSize: '0.75rem',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -66,38 +82,79 @@ export function NotificationDropdown() {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 40,
+            }}
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-card border rounded-sm shadow-lg z-50">
-            <div className="flex items-center justify-between p-3 border-b">
-              <span className="font-medium">Уведомления</span>
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: '100%',
+              marginTop: '0.5rem',
+              width: '320px',
+              background: 'var(--cds-layer-01)',
+              border: '1px solid var(--cds-border-subtle-01)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+              zIndex: 50,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 1rem',
+                borderBottom: '1px solid var(--cds-border-subtle-01)',
+              }}
+            >
+              <span style={{ fontWeight: 500 }}>Уведомления</span>
               {unreadCount && unreadCount > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>
                   {unreadCount} новых
                 </span>
               )}
             </div>
 
-            <div className="max-h-80 overflow-y-auto">
+            <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
               {notifications?.results && notifications.results.length > 0 ? (
                 notifications.results.map((notification) => (
                   <Link
                     key={notification.id}
                     to={notification.link || '/notifications'}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`flex items-start gap-3 p-3 hover:bg-secondary transition-colors border-b last:border-b-0 ${
-                      !notification.is_read ? 'bg-secondary' : ''
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.75rem',
+                      padding: '0.75rem 1rem',
+                      borderBottom: '1px solid var(--cds-border-subtle-01)',
+                      background: !notification.is_read ? 'var(--cds-layer-02)' : 'transparent',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                    }}
                   >
-                    <span className="text-xl shrink-0">
+                    <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>
                       {getNotificationIcon(notification.type)}
                     </span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm line-clamp-2 ${!notification.is_read ? 'font-medium' : ''}`}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: '0.875rem',
+                          fontWeight: !notification.is_read ? 500 : 400,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                        }}
+                      >
                         {notification.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
                         {formatDate(notification.created_at)}
                       </p>
                     </div>
@@ -108,28 +165,43 @@ export function NotificationDropdown() {
                           e.stopPropagation()
                           markAsReadMutation.mutate(notification.id)
                         }}
-                        className="p-1 hover:bg-accent rounded"
+                        style={{
+                          padding: '0.25rem',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--cds-text-secondary)',
+                        }}
                       >
-                        <Check className="h-4 w-4 text-muted-foreground" />
+                        <Checkmark size={16} />
                       </button>
                     )}
                   </Link>
                 ))
               ) : (
-                <div className="p-6 text-center text-muted-foreground text-sm">
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
                   Нет уведомлений
                 </div>
               )}
             </div>
 
-            <div className="p-2 border-t">
+            <div style={{ padding: '0.5rem', borderTop: '1px solid var(--cds-border-subtle-01)' }}>
               <Link
                 to="/notifications"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-center gap-2 p-2 text-sm text-primary hover:bg-secondary rounded transition-colors"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: 'var(--cds-link-primary)',
+                  textDecoration: 'none',
+                }}
               >
                 Все уведомления
-                <ExternalLink className="h-4 w-4" />
+                <ArrowRight size={16} />
               </Link>
             </div>
           </div>

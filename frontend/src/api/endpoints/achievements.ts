@@ -48,7 +48,7 @@ export const achievementsApi = {
     icon: string
     category: string
   }): Promise<Achievement> => {
-    const response = await apiClient.post<Achievement>('/admin/achievements/types/', data)
+    const response = await apiClient.post<Achievement>('/achievements/types/', data)
     return response.data
   },
 
@@ -58,11 +58,11 @@ export const achievementsApi = {
     icon?: string
     category?: string
   }): Promise<Achievement> => {
-    const response = await apiClient.patch<Achievement>(`/admin/achievements/types/${id}/`, data)
+    const response = await apiClient.patch<Achievement>(`/achievements/types/${id}/`, data)
     return response.data
   },
 
   deleteType: async (id: number): Promise<void> => {
-    await apiClient.delete(`/admin/achievements/types/${id}/`)
+    await apiClient.delete(`/achievements/types/${id}/`)
   },
 }

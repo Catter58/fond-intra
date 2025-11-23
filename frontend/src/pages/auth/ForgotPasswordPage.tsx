@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowLeft, Mail } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Form,
+  Stack,
+  TextInput,
+  Button,
+  InlineNotification,
+  Tile,
+} from '@carbon/react'
+import { ArrowLeft, Email } from '@carbon/icons-react'
 import { authApi } from '@/api/endpoints/auth'
 
 export function ForgotPasswordPage() {
@@ -31,73 +35,85 @@ export function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <div className="w-16 h-16 bg-support-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="h-8 w-8 text-support-success" />
+      <Tile>
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: 'rgba(36, 161, 72, 0.1)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem'
+          }}>
+            <Email size={32} style={{ color: '#24a148' }} />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Письмо отправлено</h2>
-          <p className="text-text-secondary mb-6">
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+            Письмо отправлено
+          </h2>
+          <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem' }}>
             Если аккаунт с email <strong>{email}</strong> существует,
             вы получите письмо с инструкциями по восстановлению пароля.
           </p>
-          <Button asChild variant="outline">
-            <Link to="/login">Вернуться к входу</Link>
+          <Button kind="secondary" as={Link} to="/login">
+            Вернуться к входу
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </Tile>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2 mb-2">
-          <Link to="/login" className="text-text-secondary hover:text-text-primary">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <CardTitle>Восстановление пароля</CardTitle>
-        </div>
-        <CardDescription>
-          Введите email, указанный при регистрации. Мы отправим ссылку для сброса пароля.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Tile>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <Link to="/login" style={{ color: 'var(--cds-text-secondary)' }}>
+          <ArrowLeft size={20} />
+        </Link>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Восстановление пароля</h2>
+      </div>
+      <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+        Введите email, указанный при регистрации. Мы отправим ссылку для сброса пароля.
+      </p>
+
+      <Form onSubmit={handleSubmit}>
+        <Stack gap={6}>
           {error && (
-            <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-              {error}
-            </div>
+            <InlineNotification
+              kind="error"
+              title="Ошибка"
+              subtitle={error}
+              hideCloseButton
+              lowContrast
+            />
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-            />
-          </div>
+          <TextInput
+            id="email"
+            labelText="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+          />
 
           <Button
             type="submit"
-            className="w-full"
             disabled={resetPasswordMutation.isPending}
+            style={{ width: '100%', maxWidth: '100%' }}
           >
             {resetPasswordMutation.isPending ? 'Отправка...' : 'Отправить ссылку'}
           </Button>
 
-          <p className="text-center text-sm text-text-secondary">
+          <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
             Вспомнили пароль?{' '}
-            <Link to="/login" className="text-interactive-primary hover:underline">
+            <Link to="/login" style={{ color: 'var(--cds-link-primary)', textDecoration: 'none' }}>
               Войти
             </Link>
           </p>
-        </form>
-      </CardContent>
-    </Card>
+        </Stack>
+      </Form>
+    </Tile>
   )
 }

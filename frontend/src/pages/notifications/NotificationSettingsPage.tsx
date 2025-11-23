@@ -1,41 +1,50 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Bell, Mail, Award, Newspaper, Cake, MessageSquare } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Tile, Button, Toggle, Loading } from '@carbon/react'
+import { ArrowLeft, Notification, Email, Trophy, Document, Events, Chat } from '@carbon/icons-react'
 import { notificationsApi } from '@/api/endpoints/notifications'
 
 interface SettingToggleProps {
   icon: React.ReactNode
   title: string
   description: string
+  id: string
   checked: boolean
   onChange: (checked: boolean) => void
 }
 
-function SettingToggle({ icon, title, description, checked, onChange }: SettingToggleProps) {
+function SettingToggle({ icon, title, description, id, checked, onChange }: SettingToggleProps) {
   return (
-    <div className="flex items-start gap-4 p-4 rounded hover:bg-layer-02 transition-colors">
-      <div className="p-2 bg-layer-02 rounded text-text-secondary">
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '1rem',
+        padding: '1rem',
+      }}
+    >
+      <div
+        style={{
+          padding: '0.5rem',
+          background: 'var(--cds-layer-02)',
+          color: 'var(--cds-text-secondary)',
+        }}
+      >
         {icon}
       </div>
-      <div className="flex-1">
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-text-secondary">{description}</p>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontWeight: 500 }}>{title}</p>
+        <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{description}</p>
       </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={`relative w-12 h-6 rounded-full transition-colors ${
-          checked ? 'bg-interactive-primary' : 'bg-layer-hover'
-        }`}
-      >
-        <span
-          className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-            checked ? 'translate-x-7' : 'translate-x-1'
-          }`}
-        />
-      </button>
+      <Toggle
+        id={id}
+        labelA=""
+        labelB=""
+        toggled={checked}
+        onToggle={(e) => onChange(e)}
+        size="sm"
+      />
     </div>
   )
 }
@@ -78,88 +87,97 @@ export function NotificationSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-text-secondary">Загрузка...</p>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+        <Loading withOverlay={false} />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-semibold text-text-primary">
-          Настройки уведомлений
-        </h1>
+    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Button
+            kind="ghost"
+            hasIconOnly
+            renderIcon={ArrowLeft}
+            iconDescription="Назад"
+            onClick={() => navigate(-1)}
+          />
+          <h1 className="page-title">Настройки уведомлений</h1>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Уведомления в приложении
-          </CardTitle>
-          <CardDescription>
-            Выберите, о каких событиях вы хотите получать уведомления
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <Tile style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <Notification size={20} />
+          <h3 style={{ fontWeight: 600 }}>Уведомления в приложении</h3>
+        </div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginBottom: '1rem' }}>
+          Выберите, о каких событиях вы хотите получать уведомления
+        </p>
+
+        <div style={{ borderTop: '1px solid var(--cds-border-subtle-01)' }}>
           <SettingToggle
-            icon={<Cake className="h-5 w-5" />}
+            icon={<Events size={20} />}
             title="Дни рождения"
             description="Уведомления о днях рождения коллег"
+            id="birthdays"
             checked={settings.birthdays_enabled}
             onChange={(v) => handleChange('birthdays_enabled', v)}
           />
           <SettingToggle
-            icon={<Award className="h-5 w-5" />}
+            icon={<Trophy size={20} />}
             title="Достижения"
             description="Уведомления о полученных наградах"
+            id="achievements"
             checked={settings.achievements_enabled}
             onChange={(v) => handleChange('achievements_enabled', v)}
           />
           <SettingToggle
-            icon={<Newspaper className="h-5 w-5" />}
+            icon={<Document size={20} />}
             title="Новости"
             description="Уведомления о новых публикациях"
+            id="news"
             checked={settings.news_enabled}
             onChange={(v) => handleChange('news_enabled', v)}
           />
           <SettingToggle
-            icon={<MessageSquare className="h-5 w-5" />}
+            icon={<Chat size={20} />}
             title="Комментарии"
             description="Уведомления о комментариях к вашим публикациям"
+            id="comments"
             checked={settings.comments_enabled}
             onChange={(v) => handleChange('comments_enabled', v)}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </Tile>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Email уведомления
-          </CardTitle>
-          <CardDescription>
-            Дублировать важные уведомления на почту
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Tile>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <Email size={20} />
+          <h3 style={{ fontWeight: 600 }}>Email уведомления</h3>
+        </div>
+        <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginBottom: '1rem' }}>
+          Дублировать важные уведомления на почту
+        </p>
+
+        <div style={{ borderTop: '1px solid var(--cds-border-subtle-01)' }}>
           <SettingToggle
-            icon={<Mail className="h-5 w-5" />}
+            icon={<Email size={20} />}
             title="Отправлять на email"
             description="Получать уведомления на электронную почту"
+            id="email"
             checked={settings.email_enabled}
             onChange={(v) => handleChange('email_enabled', v)}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </Tile>
 
       {updateSettingsMutation.isPending && (
-        <p className="text-sm text-text-helper text-center">Сохранение...</p>
+        <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-helper)', textAlign: 'center', marginTop: '1rem' }}>
+          Сохранение...
+        </p>
       )}
     </div>
   )

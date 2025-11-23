@@ -1,23 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { Users, Building2, Shield, Award, FileText, TrendingUp } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Tile, ClickableTile } from '@carbon/react'
+import { UserMultiple, Building, Security, Trophy, Document, ChartLineSmooth, Archive } from '@carbon/icons-react'
+import { apiClient } from '@/api/client'
+
+interface AdminStats {
+  total_users: number
+  active_users: number
+  archived_users: number
+  departments: number
+  positions: number
+  roles: number
+  achievement_types: number
+  audit_entries: number
+}
 
 export function AdminDashboardPage() {
   const { data: stats } = useQuery({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
-      // TODO: Replace with actual admin stats endpoint
-      return {
-        total_users: 0,
-        active_users: 0,
-        archived_users: 0,
-        departments: 0,
-        positions: 0,
-        roles: 0,
-        achievement_types: 0,
-        audit_entries: 0,
-      }
+      const response = await apiClient.get<AdminStats>('/admin/stats/')
+      return response.data
     },
   })
 
@@ -25,131 +27,119 @@ export function AdminDashboardPage() {
     {
       title: 'Пользователи',
       description: 'Управление сотрудниками',
-      icon: Users,
+      icon: UserMultiple,
       href: '/admin/users',
       stats: `${stats?.active_users || 0} активных`,
-      color: 'text-interactive-primary',
     },
     {
       title: 'Отделы',
       description: 'Организационная структура',
-      icon: Building2,
+      icon: Building,
       href: '/admin/departments',
       stats: `${stats?.departments || 0} отделов`,
-      color: 'text-support-success',
     },
     {
       title: 'Роли',
       description: 'Права и доступы',
-      icon: Shield,
+      icon: Security,
       href: '/admin/roles',
       stats: `${stats?.roles || 0} ролей`,
-      color: 'text-support-warning',
     },
     {
       title: 'Достижения',
       description: 'Типы наград',
-      icon: Award,
+      icon: Trophy,
       href: '/admin/achievements',
       stats: `${stats?.achievement_types || 0} типов`,
-      color: 'text-support-info',
     },
     {
       title: 'Аудит',
       description: 'Журнал действий',
-      icon: FileText,
+      icon: Document,
       href: '/admin/audit',
       stats: 'Просмотр логов',
-      color: 'text-text-secondary',
     },
   ]
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-primary">Администрирование</h1>
-        <p className="text-text-secondary mt-1">
-          Управление порталом и настройки системы
-        </p>
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Администрирование</h1>
+        <p className="page-subtitle">Управление порталом и настройки системы</p>
       </div>
 
       {/* Stats overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-interactive-primary/10 rounded">
-                <Users className="h-5 w-5 text-interactive-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{stats?.total_users || 0}</p>
-                <p className="text-xs text-text-secondary">Всего сотрудников</p>
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+        <Tile className="stat-tile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.5rem', background: 'rgba(15, 98, 254, 0.1)', borderRadius: '4px' }}>
+              <UserMultiple size={20} style={{ color: '#0f62fe' }} />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-support-success/10 rounded">
-                <TrendingUp className="h-5 w-5 text-support-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{stats?.active_users || 0}</p>
-                <p className="text-xs text-text-secondary">Активных</p>
-              </div>
+            <div>
+              <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>{stats?.total_users || 0}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Всего сотрудников</p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-support-warning/10 rounded">
-                <Building2 className="h-5 w-5 text-support-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{stats?.departments || 0}</p>
-                <p className="text-xs text-text-secondary">Отделов</p>
-              </div>
+          </div>
+        </Tile>
+        <Tile className="stat-tile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.5rem', background: 'rgba(36, 161, 72, 0.1)', borderRadius: '4px' }}>
+              <ChartLineSmooth size={20} style={{ color: '#24a148' }} />
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-text-secondary/10 rounded">
-                <Users className="h-5 w-5 text-text-secondary" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold">{stats?.archived_users || 0}</p>
-                <p className="text-xs text-text-secondary">В архиве</p>
-              </div>
+            <div>
+              <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>{stats?.active_users || 0}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Активных</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Tile>
+        <Tile className="stat-tile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.5rem', background: 'rgba(255, 131, 43, 0.1)', borderRadius: '4px' }}>
+              <Building size={20} style={{ color: '#ff832b' }} />
+            </div>
+            <div>
+              <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>{stats?.departments || 0}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>Отделов</p>
+            </div>
+          </div>
+        </Tile>
+        <Tile className="stat-tile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '0.5rem', background: 'rgba(82, 82, 82, 0.1)', borderRadius: '4px' }}>
+              <Archive size={20} style={{ color: '#525252' }} />
+            </div>
+            <div>
+              <p style={{ fontSize: '1.5rem', fontWeight: 600 }}>{stats?.archived_users || 0}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>В архиве</p>
+            </div>
+          </div>
+        </Tile>
       </div>
 
       {/* Admin sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
         {adminCards.map((card) => (
-          <Link key={card.href} to={card.href}>
-            <Card className="h-full hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 bg-layer-02 rounded ${card.color}`}>
-                    <card.icon className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{card.title}</h3>
-                    <p className="text-sm text-text-secondary mt-1">
-                      {card.description}
-                    </p>
-                    <p className="text-xs text-text-helper mt-2">{card.stats}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          <ClickableTile
+            key={card.href}
+            href={card.href}
+            onClick={(e) => {
+              e.preventDefault()
+              window.location.href = card.href
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', padding: '0.5rem' }}>
+              <div style={{ padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
+                <card.icon size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontWeight: 600 }}>{card.title}</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginTop: '0.25rem' }}>
+                  {card.description}
+                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.5rem' }}>{card.stats}</p>
+              </div>
+            </div>
+          </ClickableTile>
         ))}
       </div>
     </div>

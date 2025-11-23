@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit, Trash2, Shield } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tile, Button, TextInput, Checkbox, Loading, InlineNotification } from '@carbon/react'
+import { Add, Edit, TrashCan, Security } from '@carbon/icons-react'
 import { apiClient } from '@/api/client'
 import type { Role, Permission } from '@/types'
 
@@ -26,13 +23,13 @@ export function AdminRolesPage() {
   const { data: permissions } = useQuery({
     queryKey: ['permissions'],
     queryFn: async () => {
-      const response = await apiClient.get<Permission[]>('/admin/roles/permissions/')
+      const response = await apiClient.get<Permission[]>('/admin/permissions/')
       return response.data
     },
   })
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: typeof formData) => {
       const response = await apiClient.post('/admin/roles/', data)
       return response.data
     },
@@ -44,7 +41,7 @@ export function AdminRolesPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: number; data: typeof formData }) => {
       const response = await apiClient.patch(`/admin/roles/${id}/`, data)
       return response.data
     },
@@ -106,137 +103,142 @@ export function AdminRolesPage() {
   }, {} as Record<string, Permission[]>)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Управление ролями</h1>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Добавить роль
-        </Button>
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title">Управление ролями</h1>
+          <Button renderIcon={Add} onClick={() => setShowForm(true)}>
+            Добавить роль
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? 'Редактирование роли' : 'Новая роль'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 bg-support-error/10 text-support-error text-sm rounded">
-                  {error}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Название *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Описание</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-              </div>
+        <Tile style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>
+            {editingId ? 'Редактирование роли' : 'Новая роль'}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <InlineNotification
+                kind="error"
+                title="Ошибка"
+                subtitle={error}
+                hideCloseButton
+                lowContrast
+                style={{ marginBottom: '1rem' }}
+              />
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <TextInput
+                id="name"
+                labelText="Название *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <TextInput
+                id="description"
+                labelText="Описание"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
 
-              {/* Permissions */}
-              <div className="space-y-2">
-                <Label>Права доступа</Label>
-                <div className="border rounded p-4 max-h-64 overflow-y-auto">
-                  {groupedPermissions && Object.entries(groupedPermissions).map(([category, perms]) => (
-                    <div key={category} className="mb-4 last:mb-0">
-                      <p className="text-xs font-semibold text-text-helper uppercase mb-2">{category}</p>
-                      <div className="space-y-1">
-                        {perms.map((perm) => (
-                          <label
-                            key={perm.id}
-                            className="flex items-center gap-2 p-2 hover:bg-layer-hover rounded cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={formData.permissions.includes(perm.id)}
-                              onChange={() => togglePermission(perm.id)}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">{perm.name}</span>
-                            <span className="text-xs text-text-helper">({perm.codename})</span>
-                          </label>
-                        ))}
-                      </div>
+            {/* Permissions */}
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ fontWeight: 500, marginBottom: '0.5rem' }}>Права доступа</p>
+              <div style={{ border: '1px solid var(--cds-border-subtle-01)', padding: '1rem', maxHeight: '250px', overflowY: 'auto' }}>
+                {groupedPermissions && Object.entries(groupedPermissions).map(([category, perms]) => (
+                  <div key={category} style={{ marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--cds-text-helper)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                      {category}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                      {perms.map((perm) => (
+                        <Checkbox
+                          key={perm.id}
+                          id={`perm-${perm.id}`}
+                          labelText={`${perm.name} (${perm.codename})`}
+                          checked={formData.permissions.includes(perm.id)}
+                          onChange={() => togglePermission(perm.id)}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingId ? 'Сохранить' : 'Создать'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Отмена</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {editingId ? 'Сохранить' : 'Создать'}
+              </Button>
+              <Button kind="secondary" onClick={resetForm}>Отмена</Button>
+            </div>
+          </form>
+        </Tile>
       )}
 
       {/* Roles list */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 text-center text-text-secondary">Загрузка...</div>
-          ) : roles && roles.length > 0 ? (
-            <div className="divide-y">
-              {roles.map((role) => (
-                <div key={role.id} className="flex items-start gap-4 p-4 hover:bg-layer-hover">
-                  <Shield className="h-5 w-5 text-text-secondary mt-1" />
-                  <div className="flex-1">
-                    <p className="font-medium">
-                      {role.name}
-                      {role.is_system && (
-                        <span className="ml-2 text-xs bg-layer-02 px-2 py-0.5 rounded">Системная</span>
-                      )}
-                    </p>
-                    {role.description && (
-                      <p className="text-sm text-text-secondary">{role.description}</p>
+      <Tile>
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Loading withOverlay={false} />
+          </div>
+        ) : roles && roles.length > 0 ? (
+          <div>
+            {roles.map((role, index) => (
+              <div
+                key={role.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  borderBottom: index < roles.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
+                }}
+              >
+                <Security size={20} style={{ color: 'var(--cds-text-secondary)', marginTop: '0.125rem' }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 500 }}>
+                    {role.name}
+                    {role.is_system && (
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: 'var(--cds-layer-02)', padding: '0.125rem 0.5rem' }}>
+                        Системная
+                      </span>
                     )}
-                    <p className="text-xs text-text-helper mt-1">
-                      {role.permissions?.length || 0} прав
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(role)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {!role.is_system && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          if (confirm('Удалить роль?')) deleteMutation.mutate(role.id)
-                        }}
-                        className="text-support-error hover:text-support-error"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  </p>
+                  {role.description && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{role.description}</p>
+                  )}
+                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
+                    {role.permissions?.length || 0} прав
+                  </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 text-center text-text-secondary">Роли не созданы</div>
-          )}
-        </CardContent>
-      </Card>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(role)} />
+                  {!role.is_system && (
+                    <Button
+                      kind="danger--ghost"
+                      hasIconOnly
+                      renderIcon={TrashCan}
+                      iconDescription="Удалить"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('Удалить роль?')) deleteMutation.mutate(role.id)
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Роли не созданы</p>
+        )}
+      </Tile>
     </div>
   )
 }

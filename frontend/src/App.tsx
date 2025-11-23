@@ -1,7 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { Loading } from '@carbon/react'
 import { useAuthStore } from '@/store/authStore'
-import { Toaster } from '@/components/ui/toaster'
 
 // Layouts (not lazy - needed immediately)
 import { MainLayout } from '@/components/layout/MainLayout'
@@ -10,9 +10,8 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 // Loading component
 function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-[50vh]" role="status" aria-label="Загрузка">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-interactive-primary" />
-      <span className="sr-only">Загрузка...</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }} role="status" aria-label="Загрузка">
+      <Loading withOverlay={false} />
     </div>
   )
 }
@@ -176,7 +175,6 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      <Toaster />
     </>
   )
 }

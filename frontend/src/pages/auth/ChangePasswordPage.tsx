@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Form,
+  Stack,
+  PasswordInput,
+  Button,
+  InlineNotification,
+  Tile,
+} from '@carbon/react'
+import { ArrowLeft } from '@carbon/icons-react'
 import { authApi } from '@/api/endpoints/auth'
 
 export function ChangePasswordPage() {
   const navigate = useNavigate()
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false,
-  })
   const [formData, setFormData] = useState({
     current_password: '',
     new_password: '',
@@ -44,10 +43,6 @@ export function ChangePasswordPage() {
     setSuccess(false)
   }
 
-  const togglePasswordVisibility = (field: 'current' | 'new' | 'confirm') => {
-    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }))
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -70,110 +65,91 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-md mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-semibold text-text-primary">Смена пароля</h1>
+    <div style={{ maxWidth: '28rem', margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+        <Button
+          kind="ghost"
+          hasIconOnly
+          iconDescription="Назад"
+          renderIcon={ArrowLeft}
+          onClick={() => navigate(-1)}
+        />
+        <h1 className="page-title">Смена пароля</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Изменить пароль</CardTitle>
-          <CardDescription>
-            Для безопасности рекомендуем использовать уникальный пароль
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <Tile>
+        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+          Изменить пароль
+        </h2>
+        <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+          Для безопасности рекомендуем использовать уникальный пароль
+        </p>
+
+        <Form onSubmit={handleSubmit}>
+          <Stack gap={6}>
             {error && (
-              <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-                {error}
-              </div>
+              <InlineNotification
+                kind="error"
+                title="Ошибка"
+                subtitle={error}
+                hideCloseButton
+                lowContrast
+              />
             )}
 
             {success && (
-              <div className="p-3 bg-support-success/10 border border-support-success text-support-success text-sm rounded">
-                Пароль успешно изменён
-              </div>
+              <InlineNotification
+                kind="success"
+                title="Успешно"
+                subtitle="Пароль успешно изменён"
+                hideCloseButton
+                lowContrast
+              />
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="current_password">Текущий пароль</Label>
-              <div className="relative">
-                <Input
-                  id="current_password"
-                  name="current_password"
-                  type={showPasswords.current ? 'text' : 'password'}
-                  value={formData.current_password}
-                  onChange={handleChange}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('current')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+            <PasswordInput
+              id="current_password"
+              name="current_password"
+              labelText="Текущий пароль"
+              value={formData.current_password}
+              onChange={handleChange}
+              required
+            />
+
+            <div>
+              <PasswordInput
+                id="new_password"
+                name="new_password"
+                labelText="Новый пароль"
+                value={formData.new_password}
+                onChange={handleChange}
+                required
+              />
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
+                Минимум 8 символов
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="new_password">Новый пароль</Label>
-              <div className="relative">
-                <Input
-                  id="new_password"
-                  name="new_password"
-                  type={showPasswords.new ? 'text' : 'password'}
-                  value={formData.new_password}
-                  onChange={handleChange}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('new')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              <p className="text-xs text-text-helper">Минимум 8 символов</p>
-            </div>
+            <PasswordInput
+              id="confirm_password"
+              name="confirm_password"
+              labelText="Подтвердите пароль"
+              value={formData.confirm_password}
+              onChange={handleChange}
+              required
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="confirm_password">Подтвердите пароль</Label>
-              <div className="relative">
-                <Input
-                  id="confirm_password"
-                  name="confirm_password"
-                  type={showPasswords.confirm ? 'text' : 'password'}
-                  value={formData.confirm_password}
-                  onChange={handleChange}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('confirm')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                >
-                  {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
+            <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem' }}>
               <Button type="submit" disabled={changePasswordMutation.isPending}>
                 {changePasswordMutation.isPending ? 'Сохранение...' : 'Изменить пароль'}
               </Button>
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              <Button kind="secondary" onClick={() => navigate(-1)}>
                 Отмена
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </Stack>
+        </Form>
+      </Tile>
     </div>
   )
 }

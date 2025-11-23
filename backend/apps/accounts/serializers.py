@@ -137,7 +137,7 @@ class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'patronymic',
-                  'full_name', 'avatar']
+                  'full_name', 'avatar', 'is_superuser']
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -195,7 +195,7 @@ class UserPrivateDetailSerializer(UserDetailSerializer):
     """User serializer with private fields (for self or HR)."""
 
     class Meta(UserDetailSerializer.Meta):
-        fields = UserDetailSerializer.Meta.fields + ['phone_personal']
+        fields = UserDetailSerializer.Meta.fields + ['phone_personal', 'is_archived', 'archived_at']
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):

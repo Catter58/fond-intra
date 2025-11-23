@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tile, Button, TextInput, Select, SelectItem, Loading, InlineNotification } from '@carbon/react'
+import { Add, Edit, TrashCan, Building } from '@carbon/icons-react'
 import { apiClient } from '@/api/client'
 import type { Department } from '@/types'
 
@@ -24,7 +21,7 @@ export function AdminDepartmentsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: { name: string; description: string; parent_id: number | null }) => {
       const response = await apiClient.post('/organization/departments/', data)
       return response.data
     },
@@ -36,7 +33,7 @@ export function AdminDepartmentsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ id, data }: { id: number; data: { name: string; description: string; parent_id: number | null } }) => {
       const response = await apiClient.patch(`/organization/departments/${id}/`, data)
       return response.data
     },
@@ -86,114 +83,120 @@ export function AdminDepartmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Управление отделами</h1>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Добавить отдел
-        </Button>
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title">Управление отделами</h1>
+          <Button renderIcon={Add} onClick={() => setShowForm(true)}>
+            Добавить отдел
+          </Button>
+        </div>
       </div>
 
-      {/* Form modal */}
+      {/* Form */}
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? 'Редактирование' : 'Новый отдел'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 bg-support-error/10 text-support-error text-sm rounded">
-                  {error}
-                </div>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Название *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="parent">Родительский отдел</Label>
-                  <select
-                    id="parent"
-                    value={formData.parent_id}
-                    onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
-                    className="flex h-12 w-full border border-input bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="">Нет (корневой)</option>
-                    {departments?.filter(d => d.id !== editingId).map((dept) => (
-                      <option key={dept.id} value={dept.id}>{dept.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="description">Описание</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingId ? 'Сохранить' : 'Создать'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Отмена</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <Tile style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>
+            {editingId ? 'Редактирование' : 'Новый отдел'}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <InlineNotification
+                kind="error"
+                title="Ошибка"
+                subtitle={error}
+                hideCloseButton
+                lowContrast
+                style={{ marginBottom: '1rem' }}
+              />
+            )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <TextInput
+                id="name"
+                labelText="Название *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <Select
+                id="parent"
+                labelText="Родительский отдел"
+                value={formData.parent_id}
+                onChange={(e) => setFormData({ ...formData, parent_id: e.target.value })}
+              >
+                <SelectItem value="" text="Нет (корневой)" />
+                {departments?.filter(d => d.id !== editingId).map((dept) => (
+                  <SelectItem key={dept.id} value={String(dept.id)} text={dept.name} />
+                ))}
+              </Select>
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <TextInput
+                id="description"
+                labelText="Описание"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {editingId ? 'Сохранить' : 'Создать'}
+              </Button>
+              <Button kind="secondary" onClick={resetForm}>Отмена</Button>
+            </div>
+          </form>
+        </Tile>
       )}
 
       {/* Departments list */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 text-center text-text-secondary">Загрузка...</div>
-          ) : departments && departments.length > 0 ? (
-            <div className="divide-y">
-              {departments.map((dept) => (
-                <div key={dept.id} className="flex items-center gap-4 p-4 hover:bg-layer-hover">
-                  <Building2 className="h-5 w-5 text-text-secondary" />
-                  <div className="flex-1">
-                    <p className="font-medium">{dept.name}</p>
-                    {dept.description && (
-                      <p className="text-sm text-text-secondary">{dept.description}</p>
-                    )}
-                    {dept.parent_name && (
-                      <p className="text-xs text-text-helper">Родитель: {dept.parent_name}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(dept)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm('Удалить отдел?')) deleteMutation.mutate(dept.id)
-                      }}
-                      className="text-support-error hover:text-support-error"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+      <Tile>
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Loading withOverlay={false} />
+          </div>
+        ) : departments && departments.length > 0 ? (
+          <div>
+            {departments.map((dept, index) => (
+              <div
+                key={dept.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  borderBottom: index < departments.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
+                }}
+              >
+                <Building size={20} style={{ color: 'var(--cds-text-secondary)' }} />
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 500 }}>{dept.name}</p>
+                  {dept.description && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{dept.description}</p>
+                  )}
+                  {dept.parent_name && (
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Родитель: {dept.parent_name}</p>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 text-center text-text-secondary">Отделы не созданы</div>
-          )}
-        </CardContent>
-      </Card>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(dept)} />
+                  <Button
+                    kind="danger--ghost"
+                    hasIconOnly
+                    renderIcon={TrashCan}
+                    iconDescription="Удалить"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Удалить отдел?')) deleteMutation.mutate(dept.id)
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Отделы не созданы</p>
+        )}
+      </Tile>
     </div>
   )
 }

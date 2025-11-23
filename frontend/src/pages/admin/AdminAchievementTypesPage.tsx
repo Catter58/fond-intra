@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tile, Button, TextInput, TextArea, Select, SelectItem, Loading, InlineNotification } from '@carbon/react'
+import { Add, Edit, TrashCan } from '@carbon/icons-react'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import type { Achievement } from '@/types'
 
@@ -84,135 +81,144 @@ export function AdminAchievementTypesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Типы достижений</h1>
-        <Button onClick={() => setShowForm(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Добавить тип
-        </Button>
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title">Типы достижений</h1>
+          <Button renderIcon={Add} onClick={() => setShowForm(true)}>
+            Добавить тип
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? 'Редактирование' : 'Новый тип достижения'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="p-3 bg-support-error/10 text-support-error text-sm rounded">
-                  {error}
-                </div>
-              )}
+        <Tile style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>
+            {editingId ? 'Редактирование' : 'Новый тип достижения'}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <InlineNotification
+                kind="error"
+                title="Ошибка"
+                subtitle={error}
+                hideCloseButton
+                lowContrast
+                style={{ marginBottom: '1rem' }}
+              />
+            )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Название *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <TextInput
+                id="name"
+                labelText="Название *"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+              <Select
+                id="category"
+                labelText="Категория"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              >
+                {CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value} text={cat.label} />
+                ))}
+              </Select>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="category">Категория</Label>
-                  <select
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="flex h-12 w-full border border-input bg-background px-3 py-2 text-sm"
+            <div style={{ marginBottom: '1rem' }}>
+              <TextArea
+                id="description"
+                labelText="Описание *"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.75rem', fontWeight: 400, marginBottom: '0.5rem', color: 'var(--cds-text-secondary)' }}>Иконка</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {EMOJI_OPTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, icon: emoji })}
+                    style={{
+                      fontSize: '1.5rem',
+                      padding: '0.5rem',
+                      background: formData.icon === emoji ? 'var(--cds-layer-selected-01)' : 'transparent',
+                      border: formData.icon === emoji ? '2px solid var(--cds-border-interactive)' : '2px solid transparent',
+                      cursor: 'pointer',
+                    }}
                   >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat.value} value={cat.value}>{cat.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="description">Описание *</Label>
-                  <textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="flex w-full border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Иконка</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {EMOJI_OPTIONS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, icon: emoji })}
-                        className={`text-2xl p-2 rounded hover:bg-layer-hover ${
-                          formData.icon === emoji ? 'bg-interactive-primary/10 ring-2 ring-interactive-primary' : ''
-                        }`}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    {emoji}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                  {editingId ? 'Сохранить' : 'Создать'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>Отмена</Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {editingId ? 'Сохранить' : 'Создать'}
+              </Button>
+              <Button kind="secondary" onClick={resetForm}>Отмена</Button>
+            </div>
+          </form>
+        </Tile>
       )}
 
       {/* List */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 text-center text-text-secondary">Загрузка...</div>
-          ) : achievements && achievements.length > 0 ? (
-            <div className="divide-y">
-              {achievements.map((achievement) => (
-                <div key={achievement.id} className="flex items-center gap-4 p-4 hover:bg-layer-hover">
-                  <span className="text-3xl">{achievement.icon}</span>
-                  <div className="flex-1">
-                    <p className="font-medium">{achievement.name}</p>
-                    <p className="text-sm text-text-secondary line-clamp-1">{achievement.description}</p>
-                    <p className="text-xs text-text-helper">
-                      {CATEGORIES.find(c => c.value === achievement.category)?.label}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(achievement)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm('Удалить тип достижения?')) deleteMutation.mutate(achievement.id)
-                      }}
-                      className="text-support-error hover:text-support-error"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+      <Tile>
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Loading withOverlay={false} />
+          </div>
+        ) : achievements && achievements.length > 0 ? (
+          <div>
+            {achievements.map((achievement, index) => (
+              <div
+                key={achievement.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  padding: '1rem',
+                  borderBottom: index < achievements.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
+                }}
+              >
+                <span style={{ fontSize: '2rem' }}>{achievement.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 500 }}>{achievement.name}</p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{achievement.description}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>
+                    {CATEGORIES.find(c => c.value === achievement.category)?.label}
+                  </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 text-center text-text-secondary">Типы достижений не созданы</div>
-          )}
-        </CardContent>
-      </Card>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(achievement)} />
+                  <Button
+                    kind="danger--ghost"
+                    hasIconOnly
+                    renderIcon={TrashCan}
+                    iconDescription="Удалить"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Удалить тип достижения?')) deleteMutation.mutate(achievement.id)
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Типы достижений не созданы</p>
+        )}
+      </Tile>
     </div>
   )
 }

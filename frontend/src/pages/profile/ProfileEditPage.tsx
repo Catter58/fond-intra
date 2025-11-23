@@ -1,15 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ArrowLeft, Upload, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tile, Button, TextInput, TextArea, Loading, InlineNotification } from '@carbon/react'
+import { ArrowLeft, Upload, TrashCan } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersApi } from '@/api/endpoints/users'
-import { getInitials } from '@/lib/utils'
+
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export function ProfileEditPage() {
   const navigate = useNavigate()
@@ -120,139 +124,136 @@ export function ProfileEditPage() {
   }
 
   if (!user) {
-    return <div>Загрузка...</div>
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+        <Loading withOverlay={false} />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-semibold text-text-primary">
-          Редактирование профиля
-        </h1>
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Button
+            kind="ghost"
+            hasIconOnly
+            renderIcon={ArrowLeft}
+            iconDescription="Назад"
+            onClick={() => navigate(-1)}
+          />
+          <h1 className="page-title">Редактирование профиля</h1>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
           {/* Avatar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Фотография</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="h-32 w-32 mb-4">
-                <AvatarImage src={avatarDeleted ? undefined : (avatarPreview || user.avatar || undefined)} />
-                <AvatarFallback className="text-2xl">
-                  {getInitials(user.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-2">
-                <label className="cursor-pointer">
+          <Tile>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Фотография</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div className="list-item-avatar" style={{ width: '128px', height: '128px', fontSize: '2rem', marginBottom: '1rem' }}>
+                {avatarDeleted ? (
+                  getInitials(user.full_name)
+                ) : avatarPreview ? (
+                  <img src={avatarPreview} alt={user.full_name} />
+                ) : user.avatar ? (
+                  <img src={user.avatar} alt={user.full_name} />
+                ) : (
+                  getInitials(user.full_name)
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ cursor: 'pointer' }}>
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
-                    className="hidden"
+                    style={{ display: 'none' }}
                   />
-                  <span className="inline-flex items-center gap-2 px-4 py-2 border rounded hover:bg-secondary transition-colors text-sm">
-                    <Upload className="h-4 w-4" />
+                  <Button kind="tertiary" size="sm" renderIcon={Upload} as="span">
                     Загрузить фото
-                  </span>
+                  </Button>
                 </label>
                 {(user.avatar && !avatarDeleted && !avatarPreview) && (
                   <Button
-                    type="button"
-                    variant="ghost"
+                    kind="danger--ghost"
                     size="sm"
+                    renderIcon={TrashCan}
                     onClick={handleDeleteAvatar}
                     disabled={isDeleting}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
                     {isDeleting ? 'Удаление...' : 'Удалить фото'}
                   </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </Tile>
 
           {/* Form */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Личная информация</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-                  {error}
-                </div>
-              )}
+          <Tile>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Личная информация</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone_personal">Телефон</Label>
-                  <Input
-                    id="phone_personal"
-                    name="phone_personal"
-                    type="tel"
-                    value={formData.phone_personal}
-                    onChange={handleChange}
-                    placeholder="+7 (999) 123-45-67"
-                  />
-                </div>
+            {error && (
+              <InlineNotification
+                kind="error"
+                title="Ошибка"
+                subtitle={error}
+                hideCloseButton
+                lowContrast
+                style={{ marginBottom: '1rem' }}
+              />
+            )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="birth_date">День рождения</Label>
-                  <Input
-                    id="birth_date"
-                    name="birth_date"
-                    type="date"
-                    value={formData.birth_date}
-                    onChange={handleChange}
-                  />
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <TextInput
+                id="phone_personal"
+                name="phone_personal"
+                labelText="Телефон"
+                type="tel"
+                value={formData.phone_personal}
+                onChange={handleChange}
+                placeholder="+7 (999) 123-45-67"
+              />
 
-                <div className="space-y-2">
-                  <Label htmlFor="telegram">Telegram</Label>
-                  <Input
-                    id="telegram"
-                    name="telegram"
-                    value={formData.telegram}
-                    onChange={handleChange}
-                    placeholder="@username"
-                  />
-                </div>
-              </div>
+              <TextInput
+                id="birth_date"
+                name="birth_date"
+                labelText="День рождения"
+                type="date"
+                value={formData.birth_date}
+                onChange={handleChange}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="bio">О себе</Label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  rows={4}
-                  className="flex w-full border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Расскажите о себе..."
-                />
-              </div>
+              <TextInput
+                id="telegram"
+                name="telegram"
+                labelText="Telegram"
+                value={formData.telegram}
+                onChange={handleChange}
+                placeholder="@username"
+              />
+            </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? 'Сохранение...' : 'Сохранить'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate(-1)}
-                >
-                  Отмена
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <TextArea
+              id="bio"
+              name="bio"
+              labelText="О себе"
+              value={formData.bio}
+              onChange={handleChange}
+              rows={4}
+              placeholder="Расскажите о себе..."
+            />
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Сохранение...' : 'Сохранить'}
+              </Button>
+              <Button kind="secondary" onClick={() => navigate(-1)}>
+                Отмена
+              </Button>
+            </div>
+          </Tile>
         </div>
       </form>
     </div>

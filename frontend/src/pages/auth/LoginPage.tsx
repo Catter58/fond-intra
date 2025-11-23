@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Form,
+  Stack,
+  TextInput,
+  PasswordInput,
+  Button,
+  InlineNotification,
+  Tile,
+} from '@carbon/react'
+import { ArrowRight } from '@carbon/icons-react'
 import { authApi } from '@/api/endpoints/auth'
 import { useAuthStore } from '@/store/authStore'
 
@@ -34,59 +40,66 @@ export function LoginPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-center">Вход в систему</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Tile>
+      <h2 style={{ marginBottom: '1.5rem', textAlign: 'center', fontSize: '1.25rem', fontWeight: 600 }}>
+        Вход в систему
+      </h2>
+
+      <Form onSubmit={handleSubmit}>
+        <Stack gap={6}>
           {error && (
-            <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-              {error}
-            </div>
+            <InlineNotification
+              kind="error"
+              title="Ошибка"
+              subtitle={error}
+              hideCloseButton
+              lowContrast
+            />
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-            />
-          </div>
+          <TextInput
+            id="email"
+            labelText="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            required
+          />
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Пароль</Label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-interactive-primary hover:underline"
-              >
-                Забыли пароль?
-              </Link>
-            </div>
-            <Input
+          <div>
+            <PasswordInput
               id="password"
-              type="password"
+              labelText="Пароль"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
             />
+            <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+              <Link
+                to="/forgot-password"
+                style={{
+                  fontSize: '0.875rem',
+                  color: 'var(--cds-link-primary)',
+                  textDecoration: 'none'
+                }}
+              >
+                Забыли пароль?
+              </Link>
+            </div>
           </div>
 
           <Button
             type="submit"
-            className="w-full"
             disabled={loginMutation.isPending}
+            renderIcon={ArrowRight}
+            style={{ width: '100%', maxWidth: '100%' }}
           >
             {loginMutation.isPending ? 'Вход...' : 'Войти'}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </Stack>
+      </Form>
+    </Tile>
   )
 }

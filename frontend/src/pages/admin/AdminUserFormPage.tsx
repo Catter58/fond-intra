@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tile, Button, TextInput, Select, SelectItem, Loading, InlineNotification } from '@carbon/react'
+import { ArrowLeft } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
 import { apiClient } from '@/api/client'
 import type { Department, Position, Role } from '@/types'
@@ -29,9 +26,9 @@ export function AdminUserFormPage() {
   })
   const [error, setError] = useState('')
 
-  const { data: user } = useQuery({
-    queryKey: ['user', id],
-    queryFn: () => usersApi.getById(Number(id)),
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['admin', 'user', id],
+    queryFn: () => usersApi.adminGetById(Number(id)),
     enabled: isEdit,
   })
 
@@ -90,18 +87,13 @@ export function AdminUserFormPage() {
     mutationFn: (data: any) => usersApi.adminUpdate(Number(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
-      queryClient.invalidateQueries({ queryKey: ['user', id] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', id] })
       navigate('/admin/users')
     },
     onError: (err: any) => {
       setError(err.response?.data?.detail || 'Ошибка при обновлении сотрудника')
     },
   })
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,161 +115,140 @@ export function AdminUserFormPage() {
 
   const isPending = createMutation.isPending || updateMutation.isPending
 
+  if (isEdit && userLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+        <Loading withOverlay={false} />
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-semibold text-text-primary">
-          {isEdit ? 'Редактирование сотрудника' : 'Новый сотрудник'}
-        </h1>
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Button
+            kind="ghost"
+            hasIconOnly
+            renderIcon={ArrowLeft}
+            iconDescription="Назад"
+            onClick={() => navigate(-1)}
+          />
+          <h1 className="page-title">
+            {isEdit ? 'Редактирование сотрудника' : 'Новый сотрудник'}
+          </h1>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Информация о сотруднике</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-                {error}
-              </div>
-            )}
+        <Tile>
+          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Информация о сотруднике</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
+          {error && (
+            <InlineNotification
+              kind="error"
+              title="Ошибка"
+              subtitle={error}
+              hideCloseButton
+              lowContrast
+              style={{ marginBottom: '1rem' }}
+            />
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <TextInput
+              id="email"
+              labelText="Email *"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              required
+            />
+            <TextInput
+              id="phone"
+              labelText="Телефон"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+            <TextInput
+              id="last_name"
+              labelText="Фамилия *"
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              required
+            />
+            <TextInput
+              id="first_name"
+              labelText="Имя *"
+              value={formData.first_name}
+              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              required
+            />
+            <TextInput
+              id="patronymic"
+              labelText="Отчество"
+              value={formData.patronymic}
+              onChange={(e) => setFormData({ ...formData, patronymic: e.target.value })}
+            />
+            <TextInput
+              id="hire_date"
+              labelText="Дата найма"
+              type="date"
+              value={formData.hire_date}
+              onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
+            />
+            <Select
+              id="department_id"
+              labelText="Отдел"
+              value={formData.department_id}
+              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+            >
+              <SelectItem value="" text="Не выбран" />
+              {departments?.map((dept) => (
+                <SelectItem key={dept.id} value={String(dept.id)} text={dept.name} />
+              ))}
+            </Select>
+            <Select
+              id="position_id"
+              labelText="Должность"
+              value={formData.position_id}
+              onChange={(e) => setFormData({ ...formData, position_id: e.target.value })}
+            >
+              <SelectItem value="" text="Не выбрана" />
+              {positions?.map((pos) => (
+                <SelectItem key={pos.id} value={String(pos.id)} text={pos.name} />
+              ))}
+            </Select>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <Select
+              id="role_id"
+              labelText="Роль"
+              value={formData.role_id}
+              onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
+            >
+              <SelectItem value="" text="Не выбрана" />
+              {roles?.map((role) => (
+                <SelectItem
+                  key={role.id}
+                  value={String(role.id)}
+                  text={role.description ? `${role.name} — ${role.description}` : role.name}
                 />
-              </div>
+              ))}
+            </Select>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Телефон</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Фамилия *</Label>
-                <Input
-                  id="last_name"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="first_name">Имя *</Label>
-                <Input
-                  id="first_name"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="patronymic">Отчество</Label>
-                <Input
-                  id="patronymic"
-                  name="patronymic"
-                  value={formData.patronymic}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hire_date">Дата найма</Label>
-                <Input
-                  id="hire_date"
-                  name="hire_date"
-                  type="date"
-                  value={formData.hire_date}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department_id">Отдел</Label>
-                <select
-                  id="department_id"
-                  name="department_id"
-                  value={formData.department_id}
-                  onChange={handleChange}
-                  className="flex h-12 w-full border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Не выбран</option>
-                  {departments?.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="position_id">Должность</Label>
-                <select
-                  id="position_id"
-                  name="position_id"
-                  value={formData.position_id}
-                  onChange={handleChange}
-                  className="flex h-12 w-full border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Не выбрана</option>
-                  {positions?.map((pos) => (
-                    <option key={pos.id} value={pos.id}>
-                      {pos.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="role_id">Роль</Label>
-                <select
-                  id="role_id"
-                  name="role_id"
-                  value={formData.role_id}
-                  onChange={handleChange}
-                  className="flex h-12 w-full border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Не выбрана</option>
-                  {roles?.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.name} {role.description && `— ${role.description}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={isPending}>
-                {isPending ? 'Сохранение...' : isEdit ? 'Сохранить' : 'Создать'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-                Отмена
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Сохранение...' : isEdit ? 'Сохранить' : 'Создать'}
+            </Button>
+            <Button kind="secondary" onClick={() => navigate(-1)}>
+              Отмена
+            </Button>
+          </div>
+        </Tile>
       </form>
     </div>
   )

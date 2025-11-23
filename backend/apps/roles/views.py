@@ -20,6 +20,36 @@ from .serializers import (
 from .permissions import CanManageRoles
 
 
+class AdminStatsView(APIView):
+    """Get admin dashboard statistics."""
+    permission_classes = [IsAuthenticated, CanManageRoles]
+
+    def get(self, request):
+        from apps.organization.models import Department, Position
+        from apps.achievements.models import Achievement
+        from apps.audit.models import AuditLog
+
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True, is_archived=False).count()
+        archived_users = User.objects.filter(is_archived=True).count()
+        departments = Department.objects.count()
+        positions = Position.objects.count()
+        roles = Role.objects.count()
+        achievement_types = Achievement.objects.count()
+        audit_entries = AuditLog.objects.count()
+
+        return Response({
+            'total_users': total_users,
+            'active_users': active_users,
+            'archived_users': archived_users,
+            'departments': departments,
+            'positions': positions,
+            'roles': roles,
+            'achievement_types': achievement_types,
+            'audit_entries': audit_entries,
+        })
+
+
 class PermissionListView(APIView):
     """List all available permissions."""
     permission_classes = [IsAuthenticated, CanManageRoles]
@@ -34,6 +64,7 @@ class RoleViewSet(ModelViewSet):
     """CRUD for roles."""
     queryset = Role.objects.all().prefetch_related('permissions')
     permission_classes = [IsAuthenticated, CanManageRoles]
+    pagination_class = None  # Roles are few, no pagination needed
 
     def get_serializer_class(self):
         if self.action == 'list':

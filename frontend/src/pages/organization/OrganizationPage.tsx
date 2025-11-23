@@ -1,13 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Users, ChevronRight, ChevronDown, User, Crown } from 'lucide-react'
+import { Building, UserMultiple, ChevronRight, ChevronDown, Badge } from '@carbon/icons-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tile, Loading } from '@carbon/react'
 import { apiClient } from '@/api/client'
 import { usersApi } from '@/api/endpoints/users'
-import { getInitials } from '@/lib/utils'
-import type { Department, UserBasic } from '@/types'
+import type { Department } from '@/types'
+
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 interface EmployeesListProps {
   departmentId: number
@@ -24,8 +31,12 @@ function EmployeesList({ departmentId, headId, level }: EmployeesListProps) {
   if (isLoading) {
     return (
       <div
-        className="py-2 text-sm text-text-secondary"
-        style={{ marginLeft: `${(level + 1) * 24 + 20}px` }}
+        style={{
+          marginLeft: `${(level + 1) * 24 + 20}px`,
+          padding: '0.5rem 0',
+          fontSize: '0.875rem',
+          color: 'var(--cds-text-secondary)',
+        }}
       >
         Загрузка сотрудников...
       </div>
@@ -37,15 +48,18 @@ function EmployeesList({ departmentId, headId, level }: EmployeesListProps) {
   if (employees.length === 0) {
     return (
       <div
-        className="py-2 text-sm text-text-secondary"
-        style={{ marginLeft: `${(level + 1) * 24 + 20}px` }}
+        style={{
+          marginLeft: `${(level + 1) * 24 + 20}px`,
+          padding: '0.5rem 0',
+          fontSize: '0.875rem',
+          color: 'var(--cds-text-secondary)',
+        }}
       >
         Нет сотрудников
       </div>
     )
   }
 
-  // Sort: head first, then alphabetically
   const sortedEmployees = [...employees].sort((a, b) => {
     if (a.id === headId) return -1
     if (b.id === headId) return 1
@@ -55,33 +69,34 @@ function EmployeesList({ departmentId, headId, level }: EmployeesListProps) {
   })
 
   return (
-    <div className="py-1">
+    <div style={{ padding: '0.25rem 0' }}>
       {sortedEmployees.map((employee) => (
         <Link
           key={employee.id}
           to={`/employees/${employee.id}`}
-          className="flex items-center gap-3 p-2 rounded hover:bg-layer-hover transition-colors"
+          className="list-item"
           style={{ marginLeft: `${(level + 1) * 24 + 20}px` }}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={employee.avatar || undefined} />
-            <AvatarFallback className="text-xs">
-              {getInitials(employee.full_name || `${employee.first_name} ${employee.last_name}`)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium truncate">
+          <div className="list-item-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem' }}>
+            {employee.avatar ? (
+              <img src={employee.avatar} alt={employee.full_name} />
+            ) : (
+              getInitials(employee.full_name || `${employee.first_name} ${employee.last_name}`)
+            )}
+          </div>
+          <div className="list-item-content">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="list-item-title">
                 {employee.full_name || `${employee.last_name} ${employee.first_name}`}
               </span>
               {employee.id === headId && (
-                <Crown className="h-4 w-4 text-support-warning shrink-0" title="Руководитель" />
+                <Badge size={16} style={{ color: '#ff832b', flexShrink: 0 }} />
               )}
             </div>
             {employee.position && (
-              <p className="text-xs text-text-secondary truncate">
+              <span className="list-item-subtitle">
                 {typeof employee.position === 'object' ? employee.position.name : employee.position}
-              </p>
+              </span>
             )}
           </div>
         </Link>
@@ -114,59 +129,74 @@ function DepartmentNode({ department, level }: DepartmentNodeProps) {
   }
 
   return (
-    <div className="select-none">
+    <div style={{ userSelect: 'none' }}>
       <div
-        className={`flex items-center gap-2 p-3 rounded hover:bg-layer-hover transition-colors ${
-          level === 0 ? 'bg-layer-02' : ''
-        }`}
-        style={{ marginLeft: `${level * 24}px` }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          padding: '0.75rem',
+          marginLeft: `${level * 24}px`,
+          background: level === 0 ? 'var(--cds-layer-02)' : 'transparent',
+          borderRadius: 0,
+          transition: 'background-color 0.15s',
+        }}
+        className="list-item"
       >
         <div
-          className="cursor-pointer"
+          style={{ cursor: hasChildren ? 'pointer' : 'default' }}
           onClick={handleToggle}
         >
           {hasChildren ? (
             isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-text-secondary shrink-0" />
+              <ChevronDown size={16} style={{ color: 'var(--cds-text-secondary)' }} />
             ) : (
-              <ChevronRight className="h-4 w-4 text-text-secondary shrink-0" />
+              <ChevronRight size={16} style={{ color: 'var(--cds-text-secondary)' }} />
             )
           ) : (
-            <span className="w-4" />
+            <span style={{ width: '16px', display: 'inline-block' }} />
           )}
         </div>
-        <Building2 className="h-5 w-5 text-interactive-primary shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{department.name}</p>
+        <Building size={20} style={{ color: 'var(--cds-link-primary)', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {department.name}
+          </p>
           {department.head_name && (
-            <p className="text-xs text-text-secondary">
+            <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>
               Руководитель: {department.head_name}
             </p>
           )}
         </div>
-        {hasEmployees && (
+        {hasEmployees ? (
           <button
             onClick={handleEmployeesToggle}
-            className={`flex items-center gap-1 text-sm px-2 py-1 rounded transition-colors shrink-0 ${
-              showEmployees
-                ? 'bg-interactive-primary text-white'
-                : 'text-text-secondary hover:bg-layer-hover'
-            }`}
-            title={showEmployees ? 'Скрыть сотрудников' : 'Показать сотрудников'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              fontSize: '0.875rem',
+              padding: '0.25rem 0.5rem',
+              border: 'none',
+              borderRadius: 0,
+              cursor: 'pointer',
+              flexShrink: 0,
+              background: showEmployees ? 'var(--cds-link-primary)' : 'transparent',
+              color: showEmployees ? 'white' : 'var(--cds-text-secondary)',
+              transition: 'background-color 0.15s, color 0.15s',
+            }}
           >
-            <Users className="h-4 w-4" />
+            <UserMultiple size={16} />
             <span>{department.employees_count || 0}</span>
           </button>
-        )}
-        {!hasEmployees && (
-          <div className="flex items-center gap-1 text-sm text-text-secondary shrink-0">
-            <Users className="h-4 w-4" />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: 'var(--cds-text-secondary)', flexShrink: 0 }}>
+            <UserMultiple size={16} />
             <span>0</span>
           </div>
         )}
       </div>
 
-      {/* Employees list */}
       {showEmployees && hasEmployees && (
         <EmployeesList
           departmentId={department.id}
@@ -175,7 +205,6 @@ function DepartmentNode({ department, level }: DepartmentNodeProps) {
         />
       )}
 
-      {/* Child departments */}
       {isExpanded && hasChildren && (
         <div>
           {department.children!.map((child) => (
@@ -201,45 +230,47 @@ export function OrganizationPage() {
   })
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-text-primary">
-          Организационная структура
-        </h1>
-        <p className="text-text-secondary mt-1">
+    <div>
+      <div className="page-header">
+        <h1 className="page-title">Организационная структура</h1>
+        <p className="page-subtitle">
           Иерархия отделов и подразделений компании
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Структура компании
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8 text-text-secondary">
-              Загрузка...
-            </div>
-          ) : tree && tree.length > 0 ? (
-            <div className="space-y-1">
-              {tree.map((department) => (
-                <DepartmentNode
-                  key={department.id}
-                  department={department}
-                  level={0}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-text-secondary">
-              Организационная структура не настроена
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tile>
+        <h3 style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1rem',
+          fontSize: '1rem',
+          fontWeight: 600
+        }}>
+          <Building size={20} />
+          Структура компании
+        </h3>
+
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Loading withOverlay={false} />
+          </div>
+        ) : tree && tree.length > 0 ? (
+          <div>
+            {tree.map((department) => (
+              <DepartmentNode
+                key={department.id}
+                department={department}
+                level={0}
+              />
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
+            Организационная структура не настроена
+          </div>
+        )}
+      </Tile>
     </div>
   )
 }

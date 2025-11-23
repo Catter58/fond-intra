@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Eye, EyeOff, CheckCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Form,
+  Stack,
+  PasswordInput,
+  Button,
+  InlineNotification,
+  Tile,
+} from '@carbon/react'
+import { CheckmarkFilled } from '@carbon/icons-react'
 import { authApi } from '@/api/endpoints/auth'
 
 export function ResetPasswordPage() {
@@ -14,7 +18,6 @@ export function ResetPasswordPage() {
   const token = searchParams.get('token') || ''
   const uid = searchParams.get('uid') || ''
 
-  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     password: '',
     confirm_password: '',
@@ -64,100 +67,105 @@ export function ResetPasswordPage() {
 
   if (!token || !uid) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <h2 className="text-xl font-semibold mb-2 text-support-error">
+      <Tile>
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--cds-support-error)' }}>
             Недействительная ссылка
           </h2>
-          <p className="text-text-secondary mb-6">
+          <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem' }}>
             Ссылка для сброса пароля недействительна или истекла.
           </p>
-          <Button asChild>
-            <Link to="/forgot-password">Запросить новую ссылку</Link>
+          <Button as={Link} to="/forgot-password">
+            Запросить новую ссылку
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </Tile>
     )
   }
 
   if (success) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <div className="w-16 h-16 bg-support-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-8 w-8 text-support-success" />
+      <Tile>
+        <div style={{ textAlign: 'center', padding: '1rem' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: 'rgba(36, 161, 72, 0.1)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem'
+          }}>
+            <CheckmarkFilled size={32} style={{ color: '#24a148' }} />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Пароль изменён</h2>
-          <p className="text-text-secondary mb-6">
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+            Пароль изменён
+          </h2>
+          <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem' }}>
             Ваш пароль успешно изменён. Теперь вы можете войти с новым паролем.
           </p>
           <Button onClick={() => navigate('/login')}>
             Войти в систему
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </Tile>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Новый пароль</CardTitle>
-        <CardDescription>
-          Придумайте новый надёжный пароль для вашего аккаунта
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Tile>
+      <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+        Новый пароль
+      </h2>
+      <p style={{ color: 'var(--cds-text-secondary)', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+        Придумайте новый надёжный пароль для вашего аккаунта
+      </p>
+
+      <Form onSubmit={handleSubmit}>
+        <Stack gap={6}>
           {error && (
-            <div className="p-3 bg-support-error/10 border border-support-error text-support-error text-sm rounded">
-              {error}
-            </div>
+            <InlineNotification
+              kind="error"
+              title="Ошибка"
+              subtitle={error}
+              hideCloseButton
+              lowContrast
+            />
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Новый пароль</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-            <p className="text-xs text-text-helper">Минимум 8 символов</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm_password">Подтвердите пароль</Label>
-            <Input
-              id="confirm_password"
-              name="confirm_password"
-              type="password"
-              value={formData.confirm_password}
+          <div>
+            <PasswordInput
+              id="password"
+              name="password"
+              labelText="Новый пароль"
+              value={formData.password}
               onChange={handleChange}
               required
             />
+            <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
+              Минимум 8 символов
+            </p>
           </div>
+
+          <PasswordInput
+            id="confirm_password"
+            name="confirm_password"
+            labelText="Подтвердите пароль"
+            value={formData.confirm_password}
+            onChange={handleChange}
+            required
+          />
 
           <Button
             type="submit"
-            className="w-full"
             disabled={resetPasswordMutation.isPending}
+            style={{ width: '100%', maxWidth: '100%' }}
           >
             {resetPasswordMutation.isPending ? 'Сохранение...' : 'Сохранить пароль'}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </Stack>
+      </Form>
+    </Tile>
   )
 }

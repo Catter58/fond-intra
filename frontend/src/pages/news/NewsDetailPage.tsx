@@ -1,17 +1,24 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Heart, MessageSquare, Send, Paperclip, Edit } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tile, Button, TextInput, Loading } from '@carbon/react'
+import { ArrowLeft, Favorite, FavoriteFilled, Chat, Send, Attachment, Edit } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
 import { useAuthStore } from '@/store/authStore'
-import { formatDate, getInitials } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+
+const getInitials = (name: string) => {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 
 export function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
   const [comment, setComment] = useState('')
@@ -68,184 +75,198 @@ export function NewsDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-text-secondary">Загрузка...</p>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+        <Loading withOverlay={false} />
       </div>
     )
   }
 
   if (error || !news) {
     return (
-      <div className="space-y-4">
-        <Button variant="ghost" asChild>
-          <Link to="/news">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Назад к новостям
-          </Link>
+      <div>
+        <Button kind="ghost" renderIcon={ArrowLeft} onClick={() => navigate('/news')}>
+          Назад к новостям
         </Button>
-        <div className="text-center py-12">
-          <p className="text-text-secondary">Новость не найдена</p>
-        </div>
+        <Tile style={{ marginTop: '1rem' }}>
+          <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--cds-text-secondary)' }}>
+            Новость не найдена
+          </p>
+        </Tile>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/news">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <Button
+          kind="ghost"
+          hasIconOnly
+          renderIcon={ArrowLeft}
+          iconDescription="Назад"
+          onClick={() => navigate('/news')}
+        />
       </div>
 
       {/* News content */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={news.author?.avatar || undefined} />
-              <AvatarFallback>{getInitials(news.author?.full_name || 'A')}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="font-medium">{news.author?.full_name || 'Автор'}</p>
-              <p className="text-xs text-text-helper">{formatDate(news.created_at)}</p>
-            </div>
-            {(user?.id === news.author?.id || user?.is_superuser) && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to={`/news/${id}/edit`}>
-                  <Edit className="h-4 w-4 mr-1" />
-                  Редактировать
-                </Link>
-              </Button>
+      <Tile style={{ marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div className="list-item-avatar" style={{ width: '40px', height: '40px' }}>
+            {news.author?.avatar ? (
+              <img src={news.author.avatar} alt={news.author.full_name} />
+            ) : (
+              getInitials(news.author?.full_name || 'A')
             )}
           </div>
-
-          <h1 className="text-2xl font-semibold mb-4">{news.title}</h1>
-          <div className="prose prose-sm max-w-none text-text-secondary whitespace-pre-wrap">
-            {news.content}
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 500 }}>{news.author?.full_name || 'Автор'}</p>
+            <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>{formatDate(news.created_at)}</p>
           </div>
-
-          {/* Attachments */}
-          {news.attachments && news.attachments.length > 0 && (
-            <div className="mt-6 pt-4 border-t">
-              <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Paperclip className="h-4 w-4" />
-                Вложения
-              </p>
-              <div className="space-y-2">
-                {news.attachments.map((attachment) => (
-                  <a
-                    key={attachment.id}
-                    href={attachment.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 bg-layer-02 rounded hover:bg-layer-hover text-sm"
-                  >
-                    <Paperclip className="h-4 w-4 text-text-secondary" />
-                    {attachment.file_name}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Reactions */}
-          <div className="flex items-center gap-4 mt-6 pt-4 border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleToggleReaction}
-              disabled={addReactionMutation.isPending || removeReactionMutation.isPending}
-              className={news.user_reaction
-                ? "text-destructive hover:text-destructive"
-                : "text-muted-foreground hover:text-destructive"
-              }
-            >
-              <Heart className={`h-4 w-4 mr-1 ${news.user_reaction ? 'fill-current' : ''}`} />
-              {news.reactions_count || 0}
+          {(user?.id === news.author?.id || user?.is_superuser) && (
+            <Button kind="ghost" size="sm" renderIcon={Edit} as={Link} to={`/news/${id}/edit`}>
+              Редактировать
             </Button>
-            <span className="flex items-center gap-1 text-sm text-muted-foreground">
-              <MessageSquare className="h-4 w-4" />
-              {news.comments_count || 0} комментариев
-            </span>
+          )}
+        </div>
+
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>{news.title}</h1>
+        <div style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>
+          {news.content}
+        </div>
+
+        {/* Attachments */}
+        {news.attachments && news.attachments.length > 0 && (
+          <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--cds-border-subtle-01)' }}>
+            <p style={{ fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Attachment size={16} />
+              Вложения
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {news.attachments.map((attachment) => (
+                <a
+                  key={attachment.id}
+                  href={attachment.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem',
+                    background: 'var(--cds-layer-02)',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-link-primary)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Attachment size={16} />
+                  {attachment.file_name}
+                </a>
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {/* Reactions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--cds-border-subtle-01)' }}>
+          <Button
+            kind="ghost"
+            size="sm"
+            onClick={handleToggleReaction}
+            disabled={addReactionMutation.isPending || removeReactionMutation.isPending}
+          >
+            {news.user_reaction ? (
+              <FavoriteFilled size={16} style={{ color: '#da1e28', marginRight: '0.25rem' }} />
+            ) : (
+              <Favorite size={16} style={{ marginRight: '0.25rem' }} />
+            )}
+            {news.reactions_count || 0}
+          </Button>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+            <Chat size={16} />
+            {news.comments_count || 0} комментариев
+          </span>
+        </div>
+      </Tile>
 
       {/* Comments */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Комментарии</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Add comment form */}
-          <form onSubmit={handleSubmitComment} className="flex gap-2">
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarImage src={user?.avatar || undefined} />
-              <AvatarFallback className="text-xs">
-                {getInitials(user?.full_name) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 flex gap-2">
-              <Input
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Написать комментарий..."
-                className="h-10"
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={!comment.trim() || addCommentMutation.isPending}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </form>
+      <Tile>
+        <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Комментарии</h3>
 
-          {/* Comments list */}
-          {comments && comments.length > 0 ? (
-            <div className="space-y-4 pt-4 border-t">
-              {comments.map((c) => {
-                const isCurrentUser = user?.id === c.author?.id
-                return (
-                  <div
-                    key={c.id}
-                    className={`flex gap-3 p-3 rounded-lg ${
-                      isCurrentUser ? 'bg-primary/5 border border-primary/10' : ''
-                    }`}
-                  >
-                    <Avatar className="h-8 w-8 shrink-0">
-                      <AvatarImage src={c.author?.avatar || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(c.author?.full_name || 'U')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className={`font-medium text-sm ${isCurrentUser ? 'text-primary' : ''}`}>
-                          {c.author?.full_name || 'Пользователь'}
-                          {isCurrentUser && <span className="ml-1 text-xs font-normal">(вы)</span>}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(c.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{c.content}</p>
-                    </div>
+        {/* Add comment form */}
+        <form onSubmit={handleSubmitComment} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <div className="list-item-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem', flexShrink: 0 }}>
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.full_name} />
+            ) : (
+              getInitials(user?.full_name || 'U')
+            )}
+          </div>
+          <TextInput
+            id="comment"
+            labelText=""
+            hideLabel
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Написать комментарий..."
+            size="sm"
+          />
+          <Button
+            type="submit"
+            kind="primary"
+            hasIconOnly
+            renderIcon={Send}
+            iconDescription="Отправить"
+            size="sm"
+            disabled={!comment.trim() || addCommentMutation.isPending}
+          />
+        </form>
+
+        {/* Comments list */}
+        {comments && comments.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingTop: '1rem', borderTop: '1px solid var(--cds-border-subtle-01)' }}>
+            {comments.map((c) => {
+              const isCurrentUser = user?.id === c.author?.id
+              return (
+                <div
+                  key={c.id}
+                  style={{
+                    display: 'flex',
+                    gap: '0.75rem',
+                    padding: '0.75rem',
+                    background: isCurrentUser ? 'var(--cds-layer-selected-01)' : 'var(--cds-layer-02)',
+                    border: isCurrentUser ? '1px solid var(--cds-border-interactive)' : 'none',
+                  }}
+                >
+                  <div className="list-item-avatar" style={{ width: '32px', height: '32px', fontSize: '0.75rem', flexShrink: 0 }}>
+                    {c.author?.avatar ? (
+                      <img src={c.author.avatar} alt={c.author.full_name} />
+                    ) : (
+                      getInitials(c.author?.full_name || 'U')
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-text-secondary text-center py-4">
-              Комментариев пока нет. Будьте первым!
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 500, fontSize: '0.875rem', color: isCurrentUser ? 'var(--cds-link-primary)' : 'inherit' }}>
+                        {c.author?.full_name || 'Пользователь'}
+                        {isCurrentUser && <span style={{ fontWeight: 400, fontSize: '0.75rem', marginLeft: '0.25rem' }}>(вы)</span>}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>
+                        {formatDate(c.created_at)}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginTop: '0.25rem' }}>{c.content}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+            Комментариев пока нет. Будьте первым!
+          </p>
+        )}
+      </Tile>
     </div>
   )
 }

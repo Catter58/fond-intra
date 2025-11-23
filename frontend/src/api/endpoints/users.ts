@@ -66,21 +66,38 @@ export const usersApi = {
   },
 
   // Admin methods
+  adminGetById: async (id: number): Promise<User> => {
+    const response = await apiClient.get<User>(`/users/admin/${id}/`)
+    return response.data
+  },
+
+  adminGetList: async (params?: {
+    search?: string
+    department?: number
+    position?: number
+    page?: number
+    page_size?: number
+    is_archived?: boolean
+  }): Promise<PaginatedResponse<UserBasic>> => {
+    const response = await apiClient.get<PaginatedResponse<UserBasic>>('/users/admin/', { params })
+    return response.data
+  },
+
   adminCreate: async (data: any): Promise<User> => {
-    const response = await apiClient.post<User>('/admin/users/', data)
+    const response = await apiClient.post<User>('/users/admin/', data)
     return response.data
   },
 
   adminUpdate: async (id: number, data: any): Promise<User> => {
-    const response = await apiClient.put<User>(`/admin/users/${id}/`, data)
+    const response = await apiClient.put<User>(`/users/admin/${id}/`, data)
     return response.data
   },
 
   archive: async (id: number): Promise<void> => {
-    await apiClient.post(`/admin/users/${id}/archive/`)
+    await apiClient.post(`/users/admin/${id}/archive/`)
   },
 
   restore: async (id: number): Promise<void> => {
-    await apiClient.post(`/admin/users/${id}/restore/`)
+    await apiClient.post(`/users/admin/${id}/restore/`)
   },
 }

@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, Check, CheckCheck, Settings } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Tile, Button, ContentSwitcher, Switch, Loading } from '@carbon/react'
+import { Notification, Checkmark, CheckmarkOutline, Settings } from '@carbon/icons-react'
 import { notificationsApi } from '@/api/endpoints/notifications'
 import { formatDate } from '@/lib/utils'
-import type { Notification } from '@/types'
+import type { Notification as NotificationType } from '@/types'
 
 export function NotificationsPage() {
   const queryClient = useQueryClient()
-  const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const [filter, setFilter] = useState(0) // 0 = all, 1 = unread
 
   const { data, isLoading } = useQuery({
     queryKey: ['notifications', filter],
-    queryFn: () => notificationsApi.getList({ is_read: filter === 'all' ? undefined : false }),
+    queryFn: () => notificationsApi.getList({ is_read: filter === 0 ? undefined : false }),
   })
 
   const markAsReadMutation = useMutation({
@@ -47,94 +46,99 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary">Уведомления</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => markAllAsReadMutation.mutate()}
-            disabled={markAllAsReadMutation.isPending}
-          >
-            <CheckCheck className="h-4 w-4 mr-2" />
-            Прочитать все
-          </Button>
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/notifications/settings">
-              <Settings className="h-4 w-4" />
-            </Link>
-          </Button>
+    <div>
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title">Уведомления</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Button
+              kind="tertiary"
+              size="sm"
+              renderIcon={CheckmarkOutline}
+              onClick={() => markAllAsReadMutation.mutate()}
+              disabled={markAllAsReadMutation.isPending}
+            >
+              Прочитать все
+            </Button>
+            <Button
+              kind="ghost"
+              hasIconOnly
+              renderIcon={Settings}
+              iconDescription="Настройки"
+              as={Link}
+              to="/notifications/settings"
+            />
+          </div>
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-2">
-        <Button
-          variant={filter === 'all' ? 'default' : 'outline'}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <ContentSwitcher
+          onChange={(e) => e.index !== undefined && setFilter(e.index)}
+          selectedIndex={filter}
           size="sm"
-          onClick={() => setFilter('all')}
         >
-          Все
-        </Button>
-        <Button
-          variant={filter === 'unread' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setFilter('unread')}
-        >
-          Непрочитанные
-        </Button>
+          <Switch name="all">Все</Switch>
+          <Switch name="unread">Непрочитанные</Switch>
+        </ContentSwitcher>
       </div>
 
       {/* Notifications list */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 text-center text-text-secondary">Загрузка...</div>
-          ) : data?.results && data.results.length > 0 ? (
-            <div className="divide-y">
-              {data.results.map((notification: Notification) => (
-                <div
-                  key={notification.id}
-                  className={`flex items-start gap-4 p-4 transition-colors ${
-                    !notification.is_read ? 'bg-layer-02' : ''
-                  }`}
-                >
-                  <span className="text-2xl">{getNotificationIcon(notification.type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${!notification.is_read ? 'font-medium' : ''}`}>
-                      {notification.title}
-                    </p>
-                    <p className="text-sm text-text-secondary mt-1">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-text-helper mt-2">
-                      {formatDate(notification.created_at)}
-                    </p>
-                  </div>
-                  {!notification.is_read && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => markAsReadMutation.mutate(notification.id)}
-                      disabled={markAsReadMutation.isPending}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  )}
+      <Tile>
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Loading withOverlay={false} />
+          </div>
+        ) : data?.results && data.results.length > 0 ? (
+          <div>
+            {data.results.map((notification: NotificationType, index: number) => (
+              <div
+                key={notification.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '1rem',
+                  padding: '1rem',
+                  background: !notification.is_read ? 'var(--cds-layer-02)' : 'transparent',
+                  borderBottom: index < data.results.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>{getNotificationIcon(notification.type)}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: '0.875rem', fontWeight: !notification.is_read ? 500 : 400 }}>
+                    {notification.title}
+                  </p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginTop: '0.25rem' }}>
+                    {notification.message}
+                  </p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.5rem' }}>
+                    {formatDate(notification.created_at)}
+                  </p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-6 text-center">
-              <Bell className="h-12 w-12 text-text-helper mx-auto mb-3" />
-              <p className="text-text-secondary">
-                {filter === 'unread' ? 'Нет непрочитанных уведомлений' : 'Уведомлений пока нет'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                {!notification.is_read && (
+                  <Button
+                    kind="ghost"
+                    hasIconOnly
+                    renderIcon={Checkmark}
+                    iconDescription="Отметить как прочитанное"
+                    size="sm"
+                    onClick={() => markAsReadMutation.mutate(notification.id)}
+                    disabled={markAsReadMutation.isPending}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <Notification size={48} style={{ color: 'var(--cds-text-helper)', marginBottom: '0.75rem' }} />
+            <p style={{ color: 'var(--cds-text-secondary)' }}>
+              {filter === 1 ? 'Нет непрочитанных уведомлений' : 'Уведомлений пока нет'}
+            </p>
+          </div>
+        )}
+      </Tile>
     </div>
   )
 }

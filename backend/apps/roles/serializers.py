@@ -31,16 +31,13 @@ class RoleSerializer(serializers.ModelSerializer):
 
 class RoleListSerializer(serializers.ModelSerializer):
     """Brief serializer for role list."""
-    permissions_count = serializers.SerializerMethodField()
+    permissions = PermissionSerializer(many=True, read_only=True)
     users_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
         fields = ['id', 'name', 'description', 'is_system',
-                  'permissions_count', 'users_count']
-
-    def get_permissions_count(self, obj):
-        return obj.permissions.count()
+                  'permissions', 'users_count']
 
     def get_users_count(self, obj):
         return obj.users.count()

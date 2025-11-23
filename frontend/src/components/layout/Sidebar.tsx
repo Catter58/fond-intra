@@ -1,17 +1,17 @@
 import { NavLink } from 'react-router-dom'
+import { Button } from '@carbon/react'
 import {
   Home,
-  Users,
-  Award,
-  Newspaper,
-  Building2,
-  Settings,
-  Shield,
-  X,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+  UserMultiple,
+  Trophy,
+  Document,
+  Building,
+  Security,
+  Close,
+  Dashboard,
+  Report,
+} from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
-import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   isOpen: boolean
@@ -20,16 +20,19 @@ interface SidebarProps {
 
 const navItems = [
   { to: '/', icon: Home, label: 'Главная' },
-  { to: '/employees', icon: Users, label: 'Сотрудники' },
-  { to: '/achievements', icon: Award, label: 'Достижения' },
-  { to: '/news', icon: Newspaper, label: 'Новости' },
-  { to: '/organization', icon: Building2, label: 'Структура' },
+  { to: '/employees', icon: UserMultiple, label: 'Сотрудники' },
+  { to: '/achievements', icon: Trophy, label: 'Достижения' },
+  { to: '/news', icon: Document, label: 'Новости' },
+  { to: '/organization', icon: Building, label: 'Структура' },
 ]
 
 const adminItems = [
-  { to: '/admin/users', icon: Users, label: 'Пользователи' },
-  { to: '/admin/roles', icon: Shield, label: 'Роли' },
-  { to: '/admin/settings', icon: Settings, label: 'Настройки' },
+  { to: '/admin', icon: Dashboard, label: 'Дашборд' },
+  { to: '/admin/users', icon: UserMultiple, label: 'Пользователи' },
+  { to: '/admin/roles', icon: Security, label: 'Роли' },
+  { to: '/admin/departments', icon: Building, label: 'Отделы' },
+  { to: '/admin/achievements', icon: Trophy, label: 'Типы наград' },
+  { to: '/admin/audit', icon: Report, label: 'Аудит' },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -41,45 +44,62 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-overlay z-40 lg:hidden"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 40,
+          }}
+          className="lg-hide"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={cn(
-          'fixed top-12 left-0 bottom-0 w-64 bg-layer-01 border-r z-40 transition-transform duration-200',
-          'lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        )}
+        style={{
+          position: 'fixed',
+          top: '48px',
+          left: 0,
+          bottom: 0,
+          width: '256px',
+          background: 'var(--cds-layer-01)',
+          borderRight: '1px solid var(--cds-border-subtle-01)',
+          zIndex: 40,
+          transition: 'transform 0.2s',
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+        }}
+        className="sidebar-desktop"
       >
-        <div className="flex flex-col h-full">
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           {/* Mobile close button */}
-          <div className="flex items-center justify-end p-2 lg:hidden">
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
-            </Button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem' }} className="lg-hide">
+            <Button kind="ghost" hasIconOnly renderIcon={Close} iconDescription="Закрыть" onClick={onClose} />
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 space-y-1">
+          <nav style={{ flex: 1, padding: '1rem 0.75rem' }}>
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/'}
                 onClick={onClose}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-interactive-primary text-text-on-color'
-                      : 'text-text-secondary hover:bg-layer-hover hover:text-text-primary'
-                  )
-                }
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  marginBottom: '0.25rem',
+                  background: isActive ? 'var(--cds-button-primary)' : 'transparent',
+                  color: isActive ? 'var(--cds-text-on-color)' : 'var(--cds-text-secondary)',
+                })}
+                className="sidebar-link"
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon size={20} />
                 {item.label}
               </NavLink>
             ))}
@@ -87,8 +107,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Admin section */}
             {isAdmin && (
               <>
-                <div className="pt-6 pb-2">
-                  <span className="px-3 text-xs font-semibold text-text-helper uppercase tracking-wider">
+                <div style={{ paddingTop: '1.5rem', paddingBottom: '0.5rem' }}>
+                  <span style={{
+                    padding: '0 0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--cds-text-helper)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}>
                     Администрирование
                   </span>
                 </div>
@@ -96,17 +123,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    end={item.to === '/admin'}
                     onClick={onClose}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-interactive-primary text-text-on-color'
-                          : 'text-text-secondary hover:bg-layer-hover hover:text-text-primary'
-                      )
-                    }
+                    style={({ isActive }) => ({
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.5rem 0.75rem',
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      textDecoration: 'none',
+                      marginBottom: '0.25rem',
+                      background: isActive ? 'var(--cds-button-primary)' : 'transparent',
+                      color: isActive ? 'var(--cds-text-on-color)' : 'var(--cds-text-secondary)',
+                    })}
+                    className="sidebar-link"
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon size={20} />
                     {item.label}
                   </NavLink>
                 ))}
@@ -115,7 +148,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t text-xs text-text-helper">
+          <div style={{ padding: '1rem', borderTop: '1px solid var(--cds-border-subtle-01)', fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>
             <p>© {new Date().getFullYear()} Fond Intra</p>
           </div>
         </div>
