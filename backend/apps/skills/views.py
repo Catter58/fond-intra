@@ -64,6 +64,19 @@ class MySkillsView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class UserSkillsView(APIView):
+    """Get skills for a specific user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        """List user's skills."""
+        skills = UserSkill.objects.filter(
+            user_id=user_id
+        ).select_related('skill', 'skill__category')
+        serializer = UserSkillSerializer(skills, many=True)
+        return Response(serializer.data)
+
+
 class MySkillDetailView(APIView):
     """Delete current user's skill."""
     permission_classes = [IsAuthenticated]

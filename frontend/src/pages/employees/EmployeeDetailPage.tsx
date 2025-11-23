@@ -1,10 +1,13 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Tile, Button, Tag, Loading } from '@carbon/react'
-import { ArrowLeft, Email, Phone, Calendar, Building, UserAvatar, Events, Trophy } from '@carbon/icons-react'
+import { ArrowLeft, Email, Phone, Calendar, Events, Trophy, Catalog, UserAvatar, Edit } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
 import { achievementsApi } from '@/api/endpoints/achievements'
+import { skillsApi } from '@/api/endpoints/skills'
+import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
+import { levelLabels } from '@/components/features/skills'
 
 const getInitials = (name: string) => {
   return name
@@ -18,6 +21,10 @@ const getInitials = (name: string) => {
 export function EmployeeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuthStore()
+
+  // Check if current user can edit (HR or admin)
+  const canEdit = user?.role?.is_admin || user?.is_superuser || user?.role?.name?.toLowerCase() === 'hr'
 
   const { data: employee, isLoading, error } = useQuery({
     queryKey: ['employee', id],
@@ -28,6 +35,12 @@ export function EmployeeDetailPage() {
   const { data: achievements } = useQuery({
     queryKey: ['employee-achievements', id],
     queryFn: () => achievementsApi.getUserAchievements(Number(id)),
+    enabled: !!id,
+  })
+
+  const { data: userSkills } = useQuery({
+    queryKey: ['employee-skills', id],
+    queryFn: () => skillsApi.getUserSkills(Number(id)),
     enabled: !!id,
   })
 
@@ -61,149 +74,205 @@ export function EmployeeDetailPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      {/* Navigation */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <Button
+          kind="ghost"
+          renderIcon={ArrowLeft}
+          onClick={() => navigate('/employees')}
+        >
+          Назад к списку
+        </Button>
+        {canEdit && (
           <Button
-            kind="ghost"
-            hasIconOnly
-            renderIcon={ArrowLeft}
-            iconDescription="Назад"
-            onClick={() => navigate('/employees')}
-          />
-          <h1 className="page-title">Профиль сотрудника</h1>
-        </div>
+            kind="primary"
+            renderIcon={Edit}
+            onClick={() => navigate(`/admin/users/${id}/edit`)}
+          >
+            Редактировать
+          </Button>
+        )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.5rem' }}>
-        {/* Main info */}
-        <Tile>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1rem' }}>
-            <div className="list-item-avatar" style={{ width: '128px', height: '128px', fontSize: '2rem', marginBottom: '1rem' }}>
-              {employee.avatar ? (
-                <img src={employee.avatar} alt={employee.full_name} />
-              ) : (
-                getInitials(employee.full_name)
-              )}
-            </div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>{employee.full_name}</h2>
-            <p style={{ color: 'var(--cds-text-secondary)' }}>
-              {employee.position?.name || 'Должность не указана'}
-            </p>
-            {employee.department && (
-              <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
-                {employee.department.name}
-              </p>
-            )}
-            {employee.current_status && (
-              <Tag type="blue" size="sm" style={{ marginTop: '0.75rem' }}>
-                {employee.current_status.status_display}
-              </Tag>
+      {/* Profile Header */}
+      <Tile style={{ marginBottom: '1.5rem', padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          {/* Large Photo */}
+          <div style={{
+            width: '280px',
+            minHeight: '320px',
+            flexShrink: 0,
+            background: 'var(--cds-layer-02)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}>
+            {employee.avatar ? (
+              <img
+                src={employee.avatar}
+                alt={employee.full_name}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '1rem',
+                background: 'linear-gradient(135deg, #4589ff 0%, #0f62fe 50%, #0043ce 100%)',
+              }}>
+                <UserAvatar size={80} style={{ color: 'rgba(255,255,255,0.9)' }} />
+                <span style={{
+                  fontSize: '2rem',
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '0.1em',
+                }}>
+                  {getInitials(employee.full_name)}
+                </span>
+              </div>
             )}
           </div>
-        </Tile>
 
-        {/* Contact info */}
-        <Tile>
-          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>Контактная информация</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-              <Email size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Email</p>
-                <a
-                  href={`mailto:${employee.email}`}
-                  style={{ fontSize: '0.875rem', color: 'var(--cds-link-primary)' }}
-                >
-                  {employee.email}
-                </a>
+          {/* Info */}
+          <div style={{ flex: 1, padding: '1.5rem 1.5rem 1.5rem 0' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 600, margin: 0 }}>{employee.full_name}</h1>
+                {employee.current_status && (
+                  <Tag type="blue" size="sm">
+                    {employee.current_status.status_display}
+                  </Tag>
+                )}
               </div>
+              <p style={{ fontSize: '1.125rem', color: 'var(--cds-text-secondary)' }}>
+                {employee.position?.name || 'Должность не указана'}
+              </p>
+              {employee.department && (
+                <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
+                  {employee.department.name}
+                </p>
+              )}
             </div>
 
-            {employee.phone_personal && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-                <Phone size={20} style={{ color: 'var(--cds-text-secondary)' }} />
+            {/* Contact Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Email size={20} style={{ color: 'var(--cds-text-secondary)' }} />
                 <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Телефон</p>
-                  <a
-                    href={`tel:${employee.phone_personal}`}
-                    style={{ fontSize: '0.875rem', color: 'var(--cds-link-primary)' }}
-                  >
-                    {employee.phone_personal}
+                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Email</p>
+                  <a href={`mailto:${employee.email}`} style={{ fontSize: '0.875rem', color: 'var(--cds-link-primary)' }}>
+                    {employee.email}
                   </a>
                 </div>
               </div>
-            )}
 
-            {employee.birth_date && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-                <Calendar size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>День рождения</p>
-                  <p style={{ fontSize: '0.875rem' }}>{formatDate(employee.birth_date)}</p>
+              {employee.phone_personal && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Phone size={20} style={{ color: 'var(--cds-text-secondary)' }} />
+                  <div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Телефон</p>
+                    <a href={`tel:${employee.phone_personal}`} style={{ fontSize: '0.875rem', color: 'var(--cds-link-primary)' }}>
+                      {employee.phone_personal}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {employee.hire_date && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-                <Events size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-                <div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Дата найма</p>
-                  <p style={{ fontSize: '0.875rem' }}>{formatDate(employee.hire_date)}</p>
+              {employee.birth_date && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Calendar size={20} style={{ color: 'var(--cds-text-secondary)' }} />
+                  <div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>День рождения</p>
+                    <p style={{ fontSize: '0.875rem' }}>{formatDate(employee.birth_date)}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-              <Building size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Отдел</p>
-                <p style={{ fontSize: '0.875rem' }}>{employee.department?.name || 'Не указан'}</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
-              <UserAvatar size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-              <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Должность</p>
-                <p style={{ fontSize: '0.875rem' }}>{employee.position?.name || 'Не указана'}</p>
-              </div>
+              {employee.hire_date && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Events size={20} style={{ color: 'var(--cds-text-secondary)' }} />
+                  <div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Дата найма</p>
+                    <p style={{ fontSize: '0.875rem' }}>{formatDate(employee.hire_date)}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
+      </Tile>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+        {/* Skills */}
+        <Tile>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, marginBottom: '1rem' }}>
+            <Catalog size={20} />
+            Навыки ({userSkills?.length || 0})
+          </h3>
+          {userSkills && userSkills.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {userSkills.map((skill) => (
+                <div
+                  key={skill.id}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '4px',
+                    backgroundColor: 'var(--cds-layer-02)',
+                  }}
+                >
+                  <span style={{ fontWeight: 500 }}>{skill.skill_name}</span>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    padding: '0.125rem 0.5rem',
+                    borderRadius: '10px',
+                    backgroundColor: skill.level === 'expert' ? '#8a3ffc'
+                      : skill.level === 'advanced' ? '#198038'
+                      : skill.level === 'intermediate' ? '#0043ce'
+                      : '#6f6f6f',
+                    color: '#ffffff',
+                  }}>
+                    {levelLabels[skill.level]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
+              Навыки не указаны
+            </p>
+          )}
         </Tile>
 
-        {/* Bio */}
-        {employee.bio && (
-          <Tile style={{ gridColumn: 'span 2' }}>
-            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>О сотруднике</h3>
-            <p style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>{employee.bio}</p>
-          </Tile>
-        )}
-
         {/* Achievements */}
-        <Tile style={{ gridColumn: 'span 2' }}>
+        <Tile>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, marginBottom: '1rem' }}>
             <Trophy size={20} />
             Достижения ({achievements?.length || 0})
           </h3>
           {achievements && achievements.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {achievements.map((award) => (
-                <div key={award.id} style={{ padding: '1rem', background: 'var(--cds-layer-02)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '2rem' }}>{award.achievement?.icon || '🏆'}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {award.achievement?.name || 'Достижение'}
-                      </p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>
-                        {formatDate(award.awarded_at)}
-                      </p>
-                    </div>
+                <div key={award.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'var(--cds-layer-02)' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{award.achievement?.icon || '🏆'}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 500 }}>{award.achievement?.name || 'Достижение'}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)' }}>
+                      {formatDate(award.awarded_at)}
+                      {award.comment && ` — ${award.comment}`}
+                    </p>
                   </div>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginTop: '0.5rem' }}>
-                    {award.comment}
-                  </p>
                 </div>
               ))}
             </div>
@@ -213,6 +282,14 @@ export function EmployeeDetailPage() {
             </p>
           )}
         </Tile>
+
+        {/* Bio - full width if exists */}
+        {employee.bio && (
+          <Tile style={{ gridColumn: 'span 2' }}>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>О сотруднике</h3>
+            <p style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>{employee.bio}</p>
+          </Tile>
+        )}
       </div>
     </div>
   )

@@ -28,6 +28,22 @@ export function AdminRolesPage() {
     },
   })
 
+  // Helper to extract error message from API response
+  const getErrorMessage = (err: any): string => {
+    const data = err.response?.data
+    if (!data) return 'Ошибка сети'
+    if (typeof data === 'string') return data
+    if (data.detail) return data.detail
+    // Handle field validation errors
+    const fieldErrors = Object.entries(data)
+      .map(([field, errors]) => {
+        const errorList = Array.isArray(errors) ? errors.join(', ') : String(errors)
+        return `${field}: ${errorList}`
+      })
+      .join('; ')
+    return fieldErrors || 'Неизвестная ошибка'
+  }
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const response = await apiClient.post('/admin/roles/', data)
@@ -37,7 +53,7 @@ export function AdminRolesPage() {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       resetForm()
     },
-    onError: (err: any) => setError(err.response?.data?.detail || 'Ошибка'),
+    onError: (err: any) => setError(getErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
@@ -49,7 +65,7 @@ export function AdminRolesPage() {
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       resetForm()
     },
-    onError: (err: any) => setError(err.response?.data?.detail || 'Ошибка'),
+    onError: (err: any) => setError(getErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({

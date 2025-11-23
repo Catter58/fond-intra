@@ -1,6 +1,8 @@
 """
 Views for news app.
 """
+import json
+
 from django.db.models import Count
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from apps.audit.models import AuditLog
 from apps.notifications.models import Notification
@@ -30,6 +32,7 @@ from .permissions import CanEditNews, CanPinNews
 class NewsViewSet(ModelViewSet):
     """CRUD for news."""
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         queryset = News.objects.select_related('author').annotate(
@@ -55,9 +58,57 @@ class NewsViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         news = serializer.save(author=self.request.user)
+
+        # Handle attachments
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            NewsAttachment.objects.create(
+                news=news,
+                file=file,
+                file_name=file.name,
+                file_type=file.content_type,
+                file_size=file.size
+            )
+
         AuditLog.log(
             user=self.request.user,
             action=AuditLog.Action.CREATE,
+            entity_type='News',
+            entity_id=news.id,
+            entity_repr=news.title,
+            ip_address=getattr(self.request, 'audit_ip', None),
+            user_agent=getattr(self.request, 'audit_user_agent', '')
+        )
+
+    def perform_update(self, serializer):
+        news = serializer.save()
+
+        # Handle new attachments
+        attachments = self.request.FILES.getlist('attachments')
+        for file in attachments:
+            NewsAttachment.objects.create(
+                news=news,
+                file=file,
+                file_name=file.name,
+                file_type=file.content_type,
+                file_size=file.size
+            )
+
+        # Handle deleted attachments
+        delete_attachments = self.request.data.get('delete_attachments')
+        if delete_attachments:
+            try:
+                attachment_ids = json.loads(delete_attachments)
+                NewsAttachment.objects.filter(
+                    id__in=attachment_ids,
+                    news=news
+                ).delete()
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        AuditLog.log(
+            user=self.request.user,
+            action=AuditLog.Action.UPDATE,
             entity_type='News',
             entity_id=news.id,
             entity_repr=news.title,

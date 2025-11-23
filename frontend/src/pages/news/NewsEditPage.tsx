@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, TextArea, Loading, InlineNotification } from '@carbon/react'
+import { Tile, Button, TextInput, TextArea, Loading, InlineNotification, Checkbox } from '@carbon/react'
 import { ArrowLeft, Attachment, TrashCan, Upload, Close } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
 import type { NewsAttachment } from '@/types'
@@ -19,6 +19,8 @@ export function NewsEditPage() {
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [isPublished, setIsPublished] = useState(true)
+  const [isPinned, setIsPinned] = useState(false)
   const [newFiles, setNewFiles] = useState<FileWithPreview[]>([])
   const [existingAttachments, setExistingAttachments] = useState<NewsAttachment[]>([])
   const [attachmentsToDelete, setAttachmentsToDelete] = useState<number[]>([])
@@ -34,6 +36,8 @@ export function NewsEditPage() {
     if (news) {
       setTitle(news.title)
       setContent(news.content)
+      setIsPublished(news.is_published ?? true)
+      setIsPinned(news.is_pinned ?? false)
       setExistingAttachments(news.attachments || [])
     }
   }, [news])
@@ -43,6 +47,8 @@ export function NewsEditPage() {
       const formData = new FormData()
       formData.append('title', title)
       formData.append('content', content)
+      formData.append('is_published', String(isPublished))
+      formData.append('is_pinned', String(isPinned))
 
       newFiles.forEach((f) => {
         formData.append('attachments', f.file)
@@ -292,6 +298,22 @@ export function NewsEditPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Options */}
+          <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
+            <Checkbox
+              id="is_published"
+              labelText="Опубликована"
+              checked={isPublished}
+              onChange={(_, { checked }) => setIsPublished(checked)}
+            />
+            <Checkbox
+              id="is_pinned"
+              labelText="Закреплена"
+              checked={isPinned}
+              onChange={(_, { checked }) => setIsPinned(checked)}
+            />
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>

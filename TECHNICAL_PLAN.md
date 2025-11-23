@@ -1047,6 +1047,7 @@ ALLOWED_AVATAR_TYPES=image/jpeg,image/png,image/webp
 - [x] **6.5** Карточка профиля коллеги
 - [x] **6.6** Календарь дней рождений (на dashboard)
 - [x] **6.7** Организационное дерево (визуализация)
+- [x] **6.8** UI модуля Skills (навыки) — см. раздел 12
 
 ### Фаза 7: Frontend - Ачивки
 - [x] **7.1** Каталог ачивок
@@ -1130,3 +1131,214 @@ ALLOWED_AVATAR_TYPES=image/jpeg,image/png,image/webp
 - Расширенная аналитика
 - Экспорт данных
 - Интеграции (по запросу)
+
+---
+
+## 12. План реализации: UI модуля Skills (Навыки)
+
+### 12.1 Статус
+
+| Компонент | Статус | Описание |
+|-----------|--------|----------|
+| Backend Models | ✅ Готово | `SkillCategory`, `Skill`, `UserSkill` |
+| Backend API | ✅ Готово | CRUD endpoints, MySkills |
+| Frontend API client | ❌ Не реализовано | `api/endpoints/skills.ts` |
+| Frontend Pages | ❌ Не реализовано | Страницы и компоненты |
+| Интеграция в профиль | ❌ Не реализовано | Вкладка навыков |
+
+### 12.2 Существующий Backend API
+
+```
+GET    /api/v1/skills/categories/     - Список категорий навыков
+GET    /api/v1/skills/                - Список всех навыков
+POST   /api/v1/skills/                - Создать навык (admin)
+PUT    /api/v1/skills/{id}/           - Редактировать навык (admin)
+DELETE /api/v1/skills/{id}/           - Удалить навык (admin)
+GET    /api/v1/skills/me/             - Мои навыки
+POST   /api/v1/skills/me/             - Добавить себе навык
+PATCH  /api/v1/skills/me/{skill_id}/  - Обновить уровень навыка
+DELETE /api/v1/skills/me/{skill_id}/  - Удалить свой навык
+```
+
+### 12.3 Модель данных (существующая)
+
+```python
+class SkillCategory(Model):
+    name = CharField(max_length=100)           # "Frontend", "Backend", "Soft Skills"
+    description = TextField(blank=True)
+    order = PositiveIntegerField(default=0)
+
+class Skill(Model):
+    name = CharField(max_length=100)           # "React", "Python", "Коммуникация"
+    category = ForeignKey(SkillCategory)
+    description = TextField(blank=True)
+
+class UserSkill(Model):
+    class Level(TextChoices):
+        BEGINNER = 'beginner', 'Начинающий'
+        INTERMEDIATE = 'intermediate', 'Средний'
+        ADVANCED = 'advanced', 'Продвинутый'
+        EXPERT = 'expert', 'Эксперт'
+
+    user = ForeignKey(User)
+    skill = ForeignKey(Skill)
+    level = CharField(choices=Level.choices)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'skill']
+```
+
+### 12.4 Шаги реализации Frontend
+
+#### Шаг 1: API клиент
+**Файл:** `frontend/src/api/endpoints/skills.ts`
+
+```typescript
+// Типы
+interface SkillCategory {
+  id: number
+  name: string
+  description: string
+  order: number
+}
+
+interface Skill {
+  id: number
+  name: string
+  category: SkillCategory
+  description: string
+}
+
+interface UserSkill {
+  id: number
+  skill: Skill
+  level: 'beginner' | 'intermediate' | 'advanced' | 'expert'
+  created_at: string
+  updated_at: string
+}
+
+// API методы
+- getCategories(): Promise<SkillCategory[]>
+- getSkills(categoryId?: number): Promise<Skill[]>
+- getMySkills(): Promise<UserSkill[]>
+- addMySkill(skillId: number, level: string): Promise<UserSkill>
+- updateMySkill(skillId: number, level: string): Promise<UserSkill>
+- removeMySkill(skillId: number): Promise<void>
+- getUserSkills(userId: number): Promise<UserSkill[]>
+```
+
+#### Шаг 2: Компонент отображения навыков
+**Файл:** `frontend/src/components/features/skills/SkillBadge.tsx`
+
+- Отображение навыка с уровнем
+- Цветовая индикация уровня (Beginner → Expert)
+- Иконка категории
+
+#### Шаг 3: Компонент списка навыков пользователя
+**Файл:** `frontend/src/components/features/skills/UserSkillsList.tsx`
+
+- Группировка по категориям
+- Сортировка по уровню
+- Режим просмотра (для чужого профиля)
+- Режим редактирования (для своего профиля)
+
+#### Шаг 4: Форма добавления навыка
+**Файл:** `frontend/src/components/features/skills/AddSkillForm.tsx`
+
+- Выбор категории (фильтр)
+- Выбор навыка (из списка доступных)
+- Выбор уровня (radio/select)
+- Валидация (нельзя добавить дубликат)
+
+#### Шаг 5: Страница "Мои навыки"
+**Файл:** `frontend/src/pages/profile/ProfileSkillsPage.tsx`
+
+- Список текущих навыков с возможностью редактирования уровня
+- Кнопка удаления навыка
+- Кнопка/форма добавления нового навыка
+- Пустое состояние с призывом добавить навыки
+
+#### Шаг 6: Интеграция в профиль сотрудника
+**Файл:** `frontend/src/pages/employees/EmployeeDetailPage.tsx`
+
+- Добавить секцию "Навыки" в карточку сотрудника
+- Отображение навыков в режиме просмотра
+- Группировка по категориям
+
+#### Шаг 7: Интеграция в свой профиль
+**Файл:** `frontend/src/pages/profile/ProfilePage.tsx`
+
+- Добавить вкладку или секцию "Навыки"
+- Ссылка на редактирование навыков
+
+#### Шаг 8: Навигация
+**Файл:** `frontend/src/App.tsx`
+
+Добавить роуты:
+```typescript
+<Route path="/profile/skills" element={<ProfileSkillsPage />} />
+```
+
+**Файл:** `frontend/src/components/layout/MainLayout.tsx`
+
+- Добавить пункт меню "Навыки" или ссылку в профиле
+
+#### Шаг 9: Админка (опционально)
+**Файл:** `frontend/src/pages/admin/AdminSkillsPage.tsx`
+
+- Управление категориями навыков
+- Управление справочником навыков
+- CRUD операции
+
+### 12.5 UI/UX требования
+
+#### Отображение уровней навыков
+| Уровень | Цвет | Описание |
+|---------|------|----------|
+| Beginner | Gray | Базовые знания |
+| Intermediate | Blue | Уверенное владение |
+| Advanced | Green | Глубокие знания |
+| Expert | Purple | Экспертный уровень |
+
+#### Визуальное представление
+- Навыки группируются по категориям (аккордеон или табы)
+- Каждый навык показывается как Tag/Badge с индикатором уровня
+- Progress bar или точки для визуализации уровня
+- При наведении — tooltip с описанием навыка
+
+#### Форма добавления
+- Dropdown категорий для фильтрации
+- Searchable dropdown для выбора навыка
+- Radio buttons или Slider для выбора уровня
+- Preview выбранного навыка перед сохранением
+
+### 12.6 Чек-лист реализации
+
+- [x] **12.6.1** Создать `api/endpoints/skills.ts` с типами и методами
+- [x] **12.6.2** Создать компонент `SkillBadge` для отображения навыка
+- [x] **12.6.3** Создать компонент `UserSkillsList` для списка навыков
+- [x] **12.6.4** Создать компонент `AddSkillForm` для добавления навыка
+- [x] **12.6.5** Создать страницу `ProfileSkillsPage` для управления своими навыками
+- [x] **12.6.6** Добавить секцию навыков в `EmployeeDetailPage`
+- [x] **12.6.7** Добавить секцию/ссылку навыков в `ProfilePage`
+- [x] **12.6.8** Добавить роут `/profile/skills` в `App.tsx`
+- [ ] **12.6.9** Добавить пункт меню в навигацию (опционально)
+- [ ] **12.6.10** Создать `AdminSkillsPage` для управления справочником (опционально)
+- [ ] **12.6.11** Написать unit тесты для компонентов
+- [ ] **12.6.12** Проверить адаптивность на mobile
+
+### 12.7 Оценка трудозатрат
+
+| Задача | Оценка |
+|--------|--------|
+| API клиент + типы | 30 мин |
+| Компоненты (Badge, List, Form) | 1.5-2 часа |
+| Страница ProfileSkillsPage | 1 час |
+| Интеграция в профили | 30-45 мин |
+| Роутинг и навигация | 15 мин |
+| Админка (опционально) | 1-1.5 часа |
+| Тестирование и доработки | 30 мин |
+| **Итого (без админки)** | **~4 часа** |
+| **Итого (с админкой)** | **~5.5 часов** |

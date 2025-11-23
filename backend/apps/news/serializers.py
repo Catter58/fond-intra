@@ -128,7 +128,8 @@ class NewsCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = News
-        fields = ['title', 'content', 'is_published']
+        fields = ['id', 'title', 'content', 'is_published', 'is_pinned']
+        read_only_fields = ['id']
 
     def validate_title(self, value):
         if len(value) < 5:
@@ -143,4 +144,4 @@ class NewsUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = News
-        fields = ['title', 'content', 'is_published']
+        fields = ['title', 'content', 'is_published', 'is_pinned']

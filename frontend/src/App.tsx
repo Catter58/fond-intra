@@ -26,6 +26,7 @@ const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage').
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const ProfileEditPage = lazy(() => import('@/pages/profile/ProfileEditPage').then(m => ({ default: m.ProfileEditPage })))
+const ProfileSkillsPage = lazy(() => import('@/pages/profile/ProfileSkillsPage').then(m => ({ default: m.ProfileSkillsPage })))
 const EmployeesPage = lazy(() => import('@/pages/employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })))
 const EmployeeDetailPage = lazy(() => import('@/pages/employees/EmployeeDetailPage').then(m => ({ default: m.EmployeeDetailPage })))
 const AchievementsPage = lazy(() => import('@/pages/achievements/AchievementsPage').then(m => ({ default: m.AchievementsPage })))
@@ -36,6 +37,7 @@ const NewsEditPage = lazy(() => import('@/pages/news/NewsEditPage').then(m => ({
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })))
 const NotificationSettingsPage = lazy(() => import('@/pages/notifications/NotificationSettingsPage').then(m => ({ default: m.NotificationSettingsPage })))
 const OrganizationPage = lazy(() => import('@/pages/organization/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
+const SkillsCatalogPage = lazy(() => import('@/pages/skills/SkillsCatalogPage').then(m => ({ default: m.SkillsCatalogPage })))
 
 // Lazy loaded pages - Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })))
@@ -44,6 +46,7 @@ const AdminUserFormPage = lazy(() => import('@/pages/admin/AdminUserFormPage').t
 const AdminDepartmentsPage = lazy(() => import('@/pages/admin/AdminDepartmentsPage').then(m => ({ default: m.AdminDepartmentsPage })))
 const AdminRolesPage = lazy(() => import('@/pages/admin/AdminRolesPage').then(m => ({ default: m.AdminRolesPage })))
 const AdminAchievementTypesPage = lazy(() => import('@/pages/admin/AdminAchievementTypesPage').then(m => ({ default: m.AdminAchievementTypesPage })))
+const AdminSkillsPage = lazy(() => import('@/pages/admin/AdminSkillsPage').then(m => ({ default: m.AdminSkillsPage })))
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage').then(m => ({ default: m.AdminAuditPage })))
 
 // Protected Route wrapper
@@ -92,6 +95,7 @@ function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profile/edit" element={<ProfileEditPage />} />
+            <Route path="/profile/skills" element={<ProfileSkillsPage />} />
             <Route path="/profile/change-password" element={<ChangePasswordPage />} />
             <Route path="/employees" element={<EmployeesPage />} />
             <Route path="/employees/:id" element={<EmployeeDetailPage />} />
@@ -103,6 +107,7 @@ function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/notifications/settings" element={<NotificationSettingsPage />} />
             <Route path="/organization" element={<OrganizationPage />} />
+            <Route path="/skills" element={<SkillsCatalogPage />} />
 
             {/* Admin routes */}
             <Route
@@ -150,6 +155,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminRolesPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/skills"
+              element={
+                <AdminRoute>
+                  <AdminSkillsPage />
                 </AdminRoute>
               }
             />

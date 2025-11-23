@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Tile, Button, TextInput, TextArea, InlineNotification } from '@carbon/react'
+import { Tile, Button, TextInput, TextArea, InlineNotification, Checkbox } from '@carbon/react'
 import { ArrowLeft, Attachment, Close, Upload } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
 
@@ -15,6 +15,8 @@ export function NewsCreatePage() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [isPublished, setIsPublished] = useState(true)
+  const [isPinned, setIsPinned] = useState(false)
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [error, setError] = useState('')
 
@@ -23,6 +25,8 @@ export function NewsCreatePage() {
       const formData = new FormData()
       formData.append('title', title)
       formData.append('content', content)
+      formData.append('is_published', String(isPublished))
+      formData.append('is_pinned', String(isPinned))
       files.forEach((f) => {
         formData.append('attachments', f.file)
       })
@@ -209,9 +213,25 @@ export function NewsCreatePage() {
             )}
           </div>
 
+          {/* Options */}
+          <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
+            <Checkbox
+              id="is_published"
+              labelText="Опубликована"
+              checked={isPublished}
+              onChange={(_, { checked }) => setIsPublished(checked)}
+            />
+            <Checkbox
+              id="is_pinned"
+              labelText="Закреплена"
+              checked={isPinned}
+              onChange={(_, { checked }) => setIsPinned(checked)}
+            />
+          </div>
+
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <Button type="submit" disabled={createNewsMutation.isPending}>
-              {createNewsMutation.isPending ? 'Публикация...' : 'Опубликовать'}
+              {createNewsMutation.isPending ? 'Сохранение...' : 'Сохранить'}
             </Button>
             <Button kind="secondary" onClick={() => navigate(-1)}>
               Отмена

@@ -15,6 +15,7 @@ from apps.accounts.views import (
     AdminUserViewSet,
     UserStatusViewSet,
 )
+from apps.skills.views import UserSkillsView
 
 # Admin router
 admin_router = DefaultRouter()
@@ -33,6 +34,9 @@ urlpatterns = [
 
     # User detail
     path('<int:pk>/', UserDetailView.as_view(), name='user-detail'),
+
+    # User skills
+    path('<int:user_id>/skills/', UserSkillsView.as_view(), name='user-skills'),
 
     # User statuses
     path('<int:user_id>/statuses/', UserStatusViewSet.as_view({

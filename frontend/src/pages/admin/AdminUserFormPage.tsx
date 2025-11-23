@@ -18,9 +18,9 @@ export function AdminUserFormPage() {
     first_name: '',
     last_name: '',
     patronymic: '',
-    phone: '',
-    department_id: '',
-    position_id: '',
+    phone_personal: '',
+    department: '',
+    position: '',
     hire_date: '',
     role_id: '',
   })
@@ -63,9 +63,9 @@ export function AdminUserFormPage() {
         first_name: user.first_name,
         last_name: user.last_name,
         patronymic: user.patronymic || '',
-        phone: user.phone_personal || '',
-        department_id: user.department?.id?.toString() || '',
-        position_id: user.position?.id?.toString() || '',
+        phone_personal: user.phone_personal || '',
+        department: user.department?.id?.toString() || '',
+        position: user.position?.id?.toString() || '',
         hire_date: user.hire_date || '',
         role_id: user.role?.id?.toString() || '',
       })
@@ -100,10 +100,14 @@ export function AdminUserFormPage() {
     setError('')
 
     const data = {
-      ...formData,
-      department_id: formData.department_id ? Number(formData.department_id) : null,
-      position_id: formData.position_id ? Number(formData.position_id) : null,
-      role_id: formData.role_id ? Number(formData.role_id) : null,
+      email: formData.email,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      patronymic: formData.patronymic,
+      phone_personal: formData.phone_personal,
+      hire_date: formData.hire_date || null,
+      department: formData.department ? Number(formData.department) : null,
+      position: formData.position ? Number(formData.position) : null,
     }
 
     if (isEdit) {
@@ -111,6 +115,9 @@ export function AdminUserFormPage() {
     } else {
       createMutation.mutate(data)
     }
+
+    // Handle role assignment separately if needed
+    // TODO: Add role assignment API call if role changed
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending
@@ -165,11 +172,11 @@ export function AdminUserFormPage() {
               required
             />
             <TextInput
-              id="phone"
+              id="phone_personal"
               labelText="Телефон"
               type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              value={formData.phone_personal}
+              onChange={(e) => setFormData({ ...formData, phone_personal: e.target.value })}
             />
             <TextInput
               id="last_name"
@@ -199,10 +206,10 @@ export function AdminUserFormPage() {
               onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
             />
             <Select
-              id="department_id"
+              id="department"
               labelText="Отдел"
-              value={formData.department_id}
-              onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
+              value={formData.department}
+              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
             >
               <SelectItem value="" text="Не выбран" />
               {departments?.map((dept) => (
@@ -210,10 +217,10 @@ export function AdminUserFormPage() {
               ))}
             </Select>
             <Select
-              id="position_id"
+              id="position"
               labelText="Должность"
-              value={formData.position_id}
-              onChange={(e) => setFormData({ ...formData, position_id: e.target.value })}
+              value={formData.position}
+              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
             >
               <SelectItem value="" text="Не выбрана" />
               {positions?.map((pos) => (

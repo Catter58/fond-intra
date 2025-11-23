@@ -32,6 +32,16 @@ export function EmployeesPage() {
       .slice(0, 2)
   }
 
+  // Check if employee was hired within the last 14 days
+  const isNewEmployee = (hireDate: string | null | undefined): boolean => {
+    if (!hireDate) return false
+    const hire = new Date(hireDate)
+    const now = new Date()
+    const diffTime = now.getTime() - hire.getTime()
+    const diffDays = diffTime / (1000 * 60 * 60 * 24)
+    return diffDays >= 0 && diffDays < 14
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -95,7 +105,21 @@ export function EmployeesPage() {
                     e.preventDefault()
                     window.location.href = `/employees/${employee.id}`
                   }}
+                  style={{ position: 'relative' }}
                 >
+                  {isNewEmployee(employee.hire_date) && (
+                    <Tag
+                      type="green"
+                      size="sm"
+                      style={{
+                        position: 'absolute',
+                        top: '0.5rem',
+                        right: '0.5rem',
+                      }}
+                    >
+                      Новый
+                    </Tag>
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '1rem' }}>
                     <div className="list-item-avatar" style={{ width: '80px', height: '80px', fontSize: '1.5rem', marginBottom: '1rem' }}>
                       {employee.avatar ? (
@@ -148,6 +172,11 @@ export function EmployeesPage() {
                         {employee.department && ` • ${employee.department.name}`}
                       </p>
                     </div>
+                    {isNewEmployee(employee.hire_date) && (
+                      <Tag type="green" size="sm">
+                        Новый
+                      </Tag>
+                    )}
                     {employee.current_status && (
                       <Tag type="blue" size="sm">
                         {employee.current_status.status_display}

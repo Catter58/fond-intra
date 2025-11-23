@@ -10,6 +10,7 @@ import {
   Close,
   Dashboard,
   Report,
+  Catalog,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -21,6 +22,7 @@ interface SidebarProps {
 const navItems = [
   { to: '/', icon: Home, label: 'Главная' },
   { to: '/employees', icon: UserMultiple, label: 'Сотрудники' },
+  { to: '/skills', icon: Catalog, label: 'Навыки' },
   { to: '/achievements', icon: Trophy, label: 'Достижения' },
   { to: '/news', icon: Document, label: 'Новости' },
   { to: '/organization', icon: Building, label: 'Структура' },
@@ -31,13 +33,14 @@ const adminItems = [
   { to: '/admin/users', icon: UserMultiple, label: 'Пользователи' },
   { to: '/admin/roles', icon: Security, label: 'Роли' },
   { to: '/admin/departments', icon: Building, label: 'Отделы' },
+  { to: '/admin/skills', icon: Catalog, label: 'Навыки' },
   { to: '/admin/achievements', icon: Trophy, label: 'Типы наград' },
   { to: '/admin/audit', icon: Report, label: 'Аудит' },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuthStore()
-  const isAdmin = user?.role?.name === 'admin' || user?.is_superuser
+  const isAdmin = user?.role?.is_admin || user?.is_superuser
 
   return (
     <>

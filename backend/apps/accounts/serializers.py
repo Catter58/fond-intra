@@ -151,7 +151,8 @@ class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'patronymic',
-                  'full_name', 'avatar', 'department', 'position', 'current_status']
+                  'full_name', 'avatar', 'department', 'position', 'current_status',
+                  'hire_date']
 
     def get_current_status(self, obj):
         status = obj.current_status

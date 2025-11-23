@@ -50,8 +50,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=${DEBUG:-True}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,192.168.100.198}
+      - FRONTEND_URL=${FRONTEND_URL:-http://192.168.100.198:5173}
     command: >
       sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
@@ -106,7 +106,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_API_URL=http://192.168.100.198:8000/api/v1
     command: npm run dev -- --host 0.0.0.0
 
 volumes:
