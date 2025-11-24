@@ -19,6 +19,7 @@ from .serializers import (
     AchievementAwardCreateSerializer,
     AchievementFeedSerializer,
     UserAchievementSerializer,
+    LeaderboardEntrySerializer,
 )
 from .permissions import CanManageAchievements
 
@@ -169,3 +170,125 @@ class AchievementStatsView(APIView):
             ],
             'top_recipients': list(top_recipients)
         })
+
+
+class AchievementLeaderboardView(APIView):
+    """Get achievement leaderboard with filters."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from django.utils import timezone
+        from datetime import timedelta
+        from django.db.models import Q, Prefetch
+
+        # Get query parameters
+        period = request.query_params.get('period', 'month')  # week, month, quarter, year, all
+        department_id = request.query_params.get('department')
+        category = request.query_params.get('category')
+        limit = int(request.query_params.get('limit', 20))
+
+        # Calculate date filter based on period
+        now = timezone.now()
+        date_filter = None
+
+        if period == 'week':
+            date_filter = now - timedelta(days=7)
+        elif period == 'month':
+            date_filter = now - timedelta(days=30)
+        elif period == 'quarter':
+            date_filter = now - timedelta(days=90)
+        elif period == 'year':
+            date_filter = now - timedelta(days=365)
+        # 'all' has no date filter
+
+        # Build queryset
+        queryset = AchievementAward.objects.all()
+
+        if date_filter:
+            queryset = queryset.filter(awarded_at__gte=date_filter)
+
+        if department_id:
+            queryset = queryset.filter(recipient__department_id=department_id)
+
+        if category:
+            queryset = queryset.filter(achievement__category=category)
+
+        # Aggregate by recipient
+        from django.db.models import Count, Max
+        leaderboard = queryset.values(
+            'recipient__id',
+            'recipient__first_name',
+            'recipient__last_name',
+            'recipient__avatar',
+            'recipient__position__name',
+            'recipient__department__name',
+        ).annotate(
+            count=Count('id'),
+            latest_award=Max('awarded_at')
+        ).order_by('-count', '-latest_award')[:limit]
+
+        # Get User objects and their recent achievements
+        from apps.accounts.models import User
+        from apps.accounts.serializers import UserBasicSerializer
+
+        result = []
+        for rank, entry in enumerate(leaderboard, start=1):
+            user = User.objects.get(id=entry['recipient__id'])
+
+            # Get most recent achievement for this user
+            recent_award = queryset.filter(recipient=user).select_related('achievement').order_by('-awarded_at').first()
+            recent_achievement = recent_award.achievement if recent_award else None
+
+            result.append({
+                'rank': rank,
+                'user': UserBasicSerializer(user).data,
+                'count': entry['count'],
+                'recent_achievement': AchievementSerializer(recent_achievement).data if recent_achievement else None
+            })
+
+        return Response(result)
+
+
+class AchievementProgressView(APIView):
+    """Get user's progress towards automatic achievements."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id=None):
+        from apps.achievements.services import get_all_achievement_progress
+        from apps.accounts.models import User
+
+        # If user_id provided, get that user's progress (for viewing others)
+        # Otherwise, get current user's progress
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {'detail': 'User not found.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            user = request.user
+
+        progress_data = get_all_achievement_progress(user)
+
+        return Response({
+            'user_id': user.id,
+            'progress': progress_data
+        })
+
+
+class TriggerTypesView(APIView):
+    """Get available trigger types for automatic achievements."""
+    permission_classes = [IsAuthenticated, CanManageAchievements]
+
+    def get(self, request):
+        trigger_types = [
+            {
+                'value': choice[0],
+                'label': choice[1]
+            }
+            for choice in Achievement.TriggerType.choices
+        ]
+
+        return Response(trigger_types)

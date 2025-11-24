@@ -1,5 +1,5 @@
 import apiClient from '../client'
-import type { SkillCategory, Skill, UserSkill } from '@/types'
+import type { SkillCategory, Skill, UserSkill, SkillEndorsement } from '@/types'
 
 interface PaginatedResponse<T> {
   count: number
@@ -26,7 +26,7 @@ export const skillsApi = {
 
   // Skills
   getSkills: async (categoryId?: number): Promise<Skill[]> => {
-    const response = await apiClient.get<PaginatedResponse<Skill>>('/skills/', {
+    const response = await apiClient.get<PaginatedResponse<Skill>>('/skills/catalog/', {
       params: categoryId ? { category: categoryId } : undefined,
     })
     return response.data.results
@@ -34,14 +34,14 @@ export const skillsApi = {
 
   // Get all skills for filters/catalogs (alias)
   getCatalog: async (): Promise<Skill[]> => {
-    const response = await apiClient.get<PaginatedResponse<Skill>>('/skills/', {
+    const response = await apiClient.get<PaginatedResponse<Skill>>('/skills/catalog/', {
       params: { page_size: 1000 }, // Get all skills
     })
     return response.data.results
   },
 
   getSkillById: async (id: number): Promise<Skill> => {
-    const response = await apiClient.get<Skill>(`/skills/${id}/`)
+    const response = await apiClient.get<Skill>(`/skills/catalog/${id}/`)
     return response.data
   },
 
@@ -73,17 +73,17 @@ export const skillsApi = {
 
   // Admin methods
   createSkill: async (data: { name: string; category: number; description?: string }): Promise<Skill> => {
-    const response = await apiClient.post<Skill>('/skills/', data)
+    const response = await apiClient.post<Skill>('/skills/catalog/', data)
     return response.data
   },
 
   updateSkill: async (id: number, data: { name?: string; category?: number; description?: string }): Promise<Skill> => {
-    const response = await apiClient.patch<Skill>(`/skills/${id}/`, data)
+    const response = await apiClient.patch<Skill>(`/skills/catalog/${id}/`, data)
     return response.data
   },
 
   deleteSkill: async (id: number): Promise<void> => {
-    await apiClient.delete(`/skills/${id}/`)
+    await apiClient.delete(`/skills/catalog/${id}/`)
   },
 
   createCategory: async (data: { name: string; description?: string; order?: number }): Promise<SkillCategory> => {
@@ -98,5 +98,30 @@ export const skillsApi = {
 
   deleteCategory: async (id: number): Promise<void> => {
     await apiClient.delete(`/skills/categories/${id}/`)
+  },
+
+  // Endorsements
+  endorseSkill: async (userId: number, skillId: number): Promise<SkillEndorsement> => {
+    const response = await apiClient.post<SkillEndorsement>('/user-skills/endorse/', {
+      user_id: userId,
+      skill_id: skillId,
+    })
+    return response.data
+  },
+
+  unendorseSkill: async (userId: number, skillId: number): Promise<void> => {
+    await apiClient.delete('/user-skills/endorse/', {
+      data: {
+        user_id: userId,
+        skill_id: skillId,
+      },
+    })
+  },
+
+  getSkillEndorsements: async (userId: number, skillId: number): Promise<SkillEndorsement[]> => {
+    const response = await apiClient.get<SkillEndorsement[]>(
+      `/user-skills/${userId}/${skillId}/endorsements/`
+    )
+    return response.data
   },
 }

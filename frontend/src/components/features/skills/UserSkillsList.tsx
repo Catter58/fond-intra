@@ -5,6 +5,7 @@ import { SkillBadge, levelLabels } from './SkillBadge'
 
 interface UserSkillsListProps {
   skills: UserSkill[]
+  userId: number
   editable?: boolean
   onRemove?: (skillId: number) => void
   loading?: boolean
@@ -16,6 +17,7 @@ interface GroupedSkills {
 
 export function UserSkillsList({
   skills,
+  userId,
   editable = false,
   onRemove,
   loading = false,
@@ -64,6 +66,8 @@ export function UserSkillsList({
           <SkillBadge
             key={skill.id}
             skill={skill}
+            userId={userId}
+            isOwnProfile={editable}
             onRemove={editable && onRemove ? () => onRemove(skill.skill) : undefined}
           />
         ))}
@@ -90,6 +94,8 @@ export function UserSkillsList({
               <SkillBadge
                 key={skill.id}
                 skill={skill}
+                userId={userId}
+                isOwnProfile={editable}
                 onRemove={editable && onRemove ? () => onRemove(skill.skill) : undefined}
               />
             ))}
@@ -101,7 +107,7 @@ export function UserSkillsList({
 }
 
 // Compact view for profile cards
-export function UserSkillsCompact({ skills, maxShow = 5 }: { skills: UserSkill[]; maxShow?: number }) {
+export function UserSkillsCompact({ skills, userId, maxShow = 5 }: { skills: UserSkill[]; userId: number; maxShow?: number }) {
   const displaySkills = skills.slice(0, maxShow)
   const remaining = skills.length - maxShow
 
@@ -116,7 +122,7 @@ export function UserSkillsCompact({ skills, maxShow = 5 }: { skills: UserSkill[]
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', alignItems: 'center' }}>
       {displaySkills.map((skill) => (
-        <SkillBadge key={skill.id} skill={skill} />
+        <SkillBadge key={skill.id} skill={skill} userId={userId} />
       ))}
       {remaining > 0 && (
         <Tag size="sm" type="gray">+{remaining}</Tag>

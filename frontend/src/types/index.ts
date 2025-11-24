@@ -106,9 +106,70 @@ export interface UserSkill {
   skill_category: string
   level: 'beginner' | 'intermediate' | 'advanced' | 'expert'
   level_display: string
+  endorsements_count: number
+  is_endorsed_by_current_user: boolean
+}
+
+export interface SkillEndorser {
+  id: number
+  full_name: string
+  avatar: string | null
+  position: string | null
+}
+
+export interface SkillEndorsement {
+  id: number
+  user_skill: number
+  endorsed_by: number
+  endorsed_by_details: SkillEndorser
+  skill_name: string
+  user_name: string
+  created_at: string
+}
+
+export interface SkillMatrixUser {
+  id: number
+  full_name: string
+  avatar: string | null
+  position: string | null
+}
+
+export interface SkillMatrixSkill {
+  id: number
+  name: string
+  category: string
+  category_id: number
+  users: Record<string, 'beginner' | 'intermediate' | 'advanced' | 'expert' | null>
+  stats: {
+    total: number
+    beginner: number
+    intermediate: number
+    advanced: number
+    expert: number
+  }
+}
+
+export interface SkillsMatrix {
+  department: {
+    id: number
+    name: string
+  }
+  users: SkillMatrixUser[]
+  skills: SkillMatrixSkill[]
 }
 
 // Achievement types
+export type TriggerType =
+  | 'comments_count'
+  | 'reactions_given'
+  | 'reactions_received'
+  | 'news_created'
+  | 'logins_count'
+  | 'profile_views'
+  | 'endorsements_received'
+  | 'skills_count'
+  | 'achievements_count'
+
 export interface Achievement {
   id: number
   name: string
@@ -118,6 +179,36 @@ export interface Achievement {
   category_display: string
   is_active: boolean
   awards_count: number
+  is_automatic: boolean
+  trigger_type: TriggerType | null
+  trigger_type_display: string | null
+  trigger_value: number | null
+}
+
+export interface TriggerTypeOption {
+  value: TriggerType
+  label: string
+}
+
+export interface AchievementProgress {
+  achievement: {
+    id: number
+    name: string
+    description: string
+    icon: string
+    trigger_value: number
+  }
+  current_value: number
+  is_achieved: boolean
+  progress_percentage: number
+  remaining: number
+}
+
+export interface AchievementProgressGroup {
+  trigger_type: TriggerType
+  trigger_type_display: string
+  current_value: number
+  achievements: AchievementProgress[]
 }
 
 export interface AchievementAward {
@@ -129,6 +220,13 @@ export interface AchievementAward {
   comment: string
   awarded_at: string
   created_at: string  // alias for awarded_at
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  user: UserBasic
+  count: number
+  recent_achievement: Achievement | null
 }
 
 // News types

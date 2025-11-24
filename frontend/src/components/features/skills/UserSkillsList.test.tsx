@@ -11,6 +11,8 @@ const mockSkills: UserSkill[] = [
     skill_category: 'Языки программирования',
     level: 'advanced',
     level_display: 'Продвинутый',
+    endorsements_count: 0,
+    is_endorsed_by_current_user: false,
   },
   {
     id: 2,
@@ -19,6 +21,8 @@ const mockSkills: UserSkill[] = [
     skill_category: 'Фреймворки',
     level: 'expert',
     level_display: 'Эксперт',
+    endorsements_count: 0,
+    is_endorsed_by_current_user: false,
   },
   {
     id: 3,
@@ -27,25 +31,27 @@ const mockSkills: UserSkill[] = [
     skill_category: 'Языки программирования',
     level: 'intermediate',
     level_display: 'Средний',
+    endorsements_count: 0,
+    is_endorsed_by_current_user: false,
   },
 ]
 
 describe('UserSkillsList', () => {
   it('renders empty state when no skills', () => {
-    render(<UserSkillsList skills={[]} />)
+    render(<UserSkillsList skills={[]} userId={1} />)
     expect(screen.getByText('Навыки не указаны')).toBeInTheDocument()
   })
 
   it('renders skills with single category as flat list', () => {
     const singleCategorySkills = mockSkills.filter((s) => s.skill_category === 'Языки программирования')
-    render(<UserSkillsList skills={singleCategorySkills} />)
+    render(<UserSkillsList skills={singleCategorySkills} userId={1} />)
 
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('Python')).toBeInTheDocument()
   })
 
   it('renders skills with multiple categories in accordion', () => {
-    render(<UserSkillsList skills={mockSkills} />)
+    render(<UserSkillsList skills={mockSkills} userId={1} />)
 
     // All skill names should be visible
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
@@ -54,7 +60,7 @@ describe('UserSkillsList', () => {
   })
 
   it('shows loading state', () => {
-    const { container } = render(<UserSkillsList skills={[]} loading />)
+    const { container } = render(<UserSkillsList skills={[]} userId={1} loading />)
     // Skeleton loaders should be present
     expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0)
   })
@@ -62,23 +68,23 @@ describe('UserSkillsList', () => {
   it('calls onRemove when skill is removed in editable mode', () => {
     const handleRemove = vi.fn()
     const singleSkill = [mockSkills[0]]
-    render(<UserSkillsList skills={singleSkill} editable onRemove={handleRemove} />)
+    render(<UserSkillsList skills={singleSkill} userId={1} editable onRemove={handleRemove} />)
 
-    // Find the close button on the tag
-    const closeButton = screen.getByRole('button')
-    fireEvent.click(closeButton)
+    // Find the remove button
+    const removeButton = screen.getByTitle('Удалить навык')
+    fireEvent.click(removeButton)
     expect(handleRemove).toHaveBeenCalledWith(10) // skill id
   })
 })
 
 describe('UserSkillsCompact', () => {
   it('renders empty state when no skills', () => {
-    render(<UserSkillsCompact skills={[]} />)
+    render(<UserSkillsCompact skills={[]} userId={1} />)
     expect(screen.getByText('Навыки не указаны')).toBeInTheDocument()
   })
 
   it('renders limited number of skills', () => {
-    render(<UserSkillsCompact skills={mockSkills} maxShow={2} />)
+    render(<UserSkillsCompact skills={mockSkills} userId={1} maxShow={2} />)
 
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('React')).toBeInTheDocument()
@@ -87,13 +93,13 @@ describe('UserSkillsCompact', () => {
   })
 
   it('does not show counter when all skills fit', () => {
-    render(<UserSkillsCompact skills={mockSkills} maxShow={5} />)
+    render(<UserSkillsCompact skills={mockSkills} userId={1} maxShow={5} />)
 
     expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument()
   })
 
   it('renders all skills when maxShow is larger than skills count', () => {
-    render(<UserSkillsCompact skills={mockSkills} maxShow={10} />)
+    render(<UserSkillsCompact skills={mockSkills} userId={1} maxShow={10} />)
 
     expect(screen.getByText('TypeScript')).toBeInTheDocument()
     expect(screen.getByText('React')).toBeInTheDocument()

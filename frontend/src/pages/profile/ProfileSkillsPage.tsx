@@ -13,13 +13,15 @@ import {
 } from '@carbon/react'
 import { Add, ArrowLeft, Education } from '@carbon/icons-react'
 import { skillsApi } from '@/api/endpoints/skills'
-import { AddSkillForm, levelLabels } from '@/components/features/skills'
+import { AddSkillForm, SkillBadge, levelLabels } from '@/components/features/skills'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useAuthStore } from '@/store/authStore'
 import type { UserSkill } from '@/types'
 
 export function ProfileSkillsPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const currentUser = useAuthStore((state) => state.user)
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingSkill, setEditingSkill] = useState<UserSkill | null>(null)
   const [newLevel, setNewLevel] = useState<UserSkill['level']>('intermediate')
@@ -136,67 +138,14 @@ export function ProfileSkillsPage() {
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {mySkills.map((skill) => (
-                <div
+                <SkillBadge
                   key={skill.id}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '4px',
-                    backgroundColor: 'var(--cds-layer-02)',
-                    border: '1px solid var(--cds-border-subtle-01)',
-                  }}
-                >
-                  <button
-                    onClick={() => handleEditSkill(skill)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                    }}
-                    title="Изменить уровень"
-                  >
-                    <span style={{ fontWeight: 500, color: 'var(--cds-text-primary)' }}>{skill.skill_name}</span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      padding: '0.125rem 0.5rem',
-                      borderRadius: '10px',
-                      backgroundColor: skill.level === 'expert' ? '#8a3ffc'
-                        : skill.level === 'advanced' ? '#198038'
-                        : skill.level === 'intermediate' ? '#0043ce'
-                        : '#6f6f6f',
-                      color: '#ffffff',
-                    }}>
-                      {levelLabels[skill.level]}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => handleRemoveSkill(skill.skill)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0.25rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--cds-text-secondary)',
-                      fontSize: '1.25rem',
-                      lineHeight: 1,
-                      borderRadius: '50%',
-                    }}
-                    title="Удалить навык"
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--cds-layer-hover-01)'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    ×
-                  </button>
-                </div>
+                  skill={skill}
+                  userId={currentUser?.id || 0}
+                  isOwnProfile={true}
+                  onRemove={() => handleRemoveSkill(skill.skill)}
+                  onEdit={() => handleEditSkill(skill)}
+                />
               ))}
             </div>
           </div>

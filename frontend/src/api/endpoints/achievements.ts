@@ -1,5 +1,12 @@
 import apiClient from '../client'
-import type { Achievement, AchievementAward, PaginatedResponse } from '@/types'
+import type {
+  Achievement,
+  AchievementAward,
+  PaginatedResponse,
+  LeaderboardEntry,
+  TriggerTypeOption,
+  AchievementProgressGroup,
+} from '@/types'
 
 export const achievementsApi = {
   getTypes: async (): Promise<Achievement[]> => {
@@ -41,12 +48,26 @@ export const achievementsApi = {
     return response.data
   },
 
+  getLeaderboard: async (params?: {
+    period?: 'week' | 'month' | 'quarter' | 'year' | 'all'
+    department?: number
+    category?: string
+    limit?: number
+  }): Promise<LeaderboardEntry[]> => {
+    const response = await apiClient.get<LeaderboardEntry[]>('/achievements/leaderboard/', { params })
+    return response.data
+  },
+
   // Admin methods for achievement types
   createType: async (data: {
     name: string
     description: string
     icon: string
     category: string
+    is_active?: boolean
+    is_automatic?: boolean
+    trigger_type?: string | null
+    trigger_value?: number | null
   }): Promise<Achievement> => {
     const response = await apiClient.post<Achievement>('/achievements/types/', data)
     return response.data
@@ -57,6 +78,10 @@ export const achievementsApi = {
     description?: string
     icon?: string
     category?: string
+    is_active?: boolean
+    is_automatic?: boolean
+    trigger_type?: string | null
+    trigger_value?: number | null
   }): Promise<Achievement> => {
     const response = await apiClient.patch<Achievement>(`/achievements/types/${id}/`, data)
     return response.data
@@ -64,5 +89,17 @@ export const achievementsApi = {
 
   deleteType: async (id: number): Promise<void> => {
     await apiClient.delete(`/achievements/types/${id}/`)
+  },
+
+  // Automatic achievements
+  getTriggerTypes: async (): Promise<TriggerTypeOption[]> => {
+    const response = await apiClient.get<TriggerTypeOption[]>('/achievements/trigger-types/')
+    return response.data
+  },
+
+  getProgress: async (userId?: number): Promise<{ user_id: number; progress: AchievementProgressGroup[] }> => {
+    const url = userId ? `/achievements/progress/${userId}/` : '/achievements/progress/'
+    const response = await apiClient.get(url)
+    return response.data
   },
 }

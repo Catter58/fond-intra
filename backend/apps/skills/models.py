@@ -82,3 +82,47 @@ class UserSkill(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.skill} ({self.get_level_display()})"
+
+    @property
+    def endorsements_count(self):
+        """
+        Count of endorsements for this user skill.
+        """
+        return self.endorsements.count()
+
+
+class SkillEndorsement(models.Model):
+    """
+    Endorsement from one user to another user's skill.
+    Allows colleagues to confirm each other's skills.
+    """
+    user_skill = models.ForeignKey(
+        UserSkill,
+        verbose_name=_('user skill'),
+        on_delete=models.CASCADE,
+        related_name='endorsements'
+    )
+    endorsed_by = models.ForeignKey(
+        'accounts.User',
+        verbose_name=_('endorsed by'),
+        on_delete=models.CASCADE,
+        related_name='given_endorsements'
+    )
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('skill endorsement')
+        verbose_name_plural = _('skill endorsements')
+        unique_together = ['user_skill', 'endorsed_by']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.endorsed_by} endorsed {self.user_skill}"
+
+    def clean(self):
+        """
+        Validate that user cannot endorse their own skills.
+        """
+        from django.core.exceptions import ValidationError
+        if self.user_skill.user == self.endorsed_by:
+            raise ValidationError(_('You cannot endorse your own skills.'))

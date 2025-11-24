@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, TextArea, Select, SelectItem, Loading, InlineNotification } from '@carbon/react'
+import { Tile, Button, TextInput, TextArea, Select, SelectItem, Loading, InlineNotification, Checkbox, NumberInput } from '@carbon/react'
 import { Add, Edit, TrashCan } from '@carbon/icons-react'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import type { Achievement } from '@/types'
@@ -22,12 +22,20 @@ export function AdminAchievementTypesPage() {
     description: '',
     icon: '🏆',
     category: 'professional',
+    is_automatic: false,
+    trigger_type: '',
+    trigger_value: 1,
   })
   const [error, setError] = useState('')
 
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['achievement-types'],
     queryFn: achievementsApi.getTypes,
+  })
+
+  const { data: triggerTypes } = useQuery({
+    queryKey: ['trigger-types'],
+    queryFn: achievementsApi.getTriggerTypes,
   })
 
   const createMutation = useMutation({
@@ -56,7 +64,15 @@ export function AdminAchievementTypesPage() {
   const resetForm = () => {
     setShowForm(false)
     setEditingId(null)
-    setFormData({ name: '', description: '', icon: '🏆', category: 'professional' })
+    setFormData({
+      name: '',
+      description: '',
+      icon: '🏆',
+      category: 'professional',
+      is_automatic: false,
+      trigger_type: '',
+      trigger_value: 1,
+    })
     setError('')
   }
 
@@ -67,16 +83,27 @@ export function AdminAchievementTypesPage() {
       description: achievement.description,
       icon: achievement.icon,
       category: achievement.category,
+      is_automatic: achievement.is_automatic,
+      trigger_type: achievement.trigger_type || '',
+      trigger_value: achievement.trigger_value || 1,
     })
     setShowForm(true)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Prepare data: if not automatic, set trigger fields to null
+    const submitData = {
+      ...formData,
+      trigger_type: formData.is_automatic && formData.trigger_type ? formData.trigger_type : null,
+      trigger_value: formData.is_automatic && formData.trigger_value ? formData.trigger_value : null,
+    }
+
     if (editingId) {
-      updateMutation.mutate({ id: editingId, data: formData })
+      updateMutation.mutate({ id: editingId, data: submitData })
     } else {
-      createMutation.mutate(formData)
+      createMutation.mutate(submitData)
     }
   }
 
@@ -162,6 +189,44 @@ export function AdminAchievementTypesPage() {
               </div>
             </div>
 
+            <div style={{ marginBottom: '1rem' }}>
+              <Checkbox
+                id="is_automatic"
+                labelText="Автоматическое достижение"
+                checked={formData.is_automatic}
+                onChange={(_, { checked }) => setFormData({ ...formData, is_automatic: checked })}
+              />
+              <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem', marginLeft: '1.5rem' }}>
+                Будет автоматически присуждаться при достижении порогового значения
+              </p>
+            </div>
+
+            {formData.is_automatic && (
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <Select
+                  id="trigger_type"
+                  labelText="Тип триггера *"
+                  value={formData.trigger_type}
+                  onChange={(e) => setFormData({ ...formData, trigger_type: e.target.value })}
+                  required={formData.is_automatic}
+                >
+                  <SelectItem value="" text="Выберите тип триггера" />
+                  {triggerTypes?.map((type) => (
+                    <SelectItem key={type.value} value={type.value} text={type.label} />
+                  ))}
+                </Select>
+                <NumberInput
+                  id="trigger_value"
+                  label="Пороговое значение *"
+                  value={formData.trigger_value}
+                  onChange={(_, { value }) => setFormData({ ...formData, trigger_value: typeof value === 'number' ? value : (parseInt(String(value)) || 1) })}
+                  min={1}
+                  step={1}
+                  required={formData.is_automatic}
+                />
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {editingId ? 'Сохранить' : 'Создать'}
@@ -193,10 +258,28 @@ export function AdminAchievementTypesPage() {
               >
                 <span style={{ fontSize: '2rem' }}>{achievement.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 500 }}>{achievement.name}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <p style={{ fontWeight: 500 }}>{achievement.name}</p>
+                    {achievement.is_automatic && (
+                      <span
+                        style={{
+                          fontSize: '0.75rem',
+                          padding: '0.125rem 0.5rem',
+                          background: 'var(--cds-layer-accent-01)',
+                          color: 'var(--cds-text-on-color)',
+                          borderRadius: '12px',
+                        }}
+                      >
+                        Авто
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{achievement.description}</p>
                   <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>
                     {CATEGORIES.find(c => c.value === achievement.category)?.label}
+                    {achievement.is_automatic && achievement.trigger_type_display && achievement.trigger_value && (
+                      <> • {achievement.trigger_type_display}: {achievement.trigger_value}</>
+                    )}
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>

@@ -112,12 +112,24 @@ fond-intra/
 - Fields: name (unique), description, permissions (M2M), is_system
 - Default roles: Employee, HR, Content Manager, Achievement Admin, Admin
 
-### skills.SkillCategory, Skill, UserSkill
+### skills.SkillCategory, Skill, UserSkill, SkillEndorsement
 - Proficiency levels: beginner, intermediate, advanced, expert
+- UserSkill has property: `endorsements_count`
+- SkillEndorsement: colleagues can endorse each other's skills
+  - Unique constraint: (user_skill, endorsed_by)
+  - Validation: cannot endorse own skills
+  - Triggers notification on endorsement
 
 ### achievements.Achievement, AchievementAward
 - Categories: professional, corporate, social, special
 - Icon field stores emoji
+- **Automatic Achievements:**
+  - Fields: `is_automatic` (bool), `trigger_type` (choice), `trigger_value` (int)
+  - 9 trigger types: comments_count, reactions_given, reactions_received, news_created, logins_count, profile_views, endorsements_received, skills_count, achievements_count
+  - Automatically awarded via Django signals when user reaches threshold
+  - Service layer: `services.py` with get_user_stats(), check_automatic_achievements(), get_all_achievement_progress()
+  - Signal handlers in `signals.py` for all trigger points
+  - Creates notifications when automatically awarded
 
 ### news.News, Comment, Reaction, NewsAttachment, Tag
 - News has status field: draft, scheduled, published
@@ -162,11 +174,28 @@ Base URL: `/api/v1/`
 ### Skills
 - GET `/skills/categories/`
 - GET `/skills/`
+- GET/POST `/skills/my/` - Current user's skills
+- PATCH/DELETE `/skills/my/{skill_id}/` - Update/delete own skill
+- GET `/users/{id}/skills/` - User's skills
+- POST `/skills/endorse/` - Endorse a skill (body: user_id, skill_id)
+- DELETE `/skills/endorse/` - Remove endorsement (body: user_id, skill_id)
+- GET `/skills/users/{user_id}/skills/{skill_id}/endorsements/` - List endorsements
 
 ### Achievements
-- GET `/achievements/`
-- GET `/users/{id}/achievements/`
-- POST `/achievements/{id}/award/`
+- GET `/achievements/` - List all achievements (active for non-admins)
+- GET `/achievements/types/` - Get achievement types
+- POST `/achievements/types/` - Create achievement type (admin)
+- PATCH `/achievements/types/{id}/` - Update achievement type (admin)
+- DELETE `/achievements/types/{id}/` - Delete achievement type (admin)
+- POST `/achievements/award/` - Award achievement to user
+- GET `/achievements/feed/` - Achievement awards feed
+- GET `/achievements/my/` - Current user's achievements
+- GET `/achievements/user/{user_id}/` - User's achievements
+- GET `/achievements/stats/` - Achievement statistics
+- GET `/achievements/leaderboard/` - Achievement leaderboard with filters
+- GET `/achievements/trigger-types/` - Available trigger types for automatic achievements (admin)
+- GET `/achievements/progress/` - Current user's progress towards automatic achievements
+- GET `/achievements/progress/{user_id}/` - User's progress towards automatic achievements
 
 ### News
 - GET/POST `/news/`
@@ -243,6 +272,15 @@ Base URL: `/api/v1/`
 - Sizes: sm, md, lg
 - Carbon icons support
 
+### AchievementProgress (`frontend/src/components/features/achievements/AchievementProgress.tsx`)
+- Displays user's progress towards automatic achievements
+- Accordion grouped by trigger type
+- ProgressBar for incomplete achievements
+- Shows current value / target value and percentage
+- Checkmark indicator for achieved
+- Props: `userId?: number, showTitle?: boolean`
+- Integrated into AchievementsPage
+
 ## Known Issues & Technical Debt
 
 1. ~~**Mixed UI Libraries**~~ - Radix UI removed, using Carbon only ✅
@@ -298,7 +336,14 @@ docker compose -f docker-compose.prod.yml up -d
 ## Git Workflow
 
 - Main branch: `main`
-- Recent commits focus on: Skills module, Carbon Design System migration, bug fixes
+- Recent commits focus on:
+  - **Phase 4 Implementation:** Automatic achievements system with 9 trigger types
+  - Skills module with endorsements
+  - Carbon Design System migration
+  - News drafts, scheduling, and rich-text editor
+  - Gallery with lightbox
+  - @mentions in comments
+  - Bug fixes and UI improvements
 
 ## Recommendations for Future Development
 
@@ -310,3 +355,9 @@ docker compose -f docker-compose.prod.yml up -d
 6. **Setup CI/CD** - Add GitHub Actions for tests, linting, deployment
 7. **Expand Tests** - Add more unit and integration tests
 8. **API Documentation** - Enable drf-spectacular UI endpoint
+
+
+---
+
+*Document created: 2025-11-23*
+*Last updated: 2025-11-24 - Added automatic achievements system (Phase 4, Task 2.19)*

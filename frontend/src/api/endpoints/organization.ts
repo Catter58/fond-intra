@@ -1,4 +1,5 @@
 import { apiClient } from '../client'
+import type { SkillsMatrix } from '@/types'
 
 export interface Department {
   id: number
@@ -44,6 +45,15 @@ export const organizationApi = {
 
   getTree: async (): Promise<Department[]> => {
     const response = await apiClient.get<Department[]>('/organization/tree/')
+    return response.data
+  },
+
+  getDepartmentSkillsMatrix: async (departmentId: number, categoryId?: number): Promise<SkillsMatrix> => {
+    const params = categoryId ? { category: categoryId } : undefined
+    const response = await apiClient.get<SkillsMatrix>(
+      `/organization/departments/${departmentId}/skills-matrix/`,
+      { params }
+    )
     return response.data
   },
 }

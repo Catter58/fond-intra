@@ -12,6 +12,7 @@ import { usersApi } from '@/api/endpoints/users'
 import { newsApi } from '@/api/endpoints/news'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { formatDate } from '@/lib/utils'
+import { AchievementLeaderboard } from '@/components/features/achievements'
 
 export function DashboardPage() {
   const { user } = useAuthStore()
@@ -46,7 +47,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div>
+    <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
       <div className="page-header">
         <h1 className="page-title">
           Добро пожаловать, {user?.first_name}!
@@ -115,10 +116,10 @@ export function DashboardPage() {
         </Column>
       </Grid>
 
-      {/* Content Cards */}
+      {/* Content Cards - Row 1 */}
       <Grid>
         {/* Birthdays */}
-        <Column sm={4} md={4} lg={5}>
+        <Column sm={4} md={4} lg={4}>
           <Tile>
           <h3 style={{
             display: 'flex',
@@ -164,7 +165,7 @@ export function DashboardPage() {
         </Column>
 
         {/* Latest news */}
-        <Column sm={4} md={4} lg={5}>
+        <Column sm={4} md={4} lg={4}>
           <Tile>
           <h3 style={{
             display: 'flex',
@@ -210,7 +211,7 @@ export function DashboardPage() {
         </Column>
 
         {/* Latest achievements */}
-        <Column sm={4} md={4} lg={6}>
+        <Column sm={4} md={4} lg={4}>
           <Tile>
           <h3 style={{
             display: 'flex',
@@ -225,7 +226,7 @@ export function DashboardPage() {
           </h3>
           {achievementsData?.results && achievementsData.results.length > 0 ? (
             <div>
-              {achievementsData.results.map((award) => (
+              {achievementsData.results.slice(0, 3).map((award) => (
                 <div key={award.id} className="list-item">
                   <div className="list-item-avatar">
                     {award.recipient?.avatar ? (
@@ -250,6 +251,24 @@ export function DashboardPage() {
               Нет достижений
             </p>
           )}
+          </Tile>
+        </Column>
+
+        {/* Leaderboard Top 3 */}
+        <Column sm={4} md={8} lg={4}>
+          <Tile>
+            <h3 style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}>
+              <Trophy size={20} />
+              Топ-3 лидера месяца
+            </h3>
+            <AchievementLeaderboard limit={3} showFilters={false} compact />
           </Tile>
         </Column>
       </Grid>

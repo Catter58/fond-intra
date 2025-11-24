@@ -7,7 +7,7 @@ import { achievementsApi } from '@/api/endpoints/achievements'
 import { skillsApi } from '@/api/endpoints/skills'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
-import { levelLabels } from '@/components/features/skills'
+import { SkillBadge } from '@/components/features/skills'
 
 const getInitials = (name: string) => {
   return name
@@ -39,10 +39,12 @@ export function EmployeeDetailPage() {
   })
 
   const { data: userSkills } = useQuery({
-    queryKey: ['employee-skills', id],
+    queryKey: ['user-skills', Number(id)],
     queryFn: () => skillsApi.getUserSkills(Number(id)),
     enabled: !!id,
   })
+
+  const isOwnProfile = user?.id === Number(id)
 
   if (isLoading) {
     return (
@@ -221,31 +223,12 @@ export function EmployeeDetailPage() {
           {userSkills && userSkills.length > 0 ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
               {userSkills.map((skill) => (
-                <div
+                <SkillBadge
                   key={skill.id}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '4px',
-                    backgroundColor: 'var(--cds-layer-02)',
-                  }}
-                >
-                  <span style={{ fontWeight: 500 }}>{skill.skill_name}</span>
-                  <span style={{
-                    fontSize: '0.75rem',
-                    padding: '0.125rem 0.5rem',
-                    borderRadius: '10px',
-                    backgroundColor: skill.level === 'expert' ? '#8a3ffc'
-                      : skill.level === 'advanced' ? '#198038'
-                      : skill.level === 'intermediate' ? '#0043ce'
-                      : '#6f6f6f',
-                    color: '#ffffff',
-                  }}>
-                    {levelLabels[skill.level]}
-                  </span>
-                </div>
+                  skill={skill}
+                  userId={Number(id)}
+                  isOwnProfile={isOwnProfile}
+                />
               ))}
             </div>
           ) : (

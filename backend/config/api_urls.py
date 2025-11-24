@@ -18,6 +18,7 @@ urlpatterns = [
 
     # Skills
     path('skills/', include('apps.skills.urls')),
+    path('user-skills/', include('apps.skills.endorsement_urls')),  # Separate URL for endorsements
 
     # Achievements
     path('achievements/', include('apps.achievements.urls')),

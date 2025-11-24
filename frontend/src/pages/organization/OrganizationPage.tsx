@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building, UserMultiple, ChevronRight, ChevronDown, Badge } from '@carbon/icons-react'
+import { Building, UserMultiple, ChevronRight, ChevronDown, Badge, Catalog } from '@carbon/icons-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Tile, Loading } from '@carbon/react'
+import { Tile, Loading, Select, SelectItem } from '@carbon/react'
 import { apiClient } from '@/api/client'
 import { usersApi } from '@/api/endpoints/users'
+import { organizationApi } from '@/api/endpoints/organization'
+import { SkillsMatrix } from '@/components/features/organization'
 import type { Department } from '@/types'
 
 const getInitials = (name: string) => {
@@ -221,12 +223,19 @@ function DepartmentNode({ department, level }: DepartmentNodeProps) {
 }
 
 export function OrganizationPage() {
+  const [selectedDepartment, setSelectedDepartment] = useState<number | undefined>(undefined)
+
   const { data: tree, isLoading } = useQuery({
     queryKey: ['organization', 'tree'],
     queryFn: async () => {
       const response = await apiClient.get<Department[]>('/organization/tree/')
       return response.data
     },
+  })
+
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: organizationApi.getDepartments,
   })
 
   return (
@@ -269,6 +278,48 @@ export function OrganizationPage() {
           <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
             Организационная структура не настроена
           </div>
+        )}
+      </Tile>
+
+      {/* Skills Matrix Section */}
+      <Tile style={{ marginTop: '1.5rem' }}>
+        <h3 style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          marginBottom: '1.5rem',
+          fontSize: '1rem',
+          fontWeight: 600
+        }}>
+          <Catalog size={20} />
+          Матрица навыков отдела
+        </h3>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <Select
+            id="department-select"
+            labelText="Выберите отдел"
+            value={selectedDepartment?.toString() || ''}
+            onChange={(e) => {
+              const value = e.target.value
+              setSelectedDepartment(value ? Number(value) : undefined)
+            }}
+            size="md"
+            style={{ maxWidth: '400px' }}
+          >
+            <SelectItem value="" text="Выберите отдел..." />
+            {departments?.map((dept) => (
+              <SelectItem key={dept.id} value={dept.id.toString()} text={dept.name} />
+            ))}
+          </Select>
+        </div>
+
+        {selectedDepartment ? (
+          <SkillsMatrix departmentId={selectedDepartment} />
+        ) : (
+          <p style={{ color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
+            Выберите отдел, чтобы посмотреть матрицу навыков
+          </p>
         )}
       </Tile>
     </div>

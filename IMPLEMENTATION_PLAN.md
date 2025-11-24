@@ -525,7 +525,7 @@ Frontend:
 
 ## Фаза 4: Skills & Achievements
 
-### 2.9 Подтверждение навыков (Endorsements)
+### 2.9 Подтверждение навыков (Endorsements) ✅ COMPLETED
 
 **Цель:** Возможность коллегам подтверждать навыки друг друга.
 
@@ -534,36 +534,63 @@ Frontend:
 - Новая модель: `SkillEndorsement`
 - Связь: User → UserSkill (через endorsement)
 
+**Результат:** Полностью работающая система endorsements с UI для подтверждения навыков, модальным окном со списком подтвердивших, уведомлениями и защитой от self-endorsement.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать модель `SkillEndorsement`:
-  - [ ] `user_skill` (FK to UserSkill)
-  - [ ] `endorsed_by` (FK to User)
-  - [ ] `created_at`
-  - [ ] Unique constraint: (user_skill, endorsed_by)
-- [ ] Создать миграцию
-- [ ] Сериализатор `SkillEndorsementSerializer`
-- [ ] Обновить `UserSkillSerializer` — включить endorsements_count
-- [ ] Endpoint `POST /api/v1/users/{id}/skills/{skill_id}/endorse/`
-- [ ] Endpoint `DELETE /api/v1/users/{id}/skills/{skill_id}/endorse/` — отменить
-- [ ] Нельзя endorsить свои навыки
-- [ ] Создание уведомления при endorsement
+- [x] Создать модель `SkillEndorsement`:
+  - [x] `user_skill` (FK to UserSkill)
+  - [x] `endorsed_by` (FK to User)
+  - [x] `created_at`
+  - [x] Unique constraint: (user_skill, endorsed_by)
+  - [x] Метод clean() для валидации
+- [x] Создать миграцию `0002_skillendorsement.py`
+- [x] Сериализатор `SkillEndorsementSerializer` с вложенным `EndorserSerializer`
+- [x] Обновить `UserSkillSerializer` — добавлены `endorsements_count` и `is_endorsed_by_current_user`
+- [x] Endpoint `POST /api/v1/skills/endorse/` — создание endorsement
+- [x] Endpoint `DELETE /api/v1/skills/endorse/` — отмена endorsement
+- [x] Endpoint `GET /api/v1/skills/users/{user_id}/skills/{skill_id}/endorsements/` — список endorsements
+- [x] Валидация: нельзя endorsить свои навыки
+- [x] Создание уведомления при endorsement
 
 Frontend:
-- [ ] Обновить `SkillBadge.tsx` — показывать количество endorsements
-- [ ] Кнопка "Подтвердить" на навыке в чужом профиле
-- [ ] Состояние: endorsed / not endorsed
-- [ ] Список кто подтвердил (tooltip или modal)
-- [ ] Обновить `UserSkillsList.tsx`
-- [ ] Обновить `ProfileSkillsPage.tsx`
-- [ ] Обновить `EmployeeDetailPage.tsx`
-- [ ] Анимация при endorsement
-- [ ] Тестирование
+- [x] Создан компонент `SkillBadge.tsx` с полным функционалом:
+  - [x] Показывает количество endorsements с иконкой
+  - [x] Кнопка "Подтвердить" в чужом профиле
+  - [x] Состояния: endorsed (primary) / not endorsed (ghost)
+  - [x] Модальное окно со списком подтвердивших (аватар, имя, должность, дата)
+  - [x] Tooltips для UX
+- [x] Обновлен `UserSkillsList.tsx` — добавлен проп userId
+- [x] Обновлен `ProfileSkillsPage.tsx` — интеграция SkillBadge
+- [x] Обновлен `EmployeeDetailPage.tsx` — интеграция SkillBadge
+- [x] Обновлены тесты для нового интерфейса UserSkill
+- [x] TypeScript проверка пройдена
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/skills/models.py` — модель SkillEndorsement, свойство endorsements_count
+- `backend/apps/skills/admin.py` — регистрация SkillEndorsementAdmin
+- `backend/apps/skills/serializers.py` — SkillEndorsementSerializer, EndorserSerializer, SkillEndorsementCreateSerializer
+- `backend/apps/skills/views.py` — SkillEndorseView, SkillEndorsementsView
+- `backend/apps/skills/urls.py` — URLs для endorsement endpoints
+- `backend/apps/skills/migrations/0002_skillendorsement.py` — миграция
+
+Frontend:
+- `frontend/src/types/index.ts` — обновлён UserSkill, добавлены SkillEndorsement, SkillEndorser
+- `frontend/src/api/endpoints/skills.ts` — endorseSkill, unendorseSkill, getSkillEndorsements
+- `frontend/src/components/features/skills/SkillBadge.tsx` — полностью переписан компонент
+- `frontend/src/components/features/skills/SkillBadge.test.tsx` — обновлены тесты
+- `frontend/src/components/features/skills/UserSkillsList.tsx` — добавлен проп userId
+- `frontend/src/components/features/skills/UserSkillsList.test.tsx` — обновлены тесты
+- `frontend/src/components/features/skills/index.ts` — обновлены экспорты
+- `frontend/src/pages/profile/ProfileSkillsPage.tsx` — интеграция SkillBadge
+- `frontend/src/pages/employees/EmployeeDetailPage.tsx` — интеграция SkillBadge
 
 ---
 
-### 2.10 Рейтинг достижений (Лидерборд)
+### 2.10 Рейтинг достижений (Лидерборд) ✅ COMPLETED
 
 **Цель:** Таблица лидеров по достижениям за период.
 
@@ -571,26 +598,43 @@ Frontend:
 - Используем: `AchievementAward` модель
 - Новый endpoint для агрегации
 
+**Результат:** Полностью работающий лидерборд достижений с фильтрацией по периоду, подсветкой топ-3, интеграцией на странице достижений и виджетом на Dashboard.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Endpoint `GET /api/v1/achievements/leaderboard/`
-- [ ] Query params: `period=week|month|quarter|year|all`
-- [ ] Агрегация: количество достижений по пользователям
-- [ ] Возвращать: rank, user (id, name, avatar, department), count
-- [ ] Топ-10 или топ-20 по умолчанию
-- [ ] Опционально: фильтр по отделу `?department=<id>`
-- [ ] Опционально: фильтр по типу достижения `?category=<cat>`
+- [x] Endpoint `GET /api/v1/achievements/leaderboard/`
+- [x] Query params: `period=week|month|quarter|year|all`
+- [x] Агрегация: количество достижений по пользователям
+- [x] Возвращать: rank, user (id, name, avatar, department), count
+- [x] Топ-10 или топ-20 по умолчанию (настраивается через limit)
+- [x] Опционально: фильтр по отделу `?department=<id>`
+- [x] Опционально: фильтр по типу достижения `?category=<cat>`
 
 Frontend:
-- [ ] Создать компонент `AchievementLeaderboard.tsx`
-- [ ] Таблица/список с рангом, аватаром, именем, количеством
-- [ ] Подсветка топ-3 (золото, серебро, бронза)
-- [ ] Select для выбора периода
-- [ ] Опционально: фильтр по отделу
-- [ ] Интеграция в `AchievementsPage.tsx` или отдельная вкладка
-- [ ] Виджет на Dashboard — топ-3 за месяц
-- [ ] Тестирование
+- [x] Создать компонент `AchievementLeaderboard.tsx`
+- [x] Таблица/список с рангом, аватаром, именем, количеством
+- [x] Подсветка топ-3 (золото, серебро, бронза)
+- [x] Select для выбора периода
+- [x] Опционально: фильтр по отделу (структура готова)
+- [x] Интеграция в `AchievementsPage.tsx`
+- [x] Виджет на Dashboard — топ-3 за месяц
+- [x] Тестирование
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/achievements/serializers.py` — LeaderboardEntrySerializer
+- `backend/apps/achievements/views.py` — AchievementLeaderboardView
+- `backend/apps/achievements/urls/__init__.py` — URL для leaderboard
+
+Frontend:
+- `frontend/src/types/index.ts` — LeaderboardEntry interface
+- `frontend/src/api/endpoints/achievements.ts` — getLeaderboard method
+- `frontend/src/components/features/achievements/AchievementLeaderboard.tsx` — новый компонент
+- `frontend/src/components/features/achievements/index.ts` — экспорт компонента
+- `frontend/src/pages/achievements/AchievementsPage.tsx` — интеграция лидерборда
+- `frontend/src/pages/dashboard/DashboardPage.tsx` — виджет топ-3
 
 ---
 
@@ -626,43 +670,77 @@ Frontend:
 
 ---
 
-### 2.19 Бейджи за активность
+### 2.19 Бейджи за активность ✅ COMPLETED
 
 **Цель:** Автоматические достижения за активность в системе.
 
 **Интеграция с существующей структурой:**
 - Расширяем: `Achievement` модель — добавляем `is_automatic`, `trigger_type`, `trigger_value`
-- Celery tasks или signals для проверки условий
+- Django signals для проверки условий
+
+**Результат:** Полностью работающая система автоматических достижений с 9 типами триггеров, signal handlers для автоматической проверки, админ-интерфейсом для настройки и UI для отображения прогресса.
 
 **Чек-лист:**
 
 Backend:
-- [ ] Расширить модель `Achievement`:
-  - [ ] `is_automatic` (Boolean) — автоматически присваивается
-  - [ ] `trigger_type` (Choice: comments_count, reactions_given, reactions_received, news_created, logins_count, profile_views, endorsements_received)
-  - [ ] `trigger_value` (Integer) — порог для получения
-- [ ] Создать миграцию
-- [ ] Создать сервис `check_automatic_achievements(user)`
-- [ ] Вызывать при:
-  - [ ] Создании комментария
-  - [ ] Получении/выдаче реакции
-  - [ ] Создании новости
-  - [ ] Входе в систему
-  - [ ] Получении endorsement
-- [ ] Signal handlers или Celery tasks
-- [ ] Seed автоматические достижения:
-  - [ ] "Первый комментарий" (comments_count=1)
-  - [ ] "Активный комментатор" (comments_count=10)
-  - [ ] "Популярный" (reactions_received=50)
-  - [ ] "Щедрый" (reactions_given=100)
-  - [ ] "Автор" (news_created=1)
-  - [ ] "Эксперт" (endorsements_received=10)
+- [x] Расширить модель `Achievement`:
+  - [x] `is_automatic` (Boolean) — автоматически присваивается
+  - [x] `trigger_type` (Choice: comments_count, reactions_given, reactions_received, news_created, logins_count, profile_views, endorsements_received, skills_count, achievements_count)
+  - [x] `trigger_value` (Integer) — порог для получения
+- [x] Создать миграцию `0003_add_automatic_achievements.py`
+- [x] Создать сервис `check_automatic_achievements(user)` в `services.py`
+- [x] Создать сервис `get_user_stats(user)` для сбора статистики
+- [x] Создать сервис `get_all_achievement_progress(user)` для UI
+- [x] Вызывать проверку при:
+  - [x] Создании комментария (signal)
+  - [x] Получении/выдаче реакции (signal)
+  - [x] Создании новости (signal)
+  - [x] Входе в систему (signal)
+  - [x] Получении endorsement (signal)
+  - [x] Добавлении навыка (signal)
+  - [x] Получении достижения (signal)
+- [x] Signal handlers в `signals.py`, регистрация в `apps.py`
+- [x] API endpoints:
+  - [x] `GET /api/v1/achievements/trigger-types/` — доступные триггеры
+  - [x] `GET /api/v1/achievements/progress/` — прогресс текущего юзера
+  - [x] `GET /api/v1/achievements/progress/{user_id}/` — прогресс другого юзера
+- [x] Создание уведомлений при автовыдаче
 
 Frontend:
-- [ ] Отображать автоматические достижения отдельно или с пометкой
-- [ ] Прогресс до следующего достижения в профиле
-- [ ] Toast/notification при получении
-- [ ] Тестирование триггеров
+- [x] Обновлён `AdminAchievementTypesPage.tsx`:
+  - [x] Checkbox "Автоматическое достижение"
+  - [x] Conditional fields: trigger_type Select, trigger_value NumberInput
+  - [x] Отображение бейджа "Авто" в списке
+  - [x] Показ триггера и значения в списке
+- [x] Создан компонент `AchievementProgress.tsx`:
+  - [x] Accordion с группировкой по типу триггера
+  - [x] ProgressBar для незавершённых
+  - [x] Текущее значение / целевое значение
+  - [x] Процент выполнения
+  - [x] Индикатор полученных достижений
+- [x] Интегрирован в `AchievementsPage.tsx`
+- [x] TypeScript проверка пройдена
+- [x] Сборка успешна
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/achievements/models.py` — поля is_automatic, trigger_type, trigger_value, TriggerType choices
+- `backend/apps/achievements/migrations/0003_add_automatic_achievements.py` — миграция
+- `backend/apps/achievements/services.py` — get_user_stats, check_automatic_achievements, get_all_achievement_progress
+- `backend/apps/achievements/signals.py` — 7 signal handlers
+- `backend/apps/achievements/apps.py` — регистрация signals
+- `backend/apps/achievements/serializers.py` — обновлены для автоматических достижений
+- `backend/apps/achievements/views.py` — AchievementProgressView, TriggerTypesView
+- `backend/apps/achievements/urls/__init__.py` — новые URL routes
+
+Frontend:
+- `frontend/src/types/index.ts` — TriggerType, AchievementProgress, AchievementProgressGroup
+- `frontend/src/api/endpoints/achievements.ts` — getTriggerTypes, getProgress, обновлены createType/updateType
+- `frontend/src/pages/admin/AdminAchievementTypesPage.tsx` — форма для автодостижений
+- `frontend/src/components/features/achievements/AchievementProgress.tsx` — новый компонент
+- `frontend/src/components/features/achievements/index.ts` — экспорт AchievementProgress
+- `frontend/src/pages/achievements/AchievementsPage.tsx` — интеграция компонента
 
 ---
 

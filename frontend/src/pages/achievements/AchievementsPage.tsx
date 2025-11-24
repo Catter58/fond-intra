@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Tile, Button, Pagination, Loading } from '@carbon/react'
 import { Add, Trophy, ChartLineSmooth } from '@carbon/icons-react'
-import { AwardAchievementModal } from '@/components/features/achievements/AwardAchievementModal'
+import { AwardAchievementModal, AchievementLeaderboard, AchievementProgress } from '@/components/features/achievements'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { formatDate } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -101,6 +101,9 @@ export function AchievementsPage() {
               <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>Типы наград не созданы</p>
             )}
           </Tile>
+
+          {/* Achievement Progress */}
+          <AchievementProgress showTitle={true} />
         </div>
 
         {/* Feed */}
@@ -187,6 +190,15 @@ export function AchievementsPage() {
           )}
         </Tile>
       </div>
+
+      {/* Leaderboard */}
+      <Tile style={{ marginTop: '1.5rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+          <Trophy size={24} />
+          Лидерборд достижений
+        </h3>
+        <AchievementLeaderboard limit={10} />
+      </Tile>
 
       <AwardAchievementModal
         isOpen={showCreateModal}

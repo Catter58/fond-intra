@@ -15,6 +15,17 @@ class Achievement(models.Model):
         SOCIAL = 'social', _('Social')
         SPECIAL = 'special', _('Special')
 
+    class TriggerType(models.TextChoices):
+        COMMENTS_COUNT = 'comments_count', _('Comments count')
+        REACTIONS_GIVEN = 'reactions_given', _('Reactions given')
+        REACTIONS_RECEIVED = 'reactions_received', _('Reactions received')
+        NEWS_CREATED = 'news_created', _('News created')
+        LOGINS_COUNT = 'logins_count', _('Logins count')
+        PROFILE_VIEWS = 'profile_views', _('Profile views')
+        ENDORSEMENTS_RECEIVED = 'endorsements_received', _('Endorsements received')
+        SKILLS_COUNT = 'skills_count', _('Skills count')
+        ACHIEVEMENTS_COUNT = 'achievements_count', _('Achievements received')
+
     name = models.CharField(_('name'), max_length=100)
     description = models.TextField(_('description'))
     icon = models.CharField(
@@ -30,6 +41,28 @@ class Achievement(models.Model):
         default=Category.PROFESSIONAL
     )
     is_active = models.BooleanField(_('active'), default=True)
+
+    # Automatic achievements fields
+    is_automatic = models.BooleanField(
+        _('automatic'),
+        default=False,
+        help_text=_('Achievement is awarded automatically when trigger condition is met')
+    )
+    trigger_type = models.CharField(
+        _('trigger type'),
+        max_length=30,
+        choices=TriggerType.choices,
+        null=True,
+        blank=True,
+        help_text=_('Type of action that triggers this achievement')
+    )
+    trigger_value = models.PositiveIntegerField(
+        _('trigger value'),
+        null=True,
+        blank=True,
+        help_text=_('Threshold value for the trigger (e.g., 10 comments)')
+    )
+
     created_by = models.ForeignKey(
         'accounts.User',
         verbose_name=_('created by'),

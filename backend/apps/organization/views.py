@@ -119,3 +119,103 @@ class OrganizationTreeView(APIView):
 
         serializer = DepartmentTreeSerializer(root_departments, many=True)
         return Response(serializer.data)
+
+
+class DepartmentSkillsMatrixView(APIView):
+    """Get skills matrix for a department."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, department_id):
+        from apps.skills.models import UserSkill, Skill
+        from apps.accounts.models import User
+        from django.db.models import Count, Q
+
+        try:
+            department = Department.objects.get(id=department_id)
+        except Department.DoesNotExist:
+            return Response(
+                {'detail': 'Department not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get all users in this department
+        users = User.objects.filter(
+            department=department
+        ).select_related('position').order_by('last_name', 'first_name')
+
+        # Get category filter if provided
+        category_id = request.query_params.get('category')
+
+        # Get all skills that exist in this department
+        skills_query = Skill.objects.filter(
+            user_skills__user__department=department
+        ).select_related('category').distinct()
+
+        if category_id:
+            skills_query = skills_query.filter(category_id=category_id)
+
+        skills = skills_query.order_by('category__order', 'name')
+
+        # Get all UserSkills for this department
+        user_skills = UserSkill.objects.filter(
+            user__department=department
+        ).select_related('skill', 'user')
+
+        if category_id:
+            user_skills = user_skills.filter(skill__category_id=category_id)
+
+        # Build matrix: skill_id -> user_id -> level
+        matrix = {}
+        for user_skill in user_skills:
+            skill_id = user_skill.skill_id
+            user_id = user_skill.user_id
+            if skill_id not in matrix:
+                matrix[skill_id] = {}
+            matrix[skill_id][user_id] = user_skill.level
+
+        # Build response
+        skills_data = []
+        for skill in skills:
+            skill_row = {
+                'id': skill.id,
+                'name': skill.name,
+                'category': skill.category.name,
+                'category_id': skill.category.id,
+                'users': {}
+            }
+
+            # Add user levels for this skill
+            for user in users:
+                user_level = matrix.get(skill.id, {}).get(user.id)
+                skill_row['users'][str(user.id)] = user_level
+
+            # Calculate statistics for this skill
+            skill_levels = matrix.get(skill.id, {}).values()
+            skill_row['stats'] = {
+                'total': len([l for l in skill_levels if l]),
+                'beginner': len([l for l in skill_levels if l == 'beginner']),
+                'intermediate': len([l for l in skill_levels if l == 'intermediate']),
+                'advanced': len([l for l in skill_levels if l == 'advanced']),
+                'expert': len([l for l in skill_levels if l == 'expert']),
+            }
+
+            skills_data.append(skill_row)
+
+        users_data = [
+            {
+                'id': user.id,
+                'full_name': f"{user.first_name} {user.last_name}",
+                'avatar': user.avatar.url if user.avatar else None,
+                'position': user.position.name if user.position else None,
+            }
+            for user in users
+        ]
+
+        return Response({
+            'department': {
+                'id': department.id,
+                'name': department.name,
+            },
+            'users': users_data,
+            'skills': skills_data,
+        })
