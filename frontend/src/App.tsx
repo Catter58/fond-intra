@@ -39,6 +39,17 @@ const NotificationsPage = lazy(() => import('@/pages/notifications/Notifications
 const NotificationSettingsPage = lazy(() => import('@/pages/notifications/NotificationSettingsPage').then(m => ({ default: m.NotificationSettingsPage })))
 const OrganizationPage = lazy(() => import('@/pages/organization/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
 const SkillsCatalogPage = lazy(() => import('@/pages/skills/SkillsCatalogPage').then(m => ({ default: m.SkillsCatalogPage })))
+const KudosPage = lazy(() => import('@/pages/kudos/KudosPage').then(m => ({ default: m.KudosPage })))
+const SurveysPage = lazy(() => import('@/pages/surveys/SurveysPage').then(m => ({ default: m.SurveysPage })))
+const SurveyCreatePage = lazy(() => import('@/pages/surveys/SurveyCreatePage').then(m => ({ default: m.SurveyCreatePage })))
+const SurveyEditPage = lazy(() => import('@/pages/surveys/SurveyEditPage').then(m => ({ default: m.SurveyEditPage })))
+const SurveyDetailPage = lazy(() => import('@/pages/surveys/SurveyDetailPage').then(m => ({ default: m.SurveyDetailPage })))
+const SurveyResultsPage = lazy(() => import('@/pages/surveys/SurveyResultsPage').then(m => ({ default: m.SurveyResultsPage })))
+const IdeasPage = lazy(() => import('@/pages/ideas/IdeasPage'))
+const IdeaDetailPage = lazy(() => import('@/pages/ideas/IdeaDetailPage'))
+const FAQPage = lazy(() => import('@/pages/faq/FAQPage'))
+const ClassifiedsPage = lazy(() => import('@/pages/classifieds/ClassifiedsPage'))
+const ClassifiedDetailPage = lazy(() => import('@/pages/classifieds/ClassifiedDetailPage'))
 
 // Lazy loaded pages - Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })))
@@ -110,6 +121,17 @@ function App() {
             <Route path="/notifications/settings" element={<NotificationSettingsPage />} />
             <Route path="/organization" element={<OrganizationPage />} />
             <Route path="/skills" element={<SkillsCatalogPage />} />
+            <Route path="/kudos" element={<KudosPage />} />
+            <Route path="/surveys" element={<SurveysPage />} />
+            <Route path="/surveys/create" element={<SurveyCreatePage />} />
+            <Route path="/surveys/:id" element={<SurveyDetailPage />} />
+            <Route path="/surveys/:id/edit" element={<SurveyEditPage />} />
+            <Route path="/surveys/:id/results" element={<SurveyResultsPage />} />
+            <Route path="/ideas" element={<IdeasPage />} />
+            <Route path="/ideas/:id" element={<IdeaDetailPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/classifieds" element={<ClassifiedsPage />} />
+            <Route path="/classifieds/:id" element={<ClassifiedDetailPage />} />
 
             {/* Admin routes */}
             <Route

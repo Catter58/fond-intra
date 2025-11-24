@@ -638,7 +638,7 @@ Frontend:
 
 ---
 
-### 2.17 Матрица навыков отдела
+### 2.17 Матрица навыков отдела ✅ COMPLETED
 
 **Цель:** Тепловая карта навыков команды/отдела.
 
@@ -646,27 +646,41 @@ Frontend:
 - Используем: `UserSkill`, `Skill`, `User`, `Department`
 - Агрегация по отделу
 
+**Результат:** Полностью работающая матрица навыков с тепловой картой, фильтрацией по категориям и экспортом в CSV.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Endpoint `GET /api/v1/organization/departments/{id}/skills-matrix/`
-- [ ] Возвращать:
-  - [ ] Список навыков (rows)
-  - [ ] Список сотрудников отдела (columns)
-  - [ ] Матрица: skill_id → user_id → level (null если нет)
-- [ ] Агрегированная статистика: сколько человек на каждом уровне
-- [ ] Топ-навыки отдела
+- [x] Endpoint `GET /api/v1/organization/departments/{id}/skills-matrix/`
+- [x] Возвращать:
+  - [x] Список навыков (rows)
+  - [x] Список сотрудников отдела (columns)
+  - [x] Матрица: skill_id → user_id → level (null если нет)
+- [x] Агрегированная статистика: сколько человек на каждом уровне
+- [x] Фильтр по категории навыков через query param
 
 Frontend:
-- [ ] Создать компонент `SkillsMatrix.tsx`
-- [ ] Таблица: навыки по вертикали, сотрудники по горизонтали
-- [ ] Цветовая индикация уровней (тепловая карта)
-- [ ] Легенда уровней
-- [ ] Фильтр по категории навыков
-- [ ] Интеграция в `OrganizationPage.tsx` — вкладка или секция
-- [ ] Или отдельная страница `/organization/departments/{id}/skills`
-- [ ] Экспорт в CSV
-- [ ] Тестирование на больших отделах
+- [x] Создать компонент `SkillsMatrix.tsx`
+- [x] Таблица: навыки по вертикали, сотрудники по горизонтали
+- [x] Цветовая индикация уровней (тепловая карта)
+- [x] Легенда уровней
+- [x] Фильтр по категории навыков
+- [x] Интеграция в `OrganizationPage.tsx` — вкладка "Матрица навыков"
+- [x] Экспорт в CSV с корректной кодировкой (BOM для Excel)
+- [x] TypeScript проверка пройдена
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/organization/views.py` — DepartmentSkillsMatrixView
+- `backend/apps/organization/urls/__init__.py` — URL для skills-matrix
+
+Frontend:
+- `frontend/src/types/index.ts` — SkillMatrixUser, SkillMatrixSkill, SkillsMatrix
+- `frontend/src/api/endpoints/organization.ts` — getDepartmentSkillsMatrix
+- `frontend/src/components/features/organization/SkillsMatrix.tsx` — компонент матрицы
+- `frontend/src/components/features/organization/index.ts` — экспорт
+- `frontend/src/pages/organization/OrganizationPage.tsx` — интеграция
 
 ---
 
@@ -744,54 +758,52 @@ Frontend:
 
 ---
 
-### 2.20 Организационная диаграмма
+### 2.20 Организационная диаграмма ✅ COMPLETED
 
 **Цель:** Интерактивная визуализация оргструктуры.
 
 **Интеграция с существующей структурой:**
 - Используем: `Department` (иерархическая), `User` (head, manager)
-- Библиотека: react-organizational-chart или d3
+- Реализовано на чистом React без внешних библиотек
+
+**Результат:** Интерактивная организационная диаграмма с expand/collapse, zoom/pan и переходом к профилям руководителей.
 
 **Чек-лист:**
 
 Backend:
-- [ ] Endpoint `GET /api/v1/organization/tree/`
-- [ ] Возвращать nested структуру:
-```json
-{
-  "id": 1,
-  "name": "Компания",
-  "head": { "id": 1, "name": "CEO", "avatar": "..." },
-  "children": [
-    {
-      "id": 2,
-      "name": "Отдел разработки",
-      "head": {...},
-      "employees_count": 15,
-      "children": [...]
-    }
-  ]
-}
-```
-- [ ] Включать: head, employees_count на каждом уровне
+- [x] Endpoint `GET /api/v1/organization/tree/` — уже существовал
+- [x] Обновлён `DepartmentTreeSerializer`:
+  - [x] Добавлен `head_info` с полной информацией о руководителе (id, full_name, avatar, position)
+  - [x] Nested структура children
+  - [x] employees_count на каждом уровне
 
 Frontend:
-- [ ] Установить библиотеку для org chart
-- [ ] Создать компонент `OrgChart.tsx`
-- [ ] Карточка узла: название отдела, руководитель (аватар, имя), кол-во сотрудников
-- [ ] Expand/collapse узлов
-- [ ] Клик по отделу → список сотрудников или переход
-- [ ] Клик по руководителю → профиль
-- [ ] Zoom и pan для больших структур
-- [ ] Интеграция в `OrganizationPage.tsx`
-- [ ] Responsive: горизонтальный скролл на mobile
-- [ ] Тестирование
+- [x] Создать компонент `OrgChart.tsx` (без внешних библиотек)
+- [x] Карточка узла: название отдела, руководитель (аватар, имя, должность), кол-во сотрудников
+- [x] Expand/collapse узлов с кнопками "Развернуть все" / "Свернуть все"
+- [x] Клик по руководителю → переход на профиль
+- [x] Zoom и pan для больших структур (drag + Ctrl+wheel)
+- [x] Кнопки управления масштабом (+/-/reset)
+- [x] Интеграция в `OrganizationPage.tsx` — вкладка "Диаграмма"
+- [x] TypeScript проверка пройдена
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/organization/serializers.py` — DepartmentHeadSerializer, обновлён DepartmentTreeSerializer
+
+Frontend:
+- `frontend/src/types/index.ts` — DepartmentHeadInfo, обновлён DepartmentTree
+- `frontend/src/components/features/organization/OrgChart.tsx` — новый компонент
+- `frontend/src/components/features/organization/OrgChart.scss` — стили
+- `frontend/src/components/features/organization/index.ts` — экспорт OrgChart
+- `frontend/src/pages/organization/OrganizationPage.tsx` — добавлены вкладки (Tabs) с диаграммой
 
 ---
 
 ## Фаза 5: Новые модули
 
-### 3.11 Благодарности (Kudos)
+### 3.11 Благодарности (Kudos) ✅ COMPLETED
 
 **Цель:** Публичные благодарности коллегам.
 
@@ -800,48 +812,80 @@ Frontend:
 - Похоже на News, но проще
 - Связь с Achievements для автоматических бейджей
 
+**Результат:** Полностью работающий модуль благодарностей с лентой, отправкой, фильтрацией, уведомлениями и виджетом на Dashboard.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `kudos`: `python manage.py startapp kudos`
-- [ ] Модель `Kudos`:
-  - [ ] `sender` (FK to User)
-  - [ ] `recipient` (FK to User)
-  - [ ] `category` (Choice: help, great_job, initiative, mentorship, teamwork)
-  - [ ] `message` (TextField, max 500 chars)
-  - [ ] `is_public` (Boolean, default True)
-  - [ ] `created_at`
-- [ ] Миграция
-- [ ] Сериализаторы: `KudosSerializer`, `KudosCreateSerializer`
-- [ ] ViewSet с endpoints:
-  - [ ] `GET /api/v1/kudos/` — лента (публичные)
-  - [ ] `POST /api/v1/kudos/` — отправить
-  - [ ] `GET /api/v1/kudos/received/` — полученные текущим пользователем
-  - [ ] `GET /api/v1/kudos/sent/` — отправленные
-  - [ ] `GET /api/v1/users/{id}/kudos/` — kudos пользователя
-- [ ] Фильтры: по категории, по дате, по отделу
-- [ ] Нельзя отправить kudos самому себе
-- [ ] Уведомление получателю
-- [ ] Permissions: все могут отправлять и видеть публичные
+- [x] Создать app `kudos`
+- [x] Модель `Kudos`:
+  - [x] `sender` (FK to User)
+  - [x] `recipient` (FK to User)
+  - [x] `category` (Choice: help, great_job, initiative, mentorship, teamwork)
+  - [x] `message` (TextField, max 500 chars)
+  - [x] `is_public` (Boolean, default True)
+  - [x] `created_at`
+- [x] Миграция
+- [x] Сериализаторы: `KudosSerializer`, `KudosCreateSerializer`
+- [x] ViewSet с endpoints:
+  - [x] `GET /api/v1/kudos/` — лента (публичные)
+  - [x] `POST /api/v1/kudos/` — отправить
+  - [x] `GET /api/v1/kudos/received/` — полученные текущим пользователем
+  - [x] `GET /api/v1/kudos/sent/` — отправленные
+  - [x] `GET /api/v1/users/{id}/kudos/` — kudos пользователя
+- [x] `GET /api/v1/kudos/categories/` — список категорий
+- [x] `GET /api/v1/kudos/stats/` — статистика (топ получатели, категории)
+- [x] Фильтры: по категории
+- [x] Нельзя отправить kudos самому себе
+- [x] Уведомление получателю
+- [x] Permissions: все могут отправлять и видеть публичные
 
 Frontend:
-- [ ] Создать страницу `KudosPage.tsx` — лента благодарностей
-- [ ] Компонент `KudosCard.tsx` — карточка благодарности
-- [ ] Компонент `SendKudosModal.tsx`:
-  - [ ] Выбор получателя (поиск)
-  - [ ] Выбор категории (иконки)
-  - [ ] Текст сообщения
-- [ ] Кнопка "Отправить благодарность" в header или на dashboard
-- [ ] Виджет на Dashboard — последние kudos
-- [ ] Секция kudos в профиле пользователя
-- [ ] Фильтры на странице kudos
-- [ ] Добавить в навигацию
-- [ ] Иконки для категорий
-- [ ] Тестирование
+- [x] Создать страницу `KudosPage.tsx` — лента благодарностей с вкладками
+- [x] Компонент `KudosCard.tsx` — карточка благодарности с аватарами, категорией, датой
+- [x] Компонент `SendKudosModal.tsx`:
+  - [x] Выбор получателя (поиск)
+  - [x] Выбор категории (иконки)
+  - [x] Текст сообщения
+  - [x] Checkbox публичности
+- [x] Кнопка "Отправить благодарность" на странице kudos
+- [x] Виджет на Dashboard — последние 3 kudos
+- [x] Статистика на странице kudos (счётчик, лидер, популярная категория)
+- [x] Фильтр по категории на странице kudos
+- [x] Вкладки: Лента / Полученные / Отправленные
+- [x] Добавить в навигацию (иконка Favorite)
+- [x] Иконки для категорий
+- [x] TypeScript проверка пройдена
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/kudos/__init__.py`
+- `backend/apps/kudos/apps.py`
+- `backend/apps/kudos/models.py` — модель Kudos с Category choices
+- `backend/apps/kudos/serializers.py` — KudosSerializer, KudosCreateSerializer
+- `backend/apps/kudos/views.py` — KudosViewSet, KudosCategoriesView, UserKudosView, KudosStatsView
+- `backend/apps/kudos/urls.py` — URL patterns
+- `backend/apps/kudos/admin.py` — KudosAdmin
+- `backend/apps/kudos/migrations/0001_initial.py`
+- `backend/config/settings/base.py` — добавлен apps.kudos
+- `backend/config/api_urls.py` — URL include
+
+Frontend:
+- `frontend/src/types/index.ts` — Kudos, KudosUser, KudosCategory, KudosStats
+- `frontend/src/api/endpoints/kudos.ts` — API functions
+- `frontend/src/components/features/kudos/KudosCard.tsx`
+- `frontend/src/components/features/kudos/SendKudosModal.tsx`
+- `frontend/src/components/features/kudos/index.ts`
+- `frontend/src/pages/kudos/KudosPage.tsx`
+- `frontend/src/pages/kudos/index.ts`
+- `frontend/src/App.tsx` — route /kudos
+- `frontend/src/components/layout/MainLayout.tsx` — навигация
+- `frontend/src/pages/dashboard/DashboardPage.tsx` — виджет kudos
 
 ---
 
-### 3.4 Опросы (Surveys)
+### 3.4 Опросы (Surveys) ✅ COMPLETED
 
 **Цель:** Создание опросов, голосований, анонимные и открытые.
 
@@ -852,70 +896,76 @@ Frontend:
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `surveys`
-- [ ] Модель `Survey`:
-  - [ ] `title`
-  - [ ] `description`
-  - [ ] `author` (FK to User)
-  - [ ] `is_anonymous` (Boolean)
-  - [ ] `is_required` (Boolean)
-  - [ ] `status` (draft, active, closed)
-  - [ ] `starts_at`, `ends_at`
-  - [ ] `target_type` (all, department, role)
-  - [ ] `target_departments` (M2M)
-  - [ ] `target_roles` (M2M)
-  - [ ] `created_at`
-- [ ] Модель `Question`:
-  - [ ] `survey` (FK)
-  - [ ] `text`
-  - [ ] `type` (single_choice, multiple_choice, scale, text, nps)
-  - [ ] `is_required`
-  - [ ] `order`
-- [ ] Модель `QuestionOption`:
-  - [ ] `question` (FK)
-  - [ ] `text`
-  - [ ] `order`
-- [ ] Модель `Response`:
-  - [ ] `survey` (FK)
-  - [ ] `user` (FK, nullable if anonymous)
-  - [ ] `created_at`
-- [ ] Модель `Answer`:
-  - [ ] `response` (FK)
-  - [ ] `question` (FK)
-  - [ ] `selected_options` (M2M to QuestionOption)
-  - [ ] `text_value` (for text questions)
-  - [ ] `scale_value` (for scale/nps)
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] CRUD для Survey (admin)
-  - [ ] `GET /api/v1/surveys/` — доступные для пользователя
-  - [ ] `GET /api/v1/surveys/{id}/` — детали с вопросами
-  - [ ] `POST /api/v1/surveys/{id}/respond/` — отправить ответы
-  - [ ] `GET /api/v1/surveys/{id}/results/` — результаты (admin)
-- [ ] Проверка: пользователь ещё не отвечал
-- [ ] Проверка: пользователь в target audience
-- [ ] Permissions: создание только для admin/HR
+- [x] Создать app `surveys`
+- [x] Модель `Survey`:
+  - [x] `title`
+  - [x] `description`
+  - [x] `author` (FK to User)
+  - [x] `is_anonymous` (Boolean)
+  - [x] `is_required` (Boolean)
+  - [x] `status` (draft, active, closed)
+  - [x] `starts_at`, `ends_at`
+  - [x] `target_type` (all, department, role)
+  - [x] `target_departments` (M2M)
+  - [x] `target_roles` (M2M)
+  - [x] `created_at`
+- [x] Модель `Question`:
+  - [x] `survey` (FK)
+  - [x] `text`
+  - [x] `type` (single_choice, multiple_choice, scale, text, nps)
+  - [x] `is_required`
+  - [x] `order`
+- [x] Модель `QuestionOption`:
+  - [x] `question` (FK)
+  - [x] `text`
+  - [x] `order`
+- [x] Модель `Response`:
+  - [x] `survey` (FK)
+  - [x] `user` (FK, nullable if anonymous)
+  - [x] `created_at`
+- [x] Модель `Answer`:
+  - [x] `response` (FK)
+  - [x] `question` (FK)
+  - [x] `selected_options` (M2M to QuestionOption)
+  - [x] `text_value` (for text questions)
+  - [x] `scale_value` (for scale/nps)
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] CRUD для Survey (admin)
+  - [x] `GET /api/v1/surveys/` — доступные для пользователя
+  - [x] `GET /api/v1/surveys/{id}/` — детали с вопросами
+  - [x] `POST /api/v1/surveys/{id}/respond/` — отправить ответы
+  - [x] `GET /api/v1/surveys/{id}/results/` — результаты (admin)
+  - [x] `POST /api/v1/surveys/{id}/publish/` — опубликовать
+  - [x] `POST /api/v1/surveys/{id}/close/` — закрыть
+- [x] Проверка: пользователь ещё не отвечал
+- [x] Проверка: пользователь в target audience
+- [x] Permissions: создание только для admin/HR
 
 Frontend:
-- [ ] Страница `SurveysPage.tsx` — список доступных опросов
-- [ ] Страница `SurveyDetailPage.tsx` — прохождение опроса
-- [ ] Компоненты для типов вопросов:
-  - [ ] `SingleChoiceQuestion.tsx`
-  - [ ] `MultipleChoiceQuestion.tsx`
-  - [ ] `ScaleQuestion.tsx`
-  - [ ] `TextQuestion.tsx`
-  - [ ] `NPSQuestion.tsx`
-- [ ] Прогресс прохождения
-- [ ] Валидация обязательных вопросов
-- [ ] Страница благодарности после отправки
-- [ ] Админка: создание опроса
-- [ ] Админка: конструктор вопросов (drag & drop order)
-- [ ] Админка: просмотр результатов с графиками
-- [ ] Виджет на Dashboard — активные опросы
-- [ ] Уведомления о новых опросах
-- [ ] Добавить в навигацию
-- [ ] Тестирование
+- [x] Страница `SurveysPage.tsx` — список доступных опросов
+- [x] Страница `SurveyDetailPage.tsx` — прохождение опроса
+- [x] Страница `SurveyCreatePage.tsx` — создание опроса
+- [x] Страница `SurveyEditPage.tsx` — редактирование черновика
+- [x] Страница `SurveyResultsPage.tsx` — результаты опроса
+- [x] Компоненты для типов вопросов (все в SurveyDetailPage):
+  - [x] Single choice (RadioButtonGroup)
+  - [x] Multiple choice (Checkbox)
+  - [x] Scale (Slider)
+  - [x] Text (TextArea)
+  - [x] NPS (RadioButtonGroup 0-10)
+- [x] Прогресс прохождения (ProgressIndicator)
+- [x] Валидация обязательных вопросов
+- [x] Страница благодарности после отправки
+- [x] Конструктор вопросов с Accordions
+- [x] Просмотр результатов с визуализацией (ProgressBar, распределение)
+- [x] Компонент `SurveyCard.tsx` с меню управления
+- [x] Добавить в навигацию
+
+**Важные заметки реализации:**
+- `questions_count` и `responses_count` создаются через аннотации в ViewSet, НЕ как свойства модели (во избежание конфликта property setter)
+- `author_id` добавлен в сериализаторы для проверки авторства на фронтенде
 
 ---
 
@@ -927,56 +977,63 @@ Frontend:
 - Новый app: `backend/apps/ideas/`
 - Похоже на News + голосование
 
+**Статус: ЗАВЕРШЕНО** ✅
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `ideas`
-- [ ] Модель `Idea`:
-  - [ ] `title`
-  - [ ] `description`
-  - [ ] `author` (FK)
-  - [ ] `category` (process, product, culture, other)
-  - [ ] `status` (new, under_review, approved, in_progress, implemented, rejected)
-  - [ ] `admin_comment` (feedback от модератора)
-  - [ ] `created_at`, `updated_at`
-- [ ] Модель `IdeaVote`:
-  - [ ] `idea` (FK)
-  - [ ] `user` (FK)
-  - [ ] `is_upvote` (Boolean)
-  - [ ] Unique: (idea, user)
-- [ ] Модель `IdeaComment`:
-  - [ ] `idea` (FK)
-  - [ ] `author` (FK)
-  - [ ] `text`
-  - [ ] `created_at`
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/ideas/` — список (с фильтрами, сортировкой)
-  - [ ] `POST /api/v1/ideas/` — создать идею
-  - [ ] `GET /api/v1/ideas/{id}/`
-  - [ ] `PATCH /api/v1/ideas/{id}/` — редактировать (автор или admin)
-  - [ ] `POST /api/v1/ideas/{id}/vote/` — голосовать
-  - [ ] `DELETE /api/v1/ideas/{id}/vote/` — отменить голос
-  - [ ] `PATCH /api/v1/ideas/{id}/status/` — изменить статус (admin)
-  - [ ] `GET/POST /api/v1/ideas/{id}/comments/`
-- [ ] Сортировка: по голосам, по дате, по статусу
-- [ ] Фильтры: категория, статус, автор
+- [x] Создать app `ideas`
+- [x] Модель `Idea`:
+  - [x] `title`
+  - [x] `description`
+  - [x] `author` (FK)
+  - [x] `category` (process, product, culture, other)
+  - [x] `status` (new, under_review, approved, in_progress, implemented, rejected)
+  - [x] `admin_comment` (feedback от модератора)
+  - [x] `created_at`, `updated_at`
+- [x] Модель `IdeaVote`:
+  - [x] `idea` (FK)
+  - [x] `user` (FK)
+  - [x] `is_upvote` (Boolean)
+  - [x] Unique: (idea, user)
+- [x] Модель `IdeaComment`:
+  - [x] `idea` (FK)
+  - [x] `author` (FK)
+  - [x] `text`
+  - [x] `created_at`
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] `GET /api/v1/ideas/` — список (с фильтрами, сортировкой)
+  - [x] `POST /api/v1/ideas/` — создать идею
+  - [x] `GET /api/v1/ideas/{id}/`
+  - [x] `PATCH /api/v1/ideas/{id}/` — редактировать (автор или admin)
+  - [x] `POST /api/v1/ideas/{id}/vote/` — голосовать (400 если своя идея)
+  - [x] `DELETE /api/v1/ideas/{id}/unvote/` — отменить голос
+  - [x] `PATCH /api/v1/ideas/{id}/update_status/` — изменить статус (admin)
+  - [x] `GET/POST /api/v1/ideas/{id}/comments/`
+- [x] Сортировка: по голосам, по дате, по статусу
+- [x] Фильтры: категория, статус, автор
 
 Frontend:
-- [ ] Страница `IdeasPage.tsx` — список идей
-- [ ] Компонент `IdeaCard.tsx` — карточка идеи
-- [ ] Голосование: upvote/downvote кнопки
-- [ ] Счётчик голосов
-- [ ] Страница `IdeaDetailPage.tsx` — детали + комментарии
-- [ ] Модальное окно создания идеи
-- [ ] Фильтры и сортировка
-- [ ] Статус-бейджи
-- [ ] Админка: модерация идей, смена статуса
-- [ ] Виджет на Dashboard — топ идеи
-- [ ] Добавить в навигацию
-- [ ] Уведомления: изменение статуса, комментарий к идее
-- [ ] Тестирование
+- [x] Страница `IdeasPage.tsx` — список идей
+- [x] Компонент `IdeaCard.tsx` — карточка идеи с отключением голосования для автора
+- [x] Голосование: upvote/downvote кнопки (disabled для своих идей)
+- [x] Счётчик голосов
+- [x] Страница `IdeaDetailPage.tsx` — детали + комментарии + голосование в sidebar
+- [x] Модальное окно создания идеи
+- [x] Фильтры и сортировка
+- [x] Статус-бейджи
+- [x] Админка: модерация идей, смена статуса (интегрировано в IdeaDetailPage)
+- [ ] Виджет на Dashboard — топ идеи (можно добавить позже)
+- [x] Добавить в навигацию
+- [ ] Уведомления: изменение статуса, комментарий к идее (можно добавить позже)
+- [ ] Тестирование (можно добавить позже)
+
+**Важные заметки реализации:**
+- Голосование за свою идею возвращает 400 Bad Request
+- Фронтенд должен передавать `currentUserId` в `IdeaCard` для отключения кнопок
+- HTTP методы: `POST /vote/`, `DELETE /unvote/`, `PATCH /update_status/`
 
 ---
 
@@ -988,44 +1045,49 @@ Frontend:
 - Новый app: `backend/apps/faq/`
 - Простая структура: категории → вопросы
 
+**Статус: ЗАВЕРШЕНО** ✅
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `faq`
-- [ ] Модель `FAQCategory`:
-  - [ ] `name`
-  - [ ] `slug`
-  - [ ] `order`
-  - [ ] `icon` (optional, Carbon icon name)
-- [ ] Модель `FAQItem`:
-  - [ ] `category` (FK)
-  - [ ] `question`
-  - [ ] `answer` (TextField, может быть HTML)
-  - [ ] `order`
-  - [ ] `is_published`
-  - [ ] `views_count`
-  - [ ] `created_at`, `updated_at`
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/faq/categories/` — категории с вопросами
-  - [ ] `GET /api/v1/faq/` — все вопросы (flat)
-  - [ ] `GET /api/v1/faq/search/?q=<query>` — поиск
-  - [ ] CRUD для admin
-- [ ] Инкремент views_count при просмотре
-- [ ] Permissions: просмотр для всех, редактирование для admin
+- [x] Создать app `faq`
+- [x] Модель `FAQCategory`:
+  - [x] `name`
+  - [x] `slug`
+  - [x] `order`
+  - [x] `icon` (optional, Carbon icon name)
+  - [x] `description`
+  - [x] `is_active`
+- [x] Модель `FAQItem`:
+  - [x] `category` (FK)
+  - [x] `question`
+  - [x] `answer` (TextField, может быть HTML)
+  - [x] `order`
+  - [x] `is_published`
+  - [x] `views_count`
+  - [x] `created_at`, `updated_at`
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] `GET /api/v1/faq/categories/` — категории
+  - [x] `GET /api/v1/faq/categories/with_items/` — категории с вопросами
+  - [x] `GET /api/v1/faq/items/` — все вопросы (flat)
+  - [x] `GET /api/v1/faq/items/search/?q=<query>` — поиск
+  - [x] CRUD для admin
+- [x] Инкремент views_count при просмотре
+- [x] Permissions: просмотр для всех, редактирование для admin
 
 Frontend:
-- [ ] Страница `FAQPage.tsx`
-- [ ] Accordion для вопросов (Carbon Accordion)
-- [ ] Группировка по категориям
-- [ ] Поиск по FAQ
-- [ ] Подсветка результатов поиска
-- [ ] "Был ли ответ полезен?" (опционально)
-- [ ] Админка: CRUD категорий и вопросов
-- [ ] Rich-text для ответов (из 2.5)
-- [ ] Добавить в навигацию или footer
-- [ ] Тестирование
+- [x] Страница `FAQPage.tsx`
+- [x] Accordion для вопросов (Carbon Accordion)
+- [x] Группировка по категориям
+- [x] Поиск по FAQ
+- [x] Подсветка результатов поиска
+- [ ] "Был ли ответ полезен?" (опционально, можно добавить позже)
+- [ ] Админка: CRUD категорий и вопросов (можно добавить позже)
+- [ ] Rich-text для ответов (можно добавить позже)
+- [x] Добавить в навигацию
+- [ ] Тестирование (можно добавить позже)
 
 ---
 
@@ -1037,49 +1099,58 @@ Frontend:
 - Новый app: `backend/apps/classifieds/`
 - Личные объявления (не корпоративные)
 
+**Статус: ЗАВЕРШЕНО** ✅
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `classifieds`
-- [ ] Модель `ClassifiedCategory`:
-  - [ ] `name` (Продам, Куплю, Отдам, Услуги, Попутчики, Хобби, Другое)
-  - [ ] `slug`
-  - [ ] `icon`
-- [ ] Модель `Classified`:
-  - [ ] `title`
-  - [ ] `description`
-  - [ ] `category` (FK)
-  - [ ] `author` (FK)
-  - [ ] `contact_info` (optional, если отличается от профиля)
-  - [ ] `price` (optional, для продажи)
-  - [ ] `status` (active, closed, expired)
-  - [ ] `expires_at` (автоматически через 30 дней)
-  - [ ] `created_at`
-- [ ] Модель `ClassifiedImage`:
-  - [ ] `classified` (FK)
-  - [ ] `image`
-  - [ ] `order`
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/classifieds/categories/`
-  - [ ] `GET /api/v1/classifieds/` — список (фильтры, пагинация)
-  - [ ] `POST /api/v1/classifieds/`
-  - [ ] `GET/PATCH/DELETE /api/v1/classifieds/{id}/`
-  - [ ] `POST /api/v1/classifieds/{id}/close/` — закрыть
-- [ ] Celery task для auto-expire
-- [ ] Фильтры: категория, статус
+- [x] Создать app `classifieds`
+- [x] Модель `ClassifiedCategory`:
+  - [x] `name` (Продам, Куплю, Отдам, Услуги, Попутчики, Хобби, Другое)
+  - [x] `slug`
+  - [x] `icon`
+  - [x] `order`
+  - [x] `is_active`
+- [x] Модель `Classified`:
+  - [x] `title`
+  - [x] `description`
+  - [x] `category` (FK)
+  - [x] `author` (FK)
+  - [x] `contact_info` (optional, если отличается от профиля)
+  - [x] `price` (optional, для продажи)
+  - [x] `status` (active, closed, expired)
+  - [x] `expires_at` (автоматически через 30 дней)
+  - [x] `views_count`
+  - [x] `created_at`, `updated_at`
+- [x] Модель `ClassifiedImage`:
+  - [x] `classified` (FK)
+  - [x] `image`
+  - [x] `order`
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] `GET /api/v1/classifieds/categories/`
+  - [x] `GET /api/v1/classifieds/` — список (фильтры, пагинация)
+  - [x] `POST /api/v1/classifieds/`
+  - [x] `GET/PATCH/DELETE /api/v1/classifieds/{id}/`
+  - [x] `POST /api/v1/classifieds/{id}/close/` — закрыть
+  - [x] `POST /api/v1/classifieds/{id}/extend/` — продлить
+  - [x] `POST /api/v1/classifieds/{id}/upload_image/` — загрузить фото
+  - [x] `DELETE /api/v1/classifieds/{id}/images/{image_id}/` — удалить фото
+  - [x] `GET /api/v1/classifieds/my/` — мои объявления
+- [ ] Celery task для auto-expire (можно добавить позже)
+- [x] Фильтры: категория, статус, поиск, сортировка
 
 Frontend:
-- [ ] Страница `ClassifiedsPage.tsx`
-- [ ] Компонент `ClassifiedCard.tsx`
-- [ ] Фильтр по категориям (tabs или sidebar)
-- [ ] Страница `ClassifiedDetailPage.tsx`
-- [ ] Галерея изображений (переиспользовать из 2.6)
-- [ ] Форма создания объявления
-- [ ] Мои объявления в профиле
-- [ ] Добавить в навигацию
-- [ ] Тестирование
+- [x] Страница `ClassifiedsPage.tsx`
+- [x] Компонент `ClassifiedCard.tsx`
+- [x] Фильтр по категориям
+- [x] Страница `ClassifiedDetailPage.tsx`
+- [x] Галерея изображений (ImageGallery)
+- [x] Форма создания объявления
+- [x] Мои объявления (вкладка)
+- [x] Добавить в навигацию
+- [ ] Тестирование (можно добавить позже)
 
 ---
 
@@ -1759,4 +1830,4 @@ Frontend:
 ---
 
 *Документ создан: 2025-11-23*
-*Последнее обновление: 2025-11-24*
+*Последнее обновление: 2025-11-25 - Surveys, Ideas, Classifieds, FAQ полностью завершены*

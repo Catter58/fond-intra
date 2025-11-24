@@ -28,6 +28,11 @@ import {
   Menu,
   Close,
   Search as SearchIcon,
+  Favorite,
+  Task,
+  Idea,
+  Help,
+  Tag,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { searchApi, type SearchResult } from '@/api/endpoints/search'
@@ -472,6 +477,61 @@ export function MainLayout() {
               }}
             >
               Структура
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Favorite}
+              href="/kudos"
+              isActive={isActive('/kudos')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/kudos')
+              }}
+            >
+              Благодарности
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Task}
+              href="/surveys"
+              isActive={isActive('/surveys')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/surveys')
+              }}
+            >
+              Опросы
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Idea}
+              href="/ideas"
+              isActive={isActive('/ideas')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/ideas')
+              }}
+            >
+              Банк идей
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Help}
+              href="/faq"
+              isActive={isActive('/faq')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/faq')
+              }}
+            >
+              FAQ
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Tag}
+              href="/classifieds"
+              isActive={isActive('/classifieds')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/classifieds')
+              }}
+            >
+              Объявления
             </SideNavLink>
 
             {isAdmin && (

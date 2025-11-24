@@ -1,0 +1,1 @@
+export { ClassifiedCard } from './ClassifiedCard'

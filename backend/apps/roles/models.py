@@ -53,6 +53,11 @@ class Role(models.Model):
         default=False,
         help_text=_('System roles cannot be deleted')
     )
+    is_admin = models.BooleanField(
+        _('admin role'),
+        default=False,
+        help_text=_('Roles with full administrative access')
+    )
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
 
@@ -164,6 +169,7 @@ DEFAULT_ROLES = {
     'Admin': {
         'description': 'Full administrator access',
         'is_system': True,
+        'is_admin': True,
         'permissions': '__all__'  # Will get all permissions
     },
 }

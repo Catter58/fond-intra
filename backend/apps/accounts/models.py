@@ -156,6 +156,16 @@ class User(AbstractUser):
             models.Q(end_date__gte=today) | models.Q(end_date__isnull=True)
         ).first()
 
+    @property
+    def role(self):
+        """Get the primary role (admin role if exists, otherwise first role)."""
+        # First try to get an admin role
+        admin_role = self.roles.filter(is_admin=True).first()
+        if admin_role:
+            return admin_role
+        # Otherwise return the first role
+        return self.roles.first()
+
 
 class UserStatus(models.Model):
     """

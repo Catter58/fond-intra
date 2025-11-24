@@ -52,15 +52,34 @@ class DepartmentCreateUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
+class DepartmentHeadSerializer(serializers.Serializer):
+    """Serializer for department head info."""
+    id = serializers.IntegerField()
+    full_name = serializers.CharField(source='get_full_name')
+    avatar = serializers.SerializerMethodField()
+    position = serializers.SerializerMethodField()
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            return obj.avatar.url
+        return None
+
+    def get_position(self, obj):
+        if obj.position:
+            return obj.position.name
+        return None
+
+
 class DepartmentTreeSerializer(serializers.ModelSerializer):
     """Serializer for department tree with nested children."""
     children = serializers.SerializerMethodField()
     head_name = serializers.CharField(source='head.get_full_name', read_only=True)
+    head_info = serializers.SerializerMethodField()
     employees_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Department
-        fields = ['id', 'name', 'head', 'head_name', 'employees_count', 'children']
+        fields = ['id', 'name', 'description', 'head', 'head_name', 'head_info', 'employees_count', 'children']
 
     def get_children(self, obj):
         children = obj.children.all()
@@ -68,6 +87,11 @@ class DepartmentTreeSerializer(serializers.ModelSerializer):
 
     def get_employees_count(self, obj):
         return obj.employees.filter(is_active=True, is_archived=False).count()
+
+    def get_head_info(self, obj):
+        if obj.head:
+            return DepartmentHeadSerializer(obj.head).data
+        return None
 
 
 class PositionCreateUpdateSerializer(serializers.ModelSerializer):

@@ -6,11 +6,13 @@ import {
   Trophy,
   Document,
   Events,
+  Favorite,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersApi } from '@/api/endpoints/users'
 import { newsApi } from '@/api/endpoints/news'
 import { achievementsApi } from '@/api/endpoints/achievements'
+import { kudosApi } from '@/api/endpoints/kudos'
 import { formatDate } from '@/lib/utils'
 import { AchievementLeaderboard } from '@/components/features/achievements'
 
@@ -35,6 +37,11 @@ export function DashboardPage() {
   const { data: statsData } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: () => usersApi.getDashboardStats(),
+  })
+
+  const { data: kudosData } = useQuery({
+    queryKey: ['kudos', 'feed', 'latest'],
+    queryFn: () => kudosApi.getList({ page_size: 5 }),
   })
 
   const getInitials = (name: string) => {
@@ -269,6 +276,67 @@ export function DashboardPage() {
               Топ-3 лидера месяца
             </h3>
             <AchievementLeaderboard limit={3} showFilters={false} compact />
+          </Tile>
+        </Column>
+
+        {/* Latest kudos */}
+        <Column sm={4} md={4} lg={4}>
+          <Tile>
+            <h3 style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}>
+              <Favorite size={20} style={{ color: 'var(--cds-support-error)' }} />
+              Последние благодарности
+            </h3>
+            {kudosData?.results && kudosData.results.length > 0 ? (
+              <div>
+                {kudosData.results.slice(0, 3).map((kudos) => (
+                  <div key={kudos.id} className="list-item">
+                    <div className="list-item-avatar">
+                      {kudos.recipient?.avatar ? (
+                        <img src={kudos.recipient.avatar} alt={kudos.recipient.full_name} />
+                      ) : (
+                        getInitials(kudos.recipient?.full_name || '')
+                      )}
+                    </div>
+                    <div className="list-item-content">
+                      <div className="list-item-title">
+                        {kudos.recipient?.full_name || 'Неизвестный'}
+                      </div>
+                      <div className="list-item-subtitle" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}>
+                        от {kudos.sender?.full_name}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Link
+                  to="/kudos"
+                  style={{
+                    display: 'block',
+                    marginTop: '0.75rem',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-link-primary)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Все благодарности →
+                </Link>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+                Нет благодарностей
+              </p>
+            )}
           </Tile>
         </Column>
       </Grid>

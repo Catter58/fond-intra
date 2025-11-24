@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Select, SelectItem, Loading, Tile } from '@carbon/react'
+import { Select, SelectItem, Loading, Tile, Button } from '@carbon/react'
+import { Download } from '@carbon/icons-react'
 import { organizationApi } from '@/api/endpoints/organization'
 import { skillsApi } from '@/api/endpoints/skills'
-import type { SkillMatrixSkill } from '@/types'
+import type { SkillMatrixSkill, SkillsMatrix as SkillsMatrixType } from '@/types'
 
 interface SkillsMatrixProps {
   departmentId: number
@@ -21,6 +22,40 @@ const levelLabels = {
   intermediate: 'Средний',
   advanced: 'Продвинутый',
   expert: 'Эксперт',
+}
+
+const exportToCSV = (matrix: SkillsMatrixType) => {
+  // Build CSV header
+  const headers = ['Навык', 'Категория', ...matrix.users.map(u => u.full_name), 'Всего']
+
+  // Build CSV rows
+  const rows = matrix.skills.map(skill => {
+    const userLevels = matrix.users.map(user => {
+      const level = skill.users[user.id.toString()]
+      return level ? levelLabels[level as keyof typeof levelLabels] : ''
+    })
+    return [skill.name, skill.category, ...userLevels, skill.stats.total.toString()]
+  })
+
+  // Combine and encode
+  const csvContent = [
+    headers.join(';'),
+    ...rows.map(row => row.join(';'))
+  ].join('\n')
+
+  // Add BOM for proper Cyrillic encoding in Excel
+  const BOM = '\uFEFF'
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
+
+  // Download
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `skills_matrix_${matrix.department.name}_${new Date().toISOString().split('T')[0]}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 export function SkillsMatrix({ departmentId }: SkillsMatrixProps) {
@@ -65,7 +100,7 @@ export function SkillsMatrix({ departmentId }: SkillsMatrixProps) {
   return (
     <div>
       {/* Filters */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'end' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'end', flexWrap: 'wrap' }}>
         <Select
           id="category-filter"
           labelText="Фильтр по категории"
@@ -82,6 +117,15 @@ export function SkillsMatrix({ departmentId }: SkillsMatrixProps) {
             <SelectItem key={category.id} value={category.id.toString()} text={category.name} />
           ))}
         </Select>
+
+        <Button
+          kind="tertiary"
+          size="md"
+          renderIcon={Download}
+          onClick={() => exportToCSV(matrix)}
+        >
+          Экспорт в CSV
+        </Button>
       </div>
 
       {/* Legend */}

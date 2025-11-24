@@ -78,7 +78,15 @@ export interface Position {
   level: number
 }
 
+export interface DepartmentHeadInfo {
+  id: number
+  full_name: string
+  avatar: string | null
+  position: string | null
+}
+
 export interface DepartmentTree extends Department {
+  head_info: DepartmentHeadInfo | null
   children: DepartmentTree[]
 }
 
@@ -364,6 +372,268 @@ export interface AuthTokens {
   access: string
   refresh: string
   user: UserBasic
+}
+
+// Kudos types
+export type KudosCategory = 'help' | 'great_job' | 'initiative' | 'mentorship' | 'teamwork'
+
+export interface KudosUser {
+  id: number
+  full_name: string
+  avatar: string | null
+  position: string | null
+  department: string | null
+}
+
+export interface Kudos {
+  id: number
+  sender: KudosUser
+  recipient: KudosUser
+  category: KudosCategory
+  category_display: string
+  message: string
+  is_public: boolean
+  created_at: string
+}
+
+export interface KudosCategoryOption {
+  value: KudosCategory
+  label: string
+}
+
+export interface KudosStats {
+  top_recipients: {
+    id: number
+    full_name: string
+    count: number
+  }[]
+  category_stats: {
+    category: KudosCategory
+    label: string
+    count: number
+  }[]
+  total_count: number
+}
+
+// Survey types
+export type SurveyStatus = 'draft' | 'active' | 'closed'
+export type SurveyTargetType = 'all' | 'department' | 'role'
+export type QuestionType = 'single_choice' | 'multiple_choice' | 'scale' | 'text' | 'nps'
+
+export interface QuestionOption {
+  id: number
+  text: string
+  order: number
+}
+
+export interface Question {
+  id: number
+  text: string
+  type: QuestionType
+  is_required: boolean
+  order: number
+  scale_min: number
+  scale_max: number
+  scale_min_label: string
+  scale_max_label: string
+  options: QuestionOption[]
+}
+
+export interface Survey {
+  id: number
+  title: string
+  description: string
+  author_id?: number
+  author_name: string
+  status: SurveyStatus
+  is_anonymous: boolean
+  is_required: boolean
+  starts_at: string | null
+  ends_at: string | null
+  target_type: SurveyTargetType
+  questions_count: number
+  responses_count: number
+  has_responded: boolean
+  created_at: string
+}
+
+export interface SurveyDetail extends Survey {
+  questions: Question[]
+}
+
+export interface SurveyAnswer {
+  question_id: number
+  selected_options?: number[]
+  text_value?: string
+  scale_value?: number
+}
+
+export interface SurveyResponse {
+  answers: SurveyAnswer[]
+}
+
+export interface OptionStats {
+  id: number
+  text: string
+  count: number
+  percentage: number
+}
+
+export interface QuestionResults {
+  id: number
+  text: string
+  type: QuestionType
+  total_answers: number
+  options_stats?: OptionStats[]
+  average?: number
+  distribution?: Record<number, number>
+  nps_score?: number
+  text_answers?: string[]
+}
+
+export interface SurveyResults {
+  total_responses: number
+  questions: QuestionResults[]
+}
+
+export interface SurveyStatusOption {
+  value: SurveyStatus
+  label: string
+}
+
+export interface QuestionTypeOption {
+  value: QuestionType
+  label: string
+}
+
+export interface TargetTypeOption {
+  value: SurveyTargetType
+  label: string
+}
+
+// Ideas types
+export type IdeaCategory = 'process' | 'product' | 'culture' | 'other'
+export type IdeaStatus = 'new' | 'under_review' | 'approved' | 'in_progress' | 'implemented' | 'rejected'
+
+export interface IdeaAuthor {
+  id: number
+  full_name: string
+  avatar: string | null
+  position: string | null
+  department: string | null
+}
+
+export interface Idea {
+  id: number
+  title: string
+  description: string
+  author: IdeaAuthor
+  category: IdeaCategory
+  category_display: string
+  status: IdeaStatus
+  status_display: string
+  admin_comment: string
+  votes_score: number
+  upvotes_count: number
+  downvotes_count: number
+  comments_count: number
+  user_vote: 'up' | 'down' | null
+  created_at: string
+  updated_at: string
+}
+
+export interface IdeaComment {
+  id: number
+  author: IdeaAuthor
+  text: string
+  created_at: string
+}
+
+export interface IdeaCategoryOption {
+  value: IdeaCategory
+  label: string
+}
+
+export interface IdeaStatusOption {
+  value: IdeaStatus
+  label: string
+}
+
+// FAQ types
+export interface FAQCategory {
+  id: number
+  name: string
+  slug: string
+  description: string
+  icon: string
+  order: number
+  is_active: boolean
+  items_count: number
+}
+
+export interface FAQItem {
+  id: number
+  category: number
+  category_name: string
+  question: string
+  answer: string
+  order: number
+  is_published: boolean
+  views_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface FAQCategoryWithItems extends FAQCategory {
+  items: FAQItem[]
+}
+
+// Classifieds types
+export type ClassifiedStatus = 'active' | 'closed' | 'expired'
+
+export interface ClassifiedCategory {
+  id: number
+  name: string
+  slug: string
+  icon: string
+  order: number
+  classifieds_count: number
+}
+
+export interface ClassifiedAuthor {
+  id: number
+  full_name: string
+  avatar: string | null
+  department: string | null
+  phone_work: string
+  telegram: string
+}
+
+export interface ClassifiedImage {
+  id: number
+  image: string
+  order: number
+  uploaded_at: string
+}
+
+export interface Classified {
+  id: number
+  title: string
+  description: string
+  category: number
+  category_name: string
+  author: ClassifiedAuthor
+  contact_info: string
+  price: number | null
+  status: ClassifiedStatus
+  status_display: string
+  views_count: number
+  images_count?: number
+  first_image?: string | null
+  images?: ClassifiedImage[]
+  expires_at: string | null
+  created_at: string
+  updated_at?: string
 }
 
 // API Response types

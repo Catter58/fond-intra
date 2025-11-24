@@ -29,6 +29,21 @@ urlpatterns = [
     # Notifications
     path('notifications/', include('apps.notifications.urls')),
 
+    # Kudos
+    path('kudos/', include('apps.kudos.urls')),
+
+    # Surveys
+    path('surveys/', include('apps.surveys.urls')),
+
+    # Ideas
+    path('ideas/', include('apps.ideas.urls')),
+
+    # FAQ
+    path('faq/', include('apps.faq.urls')),
+
+    # Classifieds
+    path('classifieds/', include('apps.classifieds.urls')),
+
     # Admin endpoints
     path('admin/', include('apps.roles.urls')),
     path('admin/audit/', include('apps.audit.urls')),

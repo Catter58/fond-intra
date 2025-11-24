@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building, UserMultiple, ChevronRight, ChevronDown, Badge, Catalog } from '@carbon/icons-react'
+import { Building, UserMultiple, ChevronRight, ChevronDown, Badge, Catalog, Diagram } from '@carbon/icons-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Tile, Loading, Select, SelectItem } from '@carbon/react'
+import { Tile, Loading, Select, SelectItem, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react'
 import { apiClient } from '@/api/client'
 import { usersApi } from '@/api/endpoints/users'
 import { organizationApi } from '@/api/endpoints/organization'
-import { SkillsMatrix } from '@/components/features/organization'
+import { SkillsMatrix, OrgChart } from '@/components/features/organization'
 import type { Department } from '@/types'
 
 const getInitials = (name: string) => {
@@ -247,81 +247,124 @@ export function OrganizationPage() {
         </p>
       </div>
 
-      <Tile>
-        <h3 style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-          fontSize: '1rem',
-          fontWeight: 600
-        }}>
-          <Building size={20} />
-          Структура компании
-        </h3>
+      <Tabs>
+        <TabList aria-label="Организация">
+          <Tab>
+            <Building size={16} style={{ marginRight: '0.5rem' }} />
+            Структура
+          </Tab>
+          <Tab>
+            <Diagram size={16} style={{ marginRight: '0.5rem' }} />
+            Диаграмма
+          </Tab>
+          <Tab>
+            <Catalog size={16} style={{ marginRight: '0.5rem' }} />
+            Матрица навыков
+          </Tab>
+        </TabList>
 
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-            <Loading withOverlay={false} />
-          </div>
-        ) : tree && tree.length > 0 ? (
-          <div>
-            {tree.map((department) => (
-              <DepartmentNode
-                key={department.id}
-                department={department}
-                level={0}
-              />
-            ))}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
-            Организационная структура не настроена
-          </div>
-        )}
-      </Tile>
+        <TabPanels>
+          {/* Tab 1: Tree Structure */}
+          <TabPanel>
+            <Tile style={{ marginTop: '1rem' }}>
+              <h3 style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '1rem',
+                fontWeight: 600
+              }}>
+                <Building size={20} />
+                Структура компании
+              </h3>
 
-      {/* Skills Matrix Section */}
-      <Tile style={{ marginTop: '1.5rem' }}>
-        <h3 style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '1.5rem',
-          fontSize: '1rem',
-          fontWeight: 600
-        }}>
-          <Catalog size={20} />
-          Матрица навыков отдела
-        </h3>
+              {isLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                  <Loading withOverlay={false} />
+                </div>
+              ) : tree && tree.length > 0 ? (
+                <div>
+                  {tree.map((department) => (
+                    <DepartmentNode
+                      key={department.id}
+                      department={department}
+                      level={0}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
+                  Организационная структура не настроена
+                </div>
+              )}
+            </Tile>
+          </TabPanel>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <Select
-            id="department-select"
-            labelText="Выберите отдел"
-            value={selectedDepartment?.toString() || ''}
-            onChange={(e) => {
-              const value = e.target.value
-              setSelectedDepartment(value ? Number(value) : undefined)
-            }}
-            size="md"
-            style={{ maxWidth: '400px' }}
-          >
-            <SelectItem value="" text="Выберите отдел..." />
-            {departments?.map((dept) => (
-              <SelectItem key={dept.id} value={dept.id.toString()} text={dept.name} />
-            ))}
-          </Select>
-        </div>
+          {/* Tab 2: Org Chart Diagram */}
+          <TabPanel>
+            <Tile style={{ marginTop: '1rem' }}>
+              <h3 style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1rem',
+                fontSize: '1rem',
+                fontWeight: 600
+              }}>
+                <Diagram size={20} />
+                Организационная диаграмма
+              </h3>
 
-        {selectedDepartment ? (
-          <SkillsMatrix departmentId={selectedDepartment} />
-        ) : (
-          <p style={{ color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
-            Выберите отдел, чтобы посмотреть матрицу навыков
-          </p>
-        )}
-      </Tile>
+              <OrgChart />
+            </Tile>
+          </TabPanel>
+
+          {/* Tab 3: Skills Matrix */}
+          <TabPanel>
+            <Tile style={{ marginTop: '1rem' }}>
+              <h3 style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                marginBottom: '1.5rem',
+                fontSize: '1rem',
+                fontWeight: 600
+              }}>
+                <Catalog size={20} />
+                Матрица навыков отдела
+              </h3>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <Select
+                  id="department-select"
+                  labelText="Выберите отдел"
+                  value={selectedDepartment?.toString() || ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setSelectedDepartment(value ? Number(value) : undefined)
+                  }}
+                  size="md"
+                  style={{ maxWidth: '400px' }}
+                >
+                  <SelectItem value="" text="Выберите отдел..." />
+                  {departments?.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id.toString()} text={dept.name} />
+                  ))}
+                </Select>
+              </div>
+
+              {selectedDepartment ? (
+                <SkillsMatrix departmentId={selectedDepartment} />
+              ) : (
+                <p style={{ color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
+                  Выберите отдел, чтобы посмотреть матрицу навыков
+                </p>
+              )}
+            </Tile>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </div>
   )
 }

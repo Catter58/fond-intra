@@ -41,16 +41,21 @@ fond-intra/
 │   │   │   ├── ui/              # Button, Input, Card, Avatar, Toaster
 │   │   │   ├── layout/          # MainLayout, AuthLayout, Header, Sidebar
 │   │   │   └── features/        # achievements/, notifications/, skills/
-│   │   ├── pages/               # 27 pages
+│   │   ├── pages/               # 38+ pages
 │   │   │   ├── auth/            # Login, ForgotPassword, ResetPassword, ChangePassword
 │   │   │   ├── dashboard/       # DashboardPage
 │   │   │   ├── profile/         # Profile, ProfileEdit, ProfileSkills
 │   │   │   ├── employees/       # EmployeesPage, EmployeeDetailPage
 │   │   │   ├── achievements/    # AchievementsPage
-│   │   │   ├── news/            # News, NewsDetail, NewsCreate, NewsEdit
+│   │   │   ├── news/            # News, NewsDetail, NewsCreate, NewsEdit, NewsDrafts
 │   │   │   ├── organization/    # OrganizationPage
 │   │   │   ├── skills/          # SkillsCatalogPage
 │   │   │   ├── notifications/   # NotificationsPage, NotificationSettingsPage
+│   │   │   ├── kudos/           # KudosPage
+│   │   │   ├── surveys/         # SurveysPage, SurveyDetailPage, SurveyResultsPage
+│   │   │   ├── ideas/           # IdeasPage, IdeaDetailPage
+│   │   │   ├── faq/             # FAQPage
+│   │   │   ├── classifieds/     # ClassifiedsPage, ClassifiedDetailPage
 │   │   │   └── admin/           # 7 admin pages
 │   │   ├── api/                 # API client + endpoints
 │   │   ├── store/               # authStore.ts (Zustand)
@@ -61,7 +66,7 @@ fond-intra/
 │   └── tsconfig.json
 │
 ├── backend/
-│   ├── apps/                    # 8 Django apps
+│   ├── apps/                    # 14 Django apps
 │   │   ├── accounts/            # User model, auth, profiles, statuses
 │   │   ├── organization/        # Department, Position
 │   │   ├── roles/               # RBAC - Role, Permission
@@ -69,7 +74,12 @@ fond-intra/
 │   │   ├── achievements/        # Achievement, AchievementAward
 │   │   ├── news/                # News, Comment, Reaction, NewsAttachment
 │   │   ├── notifications/       # Notification, NotificationSettings
-│   │   └── audit/               # AuditLog
+│   │   ├── audit/               # AuditLog
+│   │   ├── kudos/               # Kudos (благодарности)
+│   │   ├── surveys/             # Survey, Question, Response (опросы)
+│   │   ├── ideas/               # Idea, IdeaVote, IdeaComment (банк идей)
+│   │   ├── faq/                 # FAQCategory, FAQItem
+│   │   └── classifieds/         # Classified, ClassifiedImage (объявления)
 │   ├── config/
 │   │   ├── settings/            # base.py, development.py, production.py, test.py
 │   │   ├── urls.py
@@ -89,7 +99,7 @@ fond-intra/
 - Email-based authentication (email as USERNAME_FIELD)
 - Fields: email, first_name, last_name, patronymic, avatar, phone_work, phone_personal, telegram, birth_date, hire_date
 - Relations: department (FK), position (FK), manager (self-FK), roles (M2M)
-- Properties: full_name, current_status
+- Properties: full_name, current_status, role (returns primary admin role or first role)
 - Methods: has_permission(codename), has_any_permission(codenames)
 
 ### accounts.UserStatus
@@ -109,8 +119,9 @@ fond-intra/
 - Fields: codename (unique), name, description, category
 
 ### roles.Role
-- Fields: name (unique), description, permissions (M2M), is_system
+- Fields: name (unique), description, permissions (M2M), is_system, is_admin
 - Default roles: Employee, HR, Content Manager, Achievement Admin, Admin
+- `is_admin` field marks roles with full administrative access
 
 ### skills.SkillCategory, Skill, UserSkill, SkillEndorsement
 - Proficiency levels: beginner, intermediate, advanced, expert
@@ -147,6 +158,34 @@ fond-intra/
 - Actions: CREATE, UPDATE, DELETE, LOGIN, LOGOUT, ARCHIVE, RESTORE, PASSWORD_CHANGE, PASSWORD_RESET
 - Stores old_values/new_values as JSON
 
+### surveys.Survey, Question, QuestionOption, Response, Answer
+- Survey status: draft, active, closed
+- Target types: all, department, role
+- Question types: single_choice, multiple_choice, scale, text, nps
+- Anonymous surveys supported (user set to null in Response)
+- Questions and responses counted via annotations in ViewSet (not model properties)
+- Actions: publish, close (changes status)
+- Author cannot be changed after creation
+
+### ideas.Idea, IdeaVote, IdeaComment
+- Categories: process, product, culture, other
+- Status: new, under_review, approved, in_progress, implemented, rejected
+- Voting: upvote/downvote system, users cannot vote on own ideas
+- Admin can change status with optional comment
+- Vote API: POST /ideas/{id}/vote/, DELETE /ideas/{id}/unvote/
+
+### classifieds.Classified, ClassifiedImage
+- Categories defined in ClassifiedCategory model
+- Status: active, closed, expired
+- Multiple images support with ordering
+- Contact info can be customized per classified
+- Price is optional
+
+### faq.FAQCategory, FAQItem
+- Categories with icon and order
+- Items with question/answer (answer supports rich text)
+- Pagination disabled for categories (returns array, not paginated)
+
 ## API Endpoints (v1)
 
 Base URL: `/api/v1/`
@@ -170,6 +209,8 @@ Base URL: `/api/v1/`
 ### Organization
 - GET/POST `/organization/departments/`
 - GET `/organization/positions/`
+- GET `/organization/tree/` - Organization tree with nested departments
+- GET `/organization/departments/{id}/skills-matrix/` - Skills matrix for department (with optional ?category=<id>)
 
 ### Skills
 - GET `/skills/categories/`
@@ -213,6 +254,45 @@ Base URL: `/api/v1/`
 ### Admin
 - CRUD `/admin/roles/`
 - GET `/admin/audit/`
+
+### Surveys
+- GET/POST `/surveys/` - List/create surveys
+- GET/PATCH/DELETE `/surveys/{id}/` - Survey detail/update/delete
+- GET `/surveys/my/` - Surveys user needs to respond to
+- POST `/surveys/{id}/publish/` - Publish draft survey
+- POST `/surveys/{id}/close/` - Close active survey
+- POST `/surveys/{id}/respond/` - Submit survey response
+- GET `/surveys/{id}/results/` - Get survey results (admin/author only)
+
+### Ideas
+- GET/POST `/ideas/` - List/create ideas
+- GET/PATCH/DELETE `/ideas/{id}/` - Idea detail/update/delete
+- GET `/ideas/my/` - Current user's ideas
+- POST `/ideas/{id}/vote/` - Vote on idea (body: {is_upvote: boolean})
+- DELETE `/ideas/{id}/unvote/` - Remove vote
+- PATCH `/ideas/{id}/update_status/` - Update idea status (admin only)
+- GET/POST `/ideas/{id}/comments/` - Get/add comments
+- GET `/ideas/categories/` - List categories
+- GET `/ideas/statuses/` - List statuses
+
+### Classifieds
+- GET/POST `/classifieds/` - List/create classifieds
+- GET/PATCH/DELETE `/classifieds/{id}/` - Classified detail/update/delete
+- GET `/classifieds/my/` - Current user's classifieds
+- POST `/classifieds/{id}/close/` - Close classified
+- GET `/classifieds/categories/` - List categories
+
+### FAQ
+- GET `/faq/categories/` - List categories (no pagination)
+- GET `/faq/categories/with_items/` - Categories with nested items
+- GET `/faq/items/` - List all items (no pagination)
+- Admin can CRUD categories and items
+
+### Kudos
+- GET/POST `/kudos/` - List/send kudos
+- GET `/kudos/my/` - Kudos sent/received by current user
+- GET `/kudos/stats/` - Kudos statistics
+- GET `/kudos/categories/` - List kudos categories
 
 ## RBAC Permissions
 
@@ -281,6 +361,25 @@ Base URL: `/api/v1/`
 - Props: `userId?: number, showTitle?: boolean`
 - Integrated into AchievementsPage
 
+### SkillsMatrix (`frontend/src/components/features/organization/SkillsMatrix.tsx`)
+- Heat map table showing skills per department
+- Rows: skills, Columns: employees
+- Color-coded skill levels (beginner/intermediate/advanced/expert)
+- Filter by skill category
+- Export to CSV with BOM for Excel compatibility
+- Legend with level indicators
+- Summary statistics (total skills, total employees)
+- Props: `departmentId: number`
+
+### OrgChart (`frontend/src/components/features/organization/OrgChart.tsx`)
+- Interactive organization diagram
+- Hierarchical department cards with head info
+- Expand/collapse nodes (individual + all)
+- Zoom (buttons + Ctrl+wheel) and pan (drag)
+- Click on head → navigate to profile
+- Shows employees count per department
+- Props: `className?: string`
+
 ## Known Issues & Technical Debt
 
 1. ~~**Mixed UI Libraries**~~ - Radix UI removed, using Carbon only ✅
@@ -337,7 +436,16 @@ docker compose -f docker-compose.prod.yml up -d
 
 - Main branch: `main`
 - Recent commits focus on:
-  - **Phase 4 Implementation:** Automatic achievements system with 9 trigger types
+  - **Phase 5 Implementation:**
+    - Surveys module (create, edit, publish, respond, results)
+    - Ideas/Bank of Ideas (voting, status management, comments)
+    - Classifieds/Marketplace (CRUD, images, categories)
+    - FAQ module with categories
+    - Kudos system
+  - **Phase 4 Implementation:**
+    - Automatic achievements system with 9 trigger types
+    - Skills matrix (heat map) for departments with CSV export
+    - Interactive org chart diagram with zoom/pan
   - Skills module with endorsements
   - Carbon Design System migration
   - News drafts, scheduling, and rich-text editor
@@ -347,17 +455,35 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## Recommendations for Future Development
 
-1. **Unify UI Components** - Remove Radix UI, use Carbon exclusively
-2. **Implement Carbon Grid** - Replace custom grid CSS with Carbon Grid system
+1. ~~**Unify UI Components**~~ - Radix UI removed, using Carbon exclusively ✅
+2. ~~**Implement Carbon Grid**~~ - Main pages using Carbon Grid ✅
 3. **Add Dark Theme** - Consider `g100` theme option
-4. **Use Carbon DataTable** - For all admin panel tables
+4. **Use Carbon DataTable** - For all admin panel tables (already partially done)
 5. **Add Carbon Notifications** - ToastNotification, InlineNotification
 6. **Setup CI/CD** - Add GitHub Actions for tests, linting, deployment
 7. **Expand Tests** - Add more unit and integration tests
 8. **API Documentation** - Enable drf-spectacular UI endpoint
 
 
+## Important Implementation Notes
+
+### Model Properties vs Annotations
+- **Survey model**: `questions_count` and `responses_count` should NOT be defined as model properties - they are created via annotations in ViewSet's `get_queryset()` to avoid conflicts
+
+### RBAC User.role Property
+- User model has a `role` property that returns the primary role (first with `is_admin=True` or first role)
+- This allows code like `user.role.is_admin` to work even though `roles` is M2M field
+
+### Frontend API HTTP Methods
+- Ideas voting: `POST /vote/` for vote, `DELETE /unvote/` for unvote
+- Ideas status: `PATCH /update_status/` (not POST)
+- Always check backend `@action` decorator for correct HTTP method
+
+### Owner Restrictions
+- Ideas: Users cannot vote on their own ideas (400 error from backend)
+- Frontend should disable/hide voting UI for idea authors
+
 ---
 
 *Document created: 2025-11-23*
-*Last updated: 2025-11-24 - Added automatic achievements system (Phase 4, Task 2.19)*
+*Last updated: 2025-11-25 - Added Phase 5 modules (Surveys, Ideas, Classifieds, FAQ, Kudos)*

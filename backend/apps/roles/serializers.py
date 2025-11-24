@@ -23,7 +23,7 @@ class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = ['id', 'name', 'description', 'permissions', 'is_system',
-                  'users_count', 'created_at']
+                  'is_admin', 'users_count', 'created_at']
 
     def get_users_count(self, obj):
         return obj.users.count()
@@ -36,7 +36,7 @@ class RoleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Role
-        fields = ['id', 'name', 'description', 'is_system',
+        fields = ['id', 'name', 'description', 'is_system', 'is_admin',
                   'permissions', 'users_count']
 
     def get_users_count(self, obj):
