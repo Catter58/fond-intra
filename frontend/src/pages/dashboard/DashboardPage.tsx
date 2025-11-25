@@ -1,18 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Grid, Column, Tile } from '@carbon/react'
+import { Grid, Column, Tile, ProgressBar, Tag } from '@carbon/react'
 import {
   UserMultiple,
   Trophy,
   Document,
   Events,
   Favorite,
+  ChartBullet,
+  Calendar,
+  Idea,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersApi } from '@/api/endpoints/users'
 import { newsApi } from '@/api/endpoints/news'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { kudosApi } from '@/api/endpoints/kudos'
+import { ideasApi } from '@/api/endpoints/ideas'
+import { bookingsApi } from '@/api/endpoints/bookings'
+import * as okrApi from '@/api/endpoints/okr'
 import { formatDate } from '@/lib/utils'
 import { AchievementLeaderboard } from '@/components/features/achievements'
 
@@ -42,6 +48,24 @@ export function DashboardPage() {
   const { data: kudosData } = useQuery({
     queryKey: ['kudos', 'feed', 'latest'],
     queryFn: () => kudosApi.getList({ page_size: 5 }),
+  })
+
+  // OKR - my objectives
+  const { data: myOkrData } = useQuery({
+    queryKey: ['okr', 'my', 'dashboard'],
+    queryFn: () => okrApi.getMyObjectives({ status: 'active' }),
+  })
+
+  // Bookings - my upcoming
+  const { data: myBookingsData } = useQuery({
+    queryKey: ['bookings', 'my', 'dashboard'],
+    queryFn: () => bookingsApi.getMyBookings(true),
+  })
+
+  // Ideas - top by votes
+  const { data: topIdeasData } = useQuery({
+    queryKey: ['ideas', 'top', 'dashboard'],
+    queryFn: () => ideasApi.getList({ ordering: '-votes_score', status: 'new' }),
   })
 
   const getInitials = (name: string) => {
@@ -335,6 +359,218 @@ export function DashboardPage() {
             ) : (
               <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
                 Нет благодарностей
+              </p>
+            )}
+          </Tile>
+        </Column>
+
+        {/* My OKR Progress */}
+        <Column sm={4} md={4} lg={4}>
+          <Tile>
+            <h3 style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}>
+              <ChartBullet size={20} />
+              Мои цели (OKR)
+            </h3>
+            {myOkrData && myOkrData.length > 0 ? (
+              <div>
+                {myOkrData.slice(0, 3).map((objective) => (
+                  <Link
+                    key={objective.id}
+                    to={`/okr/${objective.id}`}
+                    className="list-item"
+                    style={{ flexDirection: 'column', alignItems: 'stretch' }}
+                  >
+                    <div className="list-item-title" style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      marginBottom: '0.5rem'
+                    }}>
+                      {objective.title}
+                    </div>
+                    <ProgressBar
+                      label=""
+                      value={objective.progress}
+                      max={100}
+                      size="small"
+                      status={objective.progress >= 70 ? 'finished' : objective.progress >= 30 ? 'active' : 'error'}
+                      hideLabel
+                    />
+                    <div style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)', marginTop: '0.25rem' }}>
+                      {objective.progress}% выполнено
+                    </div>
+                  </Link>
+                ))}
+                <Link
+                  to="/okr"
+                  style={{
+                    display: 'block',
+                    marginTop: '0.75rem',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-link-primary)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Все цели →
+                </Link>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+                Нет активных целей
+              </p>
+            )}
+          </Tile>
+        </Column>
+
+        {/* My Upcoming Bookings */}
+        <Column sm={4} md={4} lg={4}>
+          <Tile>
+            <h3 style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}>
+              <Calendar size={20} />
+              Мои бронирования
+            </h3>
+            {myBookingsData && myBookingsData.length > 0 ? (
+              <div>
+                {myBookingsData.slice(0, 3).map((booking) => (
+                  <Link
+                    key={booking.id}
+                    to={`/bookings/resources/${booking.resource}`}
+                    className="list-item"
+                    style={{ flexDirection: 'column', alignItems: 'flex-start' }}
+                  >
+                    <div className="list-item-title">
+                      {booking.title}
+                    </div>
+                    <div className="list-item-subtitle" style={{ marginTop: '0.25rem' }}>
+                      {booking.resource_name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--cds-text-secondary)', marginTop: '0.25rem' }}>
+                      {new Date(booking.starts_at).toLocaleDateString('ru-RU', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}{' '}
+                      {new Date(booking.starts_at).toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                      {' - '}
+                      {new Date(booking.ends_at).toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </Link>
+                ))}
+                <Link
+                  to="/bookings"
+                  style={{
+                    display: 'block',
+                    marginTop: '0.75rem',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-link-primary)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Все бронирования →
+                </Link>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+                Нет предстоящих бронирований
+              </p>
+            )}
+          </Tile>
+        </Column>
+
+        {/* Top Ideas */}
+        <Column sm={4} md={4} lg={4}>
+          <Tile>
+            <h3 style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '1rem',
+              fontWeight: 600
+            }}>
+              <Idea size={20} />
+              Топ идеи
+            </h3>
+            {topIdeasData?.results && topIdeasData.results.length > 0 ? (
+              <div>
+                {topIdeasData.results.slice(0, 3).map((idea) => (
+                  <Link
+                    key={idea.id}
+                    to={`/ideas/${idea.id}`}
+                    className="list-item"
+                    style={{ alignItems: 'flex-start' }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: '40px',
+                      padding: '0.25rem',
+                      backgroundColor: idea.votes_score > 0 ? 'var(--cds-support-success-inverse)' : 'var(--cds-layer-02)',
+                      borderRadius: '4px',
+                      marginRight: '0.75rem'
+                    }}>
+                      <span style={{
+                        fontWeight: 600,
+                        fontSize: '0.875rem',
+                        color: idea.votes_score > 0 ? 'var(--cds-support-success)' : 'var(--cds-text-secondary)'
+                      }}>
+                        {idea.votes_score > 0 ? '+' : ''}{idea.votes_score}
+                      </span>
+                    </div>
+                    <div className="list-item-content">
+                      <div className="list-item-title" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        whiteSpace: 'normal'
+                      }}>
+                        {idea.title}
+                      </div>
+                      <Tag size="sm" type="gray" style={{ marginTop: '0.25rem' }}>
+                        {idea.category_display}
+                      </Tag>
+                    </div>
+                  </Link>
+                ))}
+                <Link
+                  to="/ideas"
+                  style={{
+                    display: 'block',
+                    marginTop: '0.75rem',
+                    fontSize: '0.875rem',
+                    color: 'var(--cds-link-primary)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Все идеи →
+                </Link>
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
+                Нет новых идей
               </p>
             )}
           </Tile>

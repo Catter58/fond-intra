@@ -339,7 +339,7 @@ export default function FAQPage() {
                       onClick={() => openCategoryModal(category)}
                     />
                     <Button
-                      kind="danger--ghost"
+                      kind="danger--tertiary"
                       size="sm"
                       hasIconOnly
                       renderIcon={TrashCan}
@@ -381,7 +381,7 @@ export default function FAQPage() {
                               }}
                             />
                             <Button
-                              kind="danger--ghost"
+                              kind="danger--tertiary"
                               size="sm"
                               hasIconOnly
                               renderIcon={TrashCan}

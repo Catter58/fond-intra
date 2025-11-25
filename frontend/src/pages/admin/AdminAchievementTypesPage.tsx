@@ -285,7 +285,7 @@ export function AdminAchievementTypesPage() {
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                   <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(achievement)} />
                   <Button
-                    kind="danger--ghost"
+                    kind="danger--tertiary"
                     hasIconOnly
                     renderIcon={TrashCan}
                     iconDescription="Удалить"

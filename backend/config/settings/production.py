@@ -40,10 +40,5 @@ REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [  # noqa: F405
 # Static files
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
-# Logging - more verbose in production
-LOGGING['handlers']['file'] = {  # noqa: F405
-    'class': 'logging.FileHandler',
-    'filename': '/var/log/fond_intra/django.log',
-    'formatter': 'verbose',
-}
-LOGGING['root']['handlers'] = ['console', 'file']  # noqa: F405
+# Logging - console only in Docker container
+LOGGING['root']['handlers'] = ['console']  # noqa: F405

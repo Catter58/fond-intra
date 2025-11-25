@@ -11,6 +11,7 @@ import {
   Dashboard,
   Report,
   Catalog,
+  Help,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -35,6 +36,7 @@ const adminItems = [
   { to: '/admin/departments', icon: Building, label: 'Отделы' },
   { to: '/admin/skills', icon: Catalog, label: 'Навыки' },
   { to: '/admin/achievements', icon: Trophy, label: 'Типы наград' },
+  { to: '/admin/faq', icon: Help, label: 'FAQ' },
   { to: '/admin/audit', icon: Report, label: 'Аудит' },
 ]
 

@@ -374,6 +374,34 @@ export interface AuthTokens {
   user: UserBasic
 }
 
+// Two-Factor Authentication types
+export interface TwoFactorStatus {
+  is_enabled: boolean
+  enabled_at: string | null
+  backup_codes_count: number
+}
+
+export interface TwoFactorSetup {
+  secret: string
+  qr_code: string
+  provisioning_uri: string
+}
+
+// User Session types
+export interface UserSession {
+  id: number
+  device_type: string
+  device_name: string
+  browser: string
+  os: string
+  ip_address: string
+  location: string
+  created_at: string
+  last_activity: string
+  is_active: boolean
+  is_current: boolean
+}
+
 // Kudos types
 export type KudosCategory = 'help' | 'great_job' | 'initiative' | 'mentorship' | 'teamwork'
 
@@ -642,4 +670,265 @@ export interface PaginatedResponse<T> {
   next: string | null
   previous: string | null
   results: T[]
+}
+
+// OKR types
+export interface OKRPeriod {
+  id: number
+  name: string
+  type: 'quarter' | 'year'
+  starts_at: string
+  ends_at: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface OKROwner {
+  id: number
+  full_name: string
+  avatar: string | null
+  position_name: string | null
+}
+
+export interface KeyResultCheckIn {
+  id: number
+  new_value: string
+  comment: string
+  created_at: string
+}
+
+export interface KeyResult {
+  id: number
+  objective: number
+  title: string
+  type: 'quantitative' | 'qualitative'
+  target_value: number | null
+  current_value: number
+  start_value: number
+  unit: string
+  progress: number
+  order: number
+  check_ins_count: number
+  last_check_in: KeyResultCheckIn | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Objective {
+  id: number
+  title: string
+  description: string
+  level: 'company' | 'department' | 'personal'
+  status: 'draft' | 'active' | 'completed' | 'cancelled'
+  period: number
+  period_name: string
+  owner: OKROwner
+  department: number | null
+  department_name: string | null
+  parent: number | null
+  parent_title?: string | null
+  progress: number
+  key_results_count: number
+  children_count: number
+  key_results?: KeyResult[]
+  children?: Objective[]
+  created_at: string
+  updated_at: string
+}
+
+export interface CheckIn {
+  id: number
+  key_result: number
+  author: number
+  author_name: string
+  previous_value: number
+  new_value: number
+  previous_progress: number
+  new_progress: number
+  comment: string
+  created_at: string
+}
+
+export interface ObjectiveTree {
+  id: number
+  title: string
+  level: 'company' | 'department' | 'personal'
+  status: 'draft' | 'active' | 'completed' | 'cancelled'
+  owner: OKROwner
+  progress: number
+  children: ObjectiveTree[]
+}
+
+export interface OKRLevelOption {
+  value: string
+  label: string
+}
+
+export interface OKRStatusOption {
+  value: string
+  label: string
+}
+
+export interface OKRStatsCheckIn {
+  id: number
+  key_result_title: string
+  objective_title: string
+  previous_value: number
+  new_value: number
+  previous_progress: number
+  new_progress: number
+  comment: string
+  created_at: string
+}
+
+export interface OKRStatsObjective {
+  id: number
+  title: string
+  level: 'company' | 'department' | 'personal'
+  progress: number
+  key_results_count: number
+}
+
+export interface OKRStats {
+  my_stats: {
+    total: number
+    active: number
+    avg_progress: number
+    by_status: Record<string, number>
+    by_level: Record<string, number>
+  }
+  team_stats: {
+    total: number
+    active: number
+    avg_progress: number
+  }
+  company_stats: {
+    total: number
+    active: number
+    avg_progress: number
+  }
+  key_results: {
+    total: number
+    completed: number
+    in_progress: number
+    not_started: number
+  }
+  progress_distribution: Record<string, number>
+  recent_check_ins: OKRStatsCheckIn[]
+  top_objectives: OKRStatsObjective[]
+}
+
+// Booking types
+export interface ResourceType {
+  id: number
+  name: string
+  slug: string
+  icon: string
+  description: string
+  is_active: boolean
+  order: number
+  resources_count: number
+}
+
+export interface Resource {
+  id: number
+  name: string
+  description: string
+  location: string
+  capacity: number | null
+  amenities: string[]
+  image: string | null
+  type: number | ResourceType
+  type_name?: string
+  type_slug?: string
+  is_active: boolean
+  work_hours_start: string
+  work_hours_end: string
+  min_booking_duration: number
+  max_booking_duration: number
+  created_at?: string
+  upcoming_bookings?: BookingListItem[]
+}
+
+export interface BookingUser {
+  id: number
+  full_name: string
+  avatar: string | null
+  department_name: string | null
+}
+
+export interface BookingListItem {
+  id: number
+  title: string
+  description: string
+  resource: number
+  resource_name: string
+  resource_type: string
+  user: BookingUser
+  starts_at: string
+  ends_at: string
+  status: 'confirmed' | 'cancelled'
+  duration_minutes: number
+  is_past: boolean
+  is_active: boolean
+  is_recurring: boolean
+  created_at: string
+}
+
+export interface RecurrenceRule {
+  type: 'weekly' | 'daily'
+  days?: number[]
+  until?: string
+}
+
+export interface Booking extends Omit<BookingListItem, 'resource'> {
+  resource: number | Resource
+  resource_id?: number
+  recurrence_rule: RecurrenceRule | null
+  parent_booking: number | null
+  updated_at: string
+}
+
+export interface TimeSlot {
+  start: string
+  end: string
+  is_available: boolean
+  booking_id: number | null
+  booking_title: string | null
+  booking_user: string | null
+}
+
+export interface ResourceAvailability {
+  date: string
+  resource_id: number
+  resource_name: string
+  work_hours_start: string
+  work_hours_end: string
+  slots: TimeSlot[]
+}
+
+export interface CalendarBooking {
+  id: number
+  title: string
+  resource: number
+  resource_name: string
+  starts_at: string
+  ends_at: string
+  user_name: string
+  color: string
+}
+
+export interface BookingStats {
+  total_bookings: number
+  today_bookings: number
+  week_bookings: number
+  month_bookings: number
+  my_upcoming: number
+  my_total: number
+  by_resource_type: {
+    type_id: number
+    type_name: string
+    type_slug: string
+    bookings_count: number
+  }[]
 }

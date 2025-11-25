@@ -44,6 +44,12 @@ urlpatterns = [
     # Classifieds
     path('classifieds/', include('apps.classifieds.urls')),
 
+    # OKR
+    path('okr/', include('apps.okr.urls')),
+
+    # Bookings
+    path('', include('apps.bookings.urls')),
+
     # Admin endpoints
     path('admin/', include('apps.roles.urls')),
     path('admin/audit/', include('apps.audit.urls')),

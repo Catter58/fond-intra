@@ -31,6 +31,31 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=3, minute=0, day_of_week=0),
         'args': (90,),  # Delete notifications older than 90 days
     },
+    # Expire classifieds daily at 1:00 AM
+    'expire-classifieds': {
+        'task': 'classifieds.expire_classifieds',
+        'schedule': crontab(hour=1, minute=0),
+    },
+    # Notify about expiring classifieds daily at 10:00 AM
+    'notify-expiring-classifieds': {
+        'task': 'classifieds.notify_expiring_soon',
+        'schedule': crontab(hour=10, minute=0),
+    },
+    # Send booking reminders every 15 minutes
+    'send-booking-reminders': {
+        'task': 'bookings.send_booking_reminders',
+        'schedule': crontab(minute='*/15'),
+    },
+    # Send daily booking summary at 8:00 AM
+    'send-daily-bookings-summary': {
+        'task': 'bookings.send_daily_bookings_summary',
+        'schedule': crontab(hour=8, minute=0),
+    },
+    # Cleanup past bookings daily at 2:00 AM
+    'cleanup-past-bookings': {
+        'task': 'bookings.cleanup_past_bookings',
+        'schedule': crontab(hour=2, minute=0),
+    },
 }
 
 

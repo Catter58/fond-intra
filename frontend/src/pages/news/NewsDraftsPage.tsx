@@ -191,7 +191,7 @@ export function NewsDraftsPage() {
                       }}
                     />
                     <Button
-                      kind="danger--ghost"
+                      kind="danger--tertiary"
                       size="sm"
                       hasIconOnly
                       renderIcon={TrashCan}

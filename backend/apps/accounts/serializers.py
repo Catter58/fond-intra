@@ -8,7 +8,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.organization.serializers import DepartmentSerializer, PositionSerializer
-from .models import User, UserStatus
+from .models import User, UserStatus, TwoFactorSettings, UserSession
 
 
 class RelativeImageField(serializers.ImageField):
@@ -311,3 +311,89 @@ class BirthdaySerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'full_name', 'avatar', 'birth_date', 'department_name']
+
+
+# =============================================================================
+# Two-Factor Authentication Serializers
+# =============================================================================
+
+class TwoFactorStatusSerializer(serializers.ModelSerializer):
+    """Serializer for 2FA status."""
+    backup_codes_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = TwoFactorSettings
+        fields = ['is_enabled', 'enabled_at', 'backup_codes_count']
+
+
+class TwoFactorSetupSerializer(serializers.Serializer):
+    """Serializer for initiating 2FA setup."""
+    secret = serializers.CharField(read_only=True)
+    qr_code = serializers.CharField(read_only=True)
+    provisioning_uri = serializers.CharField(read_only=True)
+
+
+class TwoFactorVerifySerializer(serializers.Serializer):
+    """Serializer for verifying and enabling 2FA."""
+    token = serializers.CharField(max_length=6, min_length=6)
+
+    def validate_token(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError(_('Token must contain only digits.'))
+        return value
+
+
+class TwoFactorDisableSerializer(serializers.Serializer):
+    """Serializer for disabling 2FA."""
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError(_('Incorrect password.'))
+        return value
+
+
+class TwoFactorBackupCodesSerializer(serializers.Serializer):
+    """Serializer for generating backup codes."""
+    backup_codes = serializers.ListField(
+        child=serializers.CharField(),
+        read_only=True
+    )
+
+
+class TwoFactorAuthenticateSerializer(serializers.Serializer):
+    """Serializer for authenticating with 2FA token."""
+    token = serializers.CharField(max_length=8)
+    is_backup_code = serializers.BooleanField(default=False)
+
+    def validate_token(self, value):
+        is_backup = self.initial_data.get('is_backup_code', False)
+        if not is_backup and not value.isdigit():
+            raise serializers.ValidationError(_('Token must contain only digits.'))
+        return value
+
+
+# =============================================================================
+# User Session Serializers
+# =============================================================================
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    """Serializer for user session info."""
+    is_current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSession
+        fields = [
+            'id', 'device_type', 'device_name', 'browser', 'os',
+            'ip_address', 'location', 'created_at', 'last_activity',
+            'is_active', 'is_current'
+        ]
+
+    def get_is_current(self, obj):
+        request = self.context.get('request')
+        if not request:
+            return False
+        current_jti = getattr(request, 'current_token_jti', None)
+        # Compare with access_jti (from access token in request header)
+        return obj.access_jti == current_jti

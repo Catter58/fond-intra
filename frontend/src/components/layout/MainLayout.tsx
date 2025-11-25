@@ -33,6 +33,9 @@ import {
   Idea,
   Help,
   Tag,
+  Crossroads,
+  Calendar,
+  Security,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { searchApi, type SearchResult } from '@/api/endpoints/search'
@@ -318,6 +321,14 @@ export function MainLayout() {
                 <Password size={16} />
                 Сменить пароль
               </Link>
+              <Link
+                to="/security"
+                className="user-menu-item"
+                onClick={() => setShowUserPanel(false)}
+              >
+                <Security size={16} />
+                Безопасность
+              </Link>
               <button
                 onClick={handleLogout}
                 className="user-menu-item user-menu-item--danger"
@@ -532,6 +543,28 @@ export function MainLayout() {
               }}
             >
               Объявления
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Crossroads}
+              href="/okr"
+              isActive={isActive('/okr')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/okr')
+              }}
+            >
+              OKR
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Calendar}
+              href="/bookings"
+              isActive={isActive('/bookings')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/bookings')
+              }}
+            >
+              Бронирование
             </SideNavLink>
 
             {isAdmin && (

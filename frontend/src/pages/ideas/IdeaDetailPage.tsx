@@ -208,7 +208,7 @@ export default function IdeaDetailPage() {
                       </Button>
                     )}
                     <Button
-                      kind="danger--ghost"
+                      kind="danger--tertiary"
                       size="sm"
                       hasIconOnly
                       renderIcon={TrashCan}

@@ -285,7 +285,7 @@ export function NewsEditPage() {
                     <Attachment size={20} style={{ color: 'var(--cds-text-secondary)' }} />
                     <p style={{ flex: 1, fontSize: '0.875rem', fontWeight: 500 }}>{attachment.file_name}</p>
                     <Button
-                      kind="danger--ghost"
+                      kind="danger--tertiary"
                       hasIconOnly
                       renderIcon={TrashCan}
                       iconDescription="Удалить"

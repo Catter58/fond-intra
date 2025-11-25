@@ -180,7 +180,7 @@ export function AdminDepartmentsPage() {
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
                   <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(dept)} />
                   <Button
-                    kind="danger--ghost"
+                    kind="danger--tertiary"
                     hasIconOnly
                     renderIcon={TrashCan}
                     iconDescription="Удалить"

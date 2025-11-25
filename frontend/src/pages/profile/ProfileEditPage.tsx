@@ -177,7 +177,7 @@ export function ProfileEditPage() {
                 </label>
                 {(user.avatar && !avatarDeleted && !avatarPreview) && (
                   <Button
-                    kind="danger--ghost"
+                    kind="danger--tertiary"
                     size="sm"
                     renderIcon={TrashCan}
                     onClick={handleDeleteAvatar}

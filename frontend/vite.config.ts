@@ -9,13 +9,14 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ['react', 'react-dom', 'react-router-dom'],
+    dedupe: ['react', 'react-dom', 'react-router-dom', 'react-router'],
   },
   optimizeDeps: {
     include: [
       'react',
       'react-dom',
       'react-router-dom',
+      'react-router',
       '@editorjs/editorjs',
       '@editorjs/header',
       '@editorjs/list',

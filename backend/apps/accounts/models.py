@@ -208,3 +208,201 @@ class UserStatus(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.get_status_display()}"
+
+
+class TwoFactorSettings(models.Model):
+    """
+    Two-Factor Authentication settings for users.
+    Uses TOTP (Time-based One-Time Password) via pyotp.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='two_factor_settings',
+        verbose_name=_('user')
+    )
+    is_enabled = models.BooleanField(_('2FA enabled'), default=False)
+    secret = models.CharField(
+        _('TOTP secret'),
+        max_length=32,
+        blank=True,
+        help_text=_('Base32 encoded secret key')
+    )
+    backup_codes = models.JSONField(
+        _('backup codes'),
+        default=list,
+        blank=True,
+        help_text=_('Hashed backup codes')
+    )
+    enabled_at = models.DateTimeField(_('enabled at'), null=True, blank=True)
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('two-factor settings')
+        verbose_name_plural = _('two-factor settings')
+
+    def __str__(self):
+        status = 'enabled' if self.is_enabled else 'disabled'
+        return f"2FA for {self.user.email} ({status})"
+
+    def generate_secret(self):
+        """Generate a new TOTP secret."""
+        import pyotp
+        self.secret = pyotp.random_base32()
+        return self.secret
+
+    def get_totp_uri(self, issuer='FondSmena'):
+        """Generate provisioning URI for QR code."""
+        import pyotp
+        if not self.secret:
+            return None
+        totp = pyotp.TOTP(self.secret)
+        return totp.provisioning_uri(
+            name=self.user.email,
+            issuer_name=issuer
+        )
+
+    def verify_token(self, token):
+        """Verify a TOTP token."""
+        import pyotp
+        if not self.secret:
+            return False
+        totp = pyotp.TOTP(self.secret)
+        return totp.verify(token, valid_window=1)
+
+    def generate_backup_codes(self, count=10):
+        """Generate new backup codes."""
+        import secrets
+        import hashlib
+
+        codes = []
+        hashed_codes = []
+
+        for _ in range(count):
+            # Generate 8-character alphanumeric code
+            code = secrets.token_hex(4).upper()
+            codes.append(code)
+            # Store hashed version
+            hashed = hashlib.sha256(code.encode()).hexdigest()
+            hashed_codes.append(hashed)
+
+        self.backup_codes = hashed_codes
+        return codes  # Return plain codes to show user once
+
+    def verify_backup_code(self, code):
+        """Verify and consume a backup code."""
+        import hashlib
+
+        hashed = hashlib.sha256(code.upper().encode()).hexdigest()
+        if hashed in self.backup_codes:
+            self.backup_codes.remove(hashed)
+            self.save(update_fields=['backup_codes', 'updated_at'])
+            return True
+        return False
+
+    @property
+    def backup_codes_count(self):
+        """Return number of remaining backup codes."""
+        return len(self.backup_codes)
+
+
+class UserSession(models.Model):
+    """
+    User session tracking for security management.
+    Tracks active sessions with device info.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sessions',
+        verbose_name=_('user')
+    )
+    token_jti = models.CharField(
+        _('refresh token JTI'),
+        max_length=255,
+        unique=True,
+        help_text=_('Refresh JWT token identifier for blacklisting')
+    )
+    access_jti = models.CharField(
+        _('access token JTI'),
+        max_length=255,
+        blank=True,
+        help_text=_('Access JWT token identifier for session detection')
+    )
+    device_type = models.CharField(_('device type'), max_length=50, blank=True)
+    device_name = models.CharField(_('device name'), max_length=100, blank=True)
+    browser = models.CharField(_('browser'), max_length=100, blank=True)
+    os = models.CharField(_('operating system'), max_length=100, blank=True)
+    ip_address = models.GenericIPAddressField(_('IP address'), null=True, blank=True)
+    location = models.CharField(_('location'), max_length=100, blank=True)
+    user_agent = models.TextField(_('user agent'), blank=True)
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True)
+    last_activity = models.DateTimeField(_('last activity'), auto_now=True)
+    is_active = models.BooleanField(_('is active'), default=True)
+
+    class Meta:
+        verbose_name = _('user session')
+        verbose_name_plural = _('user sessions')
+        ordering = ['-last_activity']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.device_type or 'Unknown'} ({self.ip_address})"
+
+    @classmethod
+    def create_from_request(cls, user, token_jti, request, access_jti=''):
+        """Create a session from HTTP request.
+
+        Args:
+            user: User instance
+            token_jti: Refresh token JTI (for blacklisting)
+            request: HTTP request
+            access_jti: Access token JTI (for session detection)
+        """
+        from user_agents import parse
+
+        user_agent_string = request.META.get('HTTP_USER_AGENT', '')
+        user_agent = parse(user_agent_string)
+
+        # Get IP address
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+
+        # Determine device type
+        if user_agent.is_mobile:
+            device_type = 'mobile'
+        elif user_agent.is_tablet:
+            device_type = 'tablet'
+        elif user_agent.is_pc:
+            device_type = 'desktop'
+        else:
+            device_type = 'other'
+
+        return cls.objects.create(
+            user=user,
+            token_jti=token_jti,
+            access_jti=access_jti,
+            device_type=device_type,
+            device_name=user_agent.device.family or '',
+            browser=f"{user_agent.browser.family} {user_agent.browser.version_string}".strip(),
+            os=f"{user_agent.os.family} {user_agent.os.version_string}".strip(),
+            ip_address=ip_address,
+            user_agent=user_agent_string
+        )
+
+    def terminate(self):
+        """Terminate this session by blacklisting the token."""
+        from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+
+        try:
+            # Find and blacklist the token
+            outstanding_token = OutstandingToken.objects.get(jti=self.token_jti)
+            BlacklistedToken.objects.get_or_create(token=outstanding_token)
+        except OutstandingToken.DoesNotExist:
+            pass
+
+        self.is_active = False
+        self.save(update_fields=['is_active'])

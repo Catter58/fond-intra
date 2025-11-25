@@ -50,6 +50,11 @@ const IdeaDetailPage = lazy(() => import('@/pages/ideas/IdeaDetailPage'))
 const FAQPage = lazy(() => import('@/pages/faq/FAQPage'))
 const ClassifiedsPage = lazy(() => import('@/pages/classifieds/ClassifiedsPage'))
 const ClassifiedDetailPage = lazy(() => import('@/pages/classifieds/ClassifiedDetailPage'))
+const OKRPage = lazy(() => import('@/pages/okr/OKRPage'))
+const OKRDetailPage = lazy(() => import('@/pages/okr/OKRDetailPage'))
+const BookingsPage = lazy(() => import('@/pages/bookings/BookingsPage'))
+const ResourceDetailPage = lazy(() => import('@/pages/bookings/ResourceDetailPage'))
+const SecurityPage = lazy(() => import('@/pages/security/SecurityPage').then(m => ({ default: m.SecurityPage })))
 
 // Lazy loaded pages - Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })))
@@ -60,6 +65,7 @@ const AdminRolesPage = lazy(() => import('@/pages/admin/AdminRolesPage').then(m 
 const AdminAchievementTypesPage = lazy(() => import('@/pages/admin/AdminAchievementTypesPage').then(m => ({ default: m.AdminAchievementTypesPage })))
 const AdminSkillsPage = lazy(() => import('@/pages/admin/AdminSkillsPage').then(m => ({ default: m.AdminSkillsPage })))
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage').then(m => ({ default: m.AdminAuditPage })))
+const AdminFAQPage = lazy(() => import('@/pages/admin/AdminFAQPage').then(m => ({ default: m.AdminFAQPage })))
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -132,6 +138,11 @@ function App() {
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/classifieds" element={<ClassifiedsPage />} />
             <Route path="/classifieds/:id" element={<ClassifiedDetailPage />} />
+            <Route path="/okr" element={<OKRPage />} />
+            <Route path="/okr/:id" element={<OKRDetailPage />} />
+            <Route path="/bookings" element={<BookingsPage />} />
+            <Route path="/bookings/resources/:id" element={<ResourceDetailPage />} />
+            <Route path="/security" element={<SecurityPage />} />
 
             {/* Admin routes */}
             <Route
@@ -203,6 +214,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminAuditPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/faq"
+              element={
+                <AdminRoute>
+                  <AdminFAQPage />
                 </AdminRoute>
               }
             />

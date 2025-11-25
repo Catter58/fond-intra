@@ -56,6 +56,8 @@ fond-intra/
 │   │   │   ├── ideas/           # IdeasPage, IdeaDetailPage
 │   │   │   ├── faq/             # FAQPage
 │   │   │   ├── classifieds/     # ClassifiedsPage, ClassifiedDetailPage
+│   │   │   ├── okr/             # OKRPage, OKRDetailPage
+│   │   │   ├── bookings/        # BookingsPage, ResourceDetailPage
 │   │   │   └── admin/           # 7 admin pages
 │   │   ├── api/                 # API client + endpoints
 │   │   ├── store/               # authStore.ts (Zustand)
@@ -66,7 +68,7 @@ fond-intra/
 │   └── tsconfig.json
 │
 ├── backend/
-│   ├── apps/                    # 14 Django apps
+│   ├── apps/                    # 16 Django apps
 │   │   ├── accounts/            # User model, auth, profiles, statuses
 │   │   ├── organization/        # Department, Position
 │   │   ├── roles/               # RBAC - Role, Permission
@@ -79,7 +81,9 @@ fond-intra/
 │   │   ├── surveys/             # Survey, Question, Response (опросы)
 │   │   ├── ideas/               # Idea, IdeaVote, IdeaComment (банк идей)
 │   │   ├── faq/                 # FAQCategory, FAQItem
-│   │   └── classifieds/         # Classified, ClassifiedImage (объявления)
+│   │   ├── classifieds/         # Classified, ClassifiedImage (объявления)
+│   │   ├── okr/                 # OKRPeriod, Objective, KeyResult, CheckIn (OKR)
+│   │   └── bookings/            # ResourceType, Resource, Booking (бронирование)
 │   ├── config/
 │   │   ├── settings/            # base.py, development.py, production.py, test.py
 │   │   ├── urls.py
@@ -105,6 +109,19 @@ fond-intra/
 ### accounts.UserStatus
 - Tracks: vacation, sick_leave, business_trip, remote, maternity
 - Fields: user, status, start_date, end_date, comment, created_by
+
+### accounts.TwoFactorSettings
+- Two-Factor Authentication settings using TOTP via `pyotp`
+- Fields: user (OneToOne), is_enabled, secret, backup_codes (JSONField, hashed), enabled_at
+- Methods: generate_secret(), get_totp_uri(), verify_token(), generate_backup_codes(), verify_backup_code()
+- Backup codes are hashed with SHA-256, one-time use
+
+### accounts.UserSession
+- User session tracking for security management
+- Fields: user (FK), token_jti (unique), device_type, device_name, browser, os, ip_address, location, user_agent, created_at, last_activity, is_active
+- Methods: create_from_request(), terminate()
+- Parses User-Agent via `user-agents` library
+- Session termination blacklists JWT token
 
 ### organization.Department
 - Hierarchical (self-referencing parent FK)
@@ -186,17 +203,52 @@ fond-intra/
 - Items with question/answer (answer supports rich text)
 - Pagination disabled for categories (returns array, not paginated)
 
+### okr.OKRPeriod, Objective, KeyResult, CheckIn
+- OKRPeriod: name, type (quarter/year), starts_at, ends_at, is_active
+- Objective: title, description, level (company/department/personal), status (draft/active/completed/cancelled)
+  - FK to: period, owner (User), department (nullable), parent (self, nullable for cascading)
+  - progress computed from key_results
+- KeyResult: title, type (quantitative/qualitative), target_value, current_value, start_value, unit
+  - progress computed as percentage
+- CheckIn: previous_value, new_value, comment, created_at
+  - FK to: key_result, author (User)
+
+### bookings.ResourceType, Resource, Booking
+- ResourceType: name, slug, icon, description, is_active, order
+- Resource: name, description, location, capacity, amenities (JSON), image
+  - work_hours_start, work_hours_end (TimeField)
+  - min_booking_duration, max_booking_duration (minutes)
+  - FK to: type (ResourceType)
+- Booking: title, description, starts_at, ends_at, status (confirmed/cancelled)
+  - is_recurring, recurrence_rule (JSON), parent_booking (FK to self)
+  - Properties: duration_minutes, is_past, is_active
+  - FK to: resource, user
+  - Validation: no time conflicts, within work hours, min/max duration
+
 ## API Endpoints (v1)
 
 Base URL: `/api/v1/`
 
 ### Authentication
-- POST `/auth/login/` - JWT login
+- POST `/auth/login/` - JWT login (returns `requires_2fa: true` if 2FA enabled)
 - POST `/auth/logout/` - Blacklist token
 - POST `/auth/token/refresh/` - Refresh access token
 - POST `/auth/password/change/` - Change password
 - POST `/auth/password/reset/` - Request reset
 - POST `/auth/password/reset/confirm/` - Confirm reset
+
+### Two-Factor Authentication
+- GET `/auth/2fa/status/` - Get 2FA status for current user
+- POST `/auth/2fa/setup/` - Initiate 2FA setup (returns secret, QR code base64, provisioning URI)
+- POST `/auth/2fa/verify/` - Verify TOTP token and enable 2FA (returns backup codes)
+- POST `/auth/2fa/disable/` - Disable 2FA (requires password)
+- POST `/auth/2fa/backup-codes/` - Generate new backup codes
+- POST `/auth/2fa/authenticate/` - Authenticate with 2FA token (body: user_id, token, is_backup_code)
+
+### User Sessions
+- GET `/auth/sessions/` - List user's active sessions
+- POST `/auth/sessions/{id}/terminate/` - Terminate specific session
+- POST `/auth/sessions/terminate-all/` - Terminate all sessions except current
 
 ### Users
 - GET/POST `/users/` - List/create users
@@ -294,6 +346,32 @@ Base URL: `/api/v1/`
 - GET `/kudos/stats/` - Kudos statistics
 - GET `/kudos/categories/` - List kudos categories
 
+### OKR
+- GET/POST `/okr/periods/` - OKR periods (Q1 2025, Year 2025, etc.)
+- GET/POST `/okr/objectives/` - List/create objectives
+- GET/PATCH/DELETE `/okr/objectives/{id}/` - Objective detail/update/delete
+- GET `/okr/objectives/my/` - Current user's objectives
+- GET `/okr/objectives/team/` - Team objectives (subordinates)
+- GET `/okr/objectives/company/` - Company-level objectives
+- GET `/okr/objectives/tree/` - Objective hierarchy tree
+- POST `/okr/objectives/{id}/add_key_result/` - Add key result
+- POST `/okr/key-results/{id}/check-in/` - Record check-in progress
+- GET/PATCH/DELETE `/okr/key-results/{id}/` - Key result CRUD
+- GET `/okr/stats/` - OKR statistics and progress analytics
+
+### Bookings
+- GET/POST `/resource-types/` - Resource types (meeting room, equipment, etc.)
+- GET/POST `/resources/` - Resources with filters (type, capacity, search)
+- GET/PATCH/DELETE `/resources/{id}/` - Resource detail
+- GET `/resources/{id}/availability/` - Available time slots for a date
+- GET/POST `/bookings/` - All bookings with filters
+- GET/PATCH/DELETE `/bookings/{id}/` - Booking detail
+- GET `/bookings/my/` - Current user's bookings
+- GET `/bookings/calendar/` - Bookings for calendar view (start, end dates)
+- POST `/bookings/{id}/cancel/` - Cancel booking
+- POST `/bookings/{id}/extend/` - Extend booking duration
+- GET `/bookings/stats/` - Booking statistics
+
 ## RBAC Permissions
 
 14 permission categories with codenames:
@@ -380,6 +458,23 @@ Base URL: `/api/v1/`
 - Shows employees count per department
 - Props: `className?: string`
 
+### ResourceModal (`frontend/src/components/features/bookings/ResourceModal.tsx`)
+- Modal for creating/editing booking resources (admin only)
+- Fields: name, description, location, capacity, type, work hours, duration limits, amenities
+- Toggle for active status
+- Dynamic amenities list with add/remove
+- Integrated with React Query for mutations
+- Props: `isOpen: boolean, onClose: () => void, resource?: Resource | null`
+
+### OKRDashboard (`frontend/src/components/features/okr/OKRDashboard.tsx`)
+- Visual analytics dashboard for OKR progress
+- Overview cards: personal/team/company average progress
+- Key results summary: completed/in-progress/not-started
+- Distribution charts: by status, by level, by progress range
+- Top objectives by progress with clickable navigation
+- Recent check-ins timeline with progress delta indicators
+- Props: `stats: OKRStats, loading?: boolean`
+
 ## Known Issues & Technical Debt
 
 1. ~~**Mixed UI Libraries**~~ - Radix UI removed, using Carbon only ✅
@@ -409,9 +504,41 @@ cd backend
 source venv/bin/activate
 pip install -r requirements.txt
 export DJANGO_SETTINGS_MODULE=config.settings.development
+export DATABASE_URL="postgres://fond_intra:devpassword@localhost:5432/fond_intra"
 python manage.py migrate
 python manage.py init_roles    # Initialize default roles
 python manage.py runserver
+```
+
+### Test Data
+```bash
+cd backend
+source venv/bin/activate
+export DJANGO_SETTINGS_MODULE=config.settings.development
+export DATABASE_URL="postgres://fond_intra:devpassword@localhost:5432/fond_intra"
+python scripts/create_test_data.py
+```
+
+Creates:
+- 7 test users (password: `test123`)
+- 4 departments (IT, HR, Marketing, Administration)
+- 5 positions
+- 3 achievements with awards
+- 2 news articles
+- 1 OKR period with objectives
+- 3 resource types + 3 resources for booking
+
+Test user emails: `ivan.petrov@test.com`, `maria.sidorova@test.com`, etc.
+
+### Docker - Local Development
+```bash
+# Start PostgreSQL and Redis containers
+docker run -d --name fond_db -e POSTGRES_DB=fond_intra -e POSTGRES_USER=fond_intra -e POSTGRES_PASSWORD=devpassword -p 5432:5432 postgres:16-alpine
+docker run -d --name fond_redis -p 6379:6379 redis:7-alpine
+
+# Stop containers
+docker stop fond_db fond_redis
+docker rm fond_db fond_redis
 ```
 
 ### Docker (Production)
@@ -436,6 +563,24 @@ docker compose -f docker-compose.prod.yml up -d
 
 - Main branch: `main`
 - Recent commits focus on:
+  - **Phase 7 Implementation (Security):**
+    - Two-Factor Authentication (TOTP) via pyotp
+    - QR code generation for authenticator apps
+    - Backup codes (one-time use, SHA-256 hashed)
+    - User session management
+    - Session termination (individual/all)
+    - Updated login flow for 2FA
+  - **Phase 6 Completion (OKR & Bookings):**
+    - OKR Dashboard with progress charts and analytics
+    - OKR stats API endpoint for progress tracking
+    - OKR Dashboard widget on main dashboard
+    - Bookings Dashboard widget
+    - Recurring bookings UI (daily/weekly, day selection, end date)
+    - Celery tasks for bookings (reminders, daily summary, cleanup)
+    - Celery tasks for classifieds (expire, notify expiring)
+    - FAQ admin CRUD
+    - Booking cancel button on "My Bookings" tab
+    - Fixed various bugs (resource creation, booking cancellation validation)
   - **Phase 5 Implementation:**
     - Surveys module (create, edit, publish, respond, results)
     - Ideas/Bank of Ideas (voting, status management, comments)
@@ -486,4 +631,4 @@ docker compose -f docker-compose.prod.yml up -d
 ---
 
 *Document created: 2025-11-23*
-*Last updated: 2025-11-25 - Added Phase 5 modules (Surveys, Ideas, Classifieds, FAQ, Kudos)*
+*Last updated: 2025-11-25 - Completed Phase 7 (Security: 2FA with TOTP, Sessions management, Backup codes)*

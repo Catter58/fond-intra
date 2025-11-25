@@ -15,7 +15,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.audit.models import AuditLog
-from .models import User, UserStatus
+from .models import User, UserStatus, TwoFactorSettings, UserSession
 from .serializers import (
     CustomTokenObtainPairSerializer,
     PasswordChangeSerializer,
@@ -31,6 +31,13 @@ from .serializers import (
     UserStatusSerializer,
     UserStatusCreateSerializer,
     BirthdaySerializer,
+    TwoFactorStatusSerializer,
+    TwoFactorSetupSerializer,
+    TwoFactorVerifySerializer,
+    TwoFactorDisableSerializer,
+    TwoFactorBackupCodesSerializer,
+    TwoFactorAuthenticateSerializer,
+    UserSessionSerializer,
 )
 from .permissions import IsHROrAdmin, CanViewPrivateData
 from .filters import UserFilter, AdminUserFilter
@@ -45,11 +52,38 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
+        # First, validate credentials without generating tokens
+        email = request.data.get('email')
+        password = request.data.get('password')
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Let parent handle the error
+            return super().post(request, *args, **kwargs)
+
+        # Check if user has 2FA enabled
+        try:
+            two_factor = user.two_factor_settings
+            if two_factor.is_enabled:
+                # Validate password first
+                if not user.check_password(password):
+                    return super().post(request, *args, **kwargs)
+
+                # Return 2FA required response
+                return Response({
+                    'requires_2fa': True,
+                    'user_id': user.id,
+                    'message': 'Two-factor authentication required.'
+                }, status=status.HTTP_200_OK)
+        except TwoFactorSettings.DoesNotExist:
+            pass
+
+        # Normal login flow
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == 200:
             # Log successful login
-            user = User.objects.get(email=request.data.get('email'))
             AuditLog.log(
                 user=user,
                 action=AuditLog.Action.LOGIN,
@@ -59,6 +93,26 @@ class LoginView(TokenObtainPairView):
                 ip_address=self.get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
             )
+
+            # Create session record with both refresh (for blacklisting) and access (for detection) JTIs
+            try:
+                from rest_framework_simplejwt.tokens import RefreshToken as RefreshTokenClass, AccessToken
+                refresh_token_str = response.data.get('refresh')
+                access_token_str = response.data.get('access')
+                if refresh_token_str:
+                    refresh_token = RefreshTokenClass(refresh_token_str)
+                    access_jti = ''
+                    if access_token_str:
+                        access_token = AccessToken(access_token_str)
+                        access_jti = str(access_token['jti'])
+                    UserSession.create_from_request(
+                        user=user,
+                        token_jti=str(refresh_token['jti']),
+                        request=request,
+                        access_jti=access_jti
+                    )
+            except Exception:
+                pass  # Don't fail login if session creation fails
 
         return response
 
@@ -440,3 +494,418 @@ class UserStatusViewSet(ListModelMixin, CreateModelMixin, DestroyModelMixin, Gen
         if status:
             return Response(UserStatusSerializer(status).data)
         return Response(None)
+
+
+# =============================================================================
+# Two-Factor Authentication Views
+# =============================================================================
+
+class TwoFactorStatusView(APIView):
+    """Get 2FA status for current user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            settings = request.user.two_factor_settings
+            return Response(TwoFactorStatusSerializer(settings).data)
+        except TwoFactorSettings.DoesNotExist:
+            return Response({
+                'is_enabled': False,
+                'enabled_at': None,
+                'backup_codes_count': 0
+            })
+
+
+class TwoFactorSetupView(APIView):
+    """Initiate 2FA setup - generate secret and QR code."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        import io
+        import base64
+        import qrcode
+
+        # Get or create 2FA settings
+        settings, created = TwoFactorSettings.objects.get_or_create(
+            user=request.user
+        )
+
+        # If already enabled, require disabling first
+        if settings.is_enabled:
+            return Response(
+                {'detail': 'Two-factor authentication is already enabled. Disable it first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generate new secret
+        secret = settings.generate_secret()
+        settings.save()
+
+        # Generate provisioning URI
+        provisioning_uri = settings.get_totp_uri()
+
+        # Generate QR code as base64
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(provisioning_uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        return Response({
+            'secret': secret,
+            'qr_code': f'data:image/png;base64,{qr_base64}',
+            'provisioning_uri': provisioning_uri
+        })
+
+
+class TwoFactorVerifyView(APIView):
+    """Verify TOTP token and enable 2FA."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            settings = request.user.two_factor_settings
+        except TwoFactorSettings.DoesNotExist:
+            return Response(
+                {'detail': 'Please initiate 2FA setup first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if settings.is_enabled:
+            return Response(
+                {'detail': 'Two-factor authentication is already enabled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify the token
+        token = serializer.validated_data['token']
+        if not settings.verify_token(token):
+            return Response(
+                {'detail': 'Invalid verification code.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Enable 2FA
+        settings.is_enabled = True
+        settings.enabled_at = timezone.now()
+        settings.save()
+
+        # Generate backup codes
+        backup_codes = settings.generate_backup_codes()
+        settings.save()
+
+        # Log 2FA enablement
+        AuditLog.log(
+            user=request.user,
+            action=AuditLog.Action.UPDATE,
+            entity_type='TwoFactorSettings',
+            entity_id=settings.id,
+            entity_repr=f'2FA for {request.user.email}',
+            new_values={'is_enabled': True},
+            ip_address=getattr(request, 'audit_ip', None),
+            user_agent=getattr(request, 'audit_user_agent', '')
+        )
+
+        return Response({
+            'detail': 'Two-factor authentication has been enabled.',
+            'backup_codes': backup_codes
+        })
+
+
+class TwoFactorDisableView(APIView):
+    """Disable 2FA for current user."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = TwoFactorDisableSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            settings = request.user.two_factor_settings
+        except TwoFactorSettings.DoesNotExist:
+            return Response(
+                {'detail': 'Two-factor authentication is not set up.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not settings.is_enabled:
+            return Response(
+                {'detail': 'Two-factor authentication is not enabled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Disable 2FA
+        settings.is_enabled = False
+        settings.enabled_at = None
+        settings.secret = ''
+        settings.backup_codes = []
+        settings.save()
+
+        # Log 2FA disablement
+        AuditLog.log(
+            user=request.user,
+            action=AuditLog.Action.UPDATE,
+            entity_type='TwoFactorSettings',
+            entity_id=settings.id,
+            entity_repr=f'2FA for {request.user.email}',
+            new_values={'is_enabled': False},
+            ip_address=getattr(request, 'audit_ip', None),
+            user_agent=getattr(request, 'audit_user_agent', '')
+        )
+
+        return Response({'detail': 'Two-factor authentication has been disabled.'})
+
+
+class TwoFactorBackupCodesView(APIView):
+    """Generate new backup codes."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            settings = request.user.two_factor_settings
+        except TwoFactorSettings.DoesNotExist:
+            return Response(
+                {'detail': 'Two-factor authentication is not set up.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not settings.is_enabled:
+            return Response(
+                {'detail': 'Two-factor authentication is not enabled.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generate new backup codes
+        backup_codes = settings.generate_backup_codes()
+        settings.save()
+
+        return Response({'backup_codes': backup_codes})
+
+
+class TwoFactorAuthenticateView(APIView):
+    """Authenticate with 2FA token (used during login)."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = TwoFactorAuthenticateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Get pending 2FA user ID from session/temp storage
+        pending_user_id = request.data.get('user_id')
+        if not pending_user_id:
+            return Response(
+                {'detail': 'No pending 2FA authentication.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(pk=pending_user_id)
+            settings = user.two_factor_settings
+        except (User.DoesNotExist, TwoFactorSettings.DoesNotExist):
+            return Response(
+                {'detail': 'Invalid request.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        token = serializer.validated_data['token']
+        is_backup = serializer.validated_data.get('is_backup_code', False)
+
+        # Verify token
+        if is_backup:
+            if not settings.verify_backup_code(token):
+                return Response(
+                    {'detail': 'Invalid backup code.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            if not settings.verify_token(token):
+                return Response(
+                    {'detail': 'Invalid verification code.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+
+        # Create session record with both refresh and access JTIs
+        try:
+            UserSession.create_from_request(
+                user=user,
+                token_jti=str(refresh['jti']),  # Refresh token JTI for blacklisting
+                request=request,
+                access_jti=str(refresh.access_token['jti'])  # Access token JTI for detection
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create session: {e}")
+
+        # Log successful 2FA login
+        AuditLog.log(
+            user=user,
+            action=AuditLog.Action.LOGIN,
+            entity_type='User',
+            entity_id=user.id,
+            entity_repr=str(user),
+            new_values={'two_factor_auth': True},
+            ip_address=self.get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+        )
+
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'full_name': user.get_full_name(),
+                'avatar': user.avatar.url if user.avatar else None,
+                'is_superuser': user.is_superuser
+            }
+        })
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+
+# =============================================================================
+# User Session Views
+# =============================================================================
+
+class UserSessionListView(APIView):
+    """List user's active sessions."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sessions = UserSession.objects.filter(
+            user=request.user,
+            is_active=True
+        ).order_by('-last_activity')
+
+        # Get current token JTI
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        jwt_auth = JWTAuthentication()
+        try:
+            validated_token = jwt_auth.get_validated_token(
+                jwt_auth.get_raw_token(jwt_auth.get_header(request))
+            )
+            request.current_token_jti = validated_token['jti']
+        except Exception:
+            request.current_token_jti = None
+
+        serializer = UserSessionSerializer(
+            sessions,
+            many=True,
+            context={'request': request}
+        )
+        return Response(serializer.data)
+
+
+class UserSessionTerminateView(APIView):
+    """Terminate a specific session."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id):
+        try:
+            session = UserSession.objects.get(
+                id=session_id,
+                user=request.user,
+                is_active=True
+            )
+        except UserSession.DoesNotExist:
+            return Response(
+                {'detail': 'Session not found.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if this is the current session by comparing access_jti
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        jwt_auth = JWTAuthentication()
+        is_current_session = False
+        try:
+            validated_token = jwt_auth.get_validated_token(
+                jwt_auth.get_raw_token(jwt_auth.get_header(request))
+            )
+            current_access_jti = validated_token['jti']
+            is_current_session = session.access_jti == current_access_jti
+        except Exception:
+            pass
+
+        session.terminate()
+
+        # Log session termination
+        AuditLog.log(
+            user=request.user,
+            action=AuditLog.Action.LOGOUT,
+            entity_type='UserSession',
+            entity_id=session.id,
+            entity_repr=f'Session {session.device_type} ({session.ip_address})',
+            ip_address=getattr(request, 'audit_ip', None),
+            user_agent=getattr(request, 'audit_user_agent', '')
+        )
+
+        return Response({
+            'detail': 'Сессия завершена.',
+            'logged_out': is_current_session
+        })
+
+
+class UserSessionTerminateAllView(APIView):
+    """Terminate all sessions except current."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Get current access token JTI
+        from rest_framework_simplejwt.authentication import JWTAuthentication
+        jwt_auth = JWTAuthentication()
+        current_access_jti = None
+        try:
+            validated_token = jwt_auth.get_validated_token(
+                jwt_auth.get_raw_token(jwt_auth.get_header(request))
+            )
+            current_access_jti = validated_token['jti']
+        except Exception:
+            pass
+
+        # Get all active sessions except current (compare by access_jti)
+        sessions = UserSession.objects.filter(
+            user=request.user,
+            is_active=True
+        )
+
+        if current_access_jti:
+            sessions = sessions.exclude(access_jti=current_access_jti)
+
+        terminated_count = 0
+        for session in sessions:
+            session.terminate()
+            terminated_count += 1
+
+        # Log bulk session termination
+        AuditLog.log(
+            user=request.user,
+            action=AuditLog.Action.LOGOUT,
+            entity_type='UserSession',
+            entity_id=0,
+            entity_repr=f'Terminated {terminated_count} sessions',
+            ip_address=getattr(request, 'audit_ip', None),
+            user_agent=getattr(request, 'audit_user_agent', '')
+        )
+
+        return Response({
+            'detail': f'{terminated_count} session(s) have been terminated.'
+        })

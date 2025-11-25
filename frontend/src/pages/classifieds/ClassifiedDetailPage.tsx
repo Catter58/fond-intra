@@ -214,7 +214,7 @@ export default function ClassifiedDetailPage() {
                       </Button>
                     )}
                     <Button
-                      kind="danger--ghost"
+                      kind="danger--tertiary"
                       size="md"
                       hasIconOnly
                       renderIcon={TrashCan}

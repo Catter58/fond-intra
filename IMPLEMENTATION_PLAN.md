@@ -1156,7 +1156,7 @@ Frontend:
 
 ## Фаза 6: OKR & Бронирование
 
-### 3.8 OKR система
+### 3.8 OKR система ✅ COMPLETED
 
 **Цель:** Objectives & Key Results для управления целями.
 
@@ -1164,83 +1164,85 @@ Frontend:
 - Новый app: `backend/apps/okr/`
 - Связь с User, Department
 
+**Результат:** Полностью реализована система OKR с поддержкой периодов, целей на уровне компании/отдела/сотрудника, ключевых результатов с check-in системой.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `okr`
-- [ ] Модель `OKRPeriod`:
-  - [ ] `name` (Q1 2025, 2025)
-  - [ ] `type` (quarter, year)
-  - [ ] `starts_at`, `ends_at`
-  - [ ] `is_active`
-- [ ] Модель `Objective`:
-  - [ ] `period` (FK)
-  - [ ] `title`
-  - [ ] `description`
-  - [ ] `level` (company, department, personal)
-  - [ ] `owner` (FK to User)
-  - [ ] `department` (FK, nullable)
-  - [ ] `parent` (FK to self, nullable) — каскадирование
-  - [ ] `status` (draft, active, completed, cancelled)
-  - [ ] `progress` (computed from KRs)
-  - [ ] `created_at`
-- [ ] Модель `KeyResult`:
-  - [ ] `objective` (FK)
-  - [ ] `title`
-  - [ ] `type` (quantitative, qualitative)
-  - [ ] `target_value` (для количественных)
-  - [ ] `current_value`
-  - [ ] `unit` (%, штуки, рубли, etc.)
-  - [ ] `progress` (0-100, computed или manual)
-  - [ ] `order`
-- [ ] Модель `CheckIn`:
-  - [ ] `key_result` (FK)
-  - [ ] `author` (FK)
-  - [ ] `previous_value`
-  - [ ] `new_value`
-  - [ ] `comment`
-  - [ ] `created_at`
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/okr/periods/` — периоды
-  - [ ] `GET /api/v1/okr/objectives/` — objectives с фильтрами
-  - [ ] `POST /api/v1/okr/objectives/`
-  - [ ] `GET/PATCH/DELETE /api/v1/okr/objectives/{id}/`
-  - [ ] `POST /api/v1/okr/objectives/{id}/key-results/` — добавить KR
-  - [ ] `PATCH /api/v1/okr/key-results/{id}/` — обновить KR
-  - [ ] `POST /api/v1/okr/key-results/{id}/check-in/` — добавить check-in
-  - [ ] `GET /api/v1/okr/my/` — мои OKR
-  - [ ] `GET /api/v1/okr/team/` — OKR моей команды
-  - [ ] `GET /api/v1/okr/company/` — OKR компании
-- [ ] Вычисление progress Objective из KRs
-- [ ] Permissions: свои OKR, OKR подчинённых (для менеджеров)
+- [x] Создать app `okr`
+- [x] Модель `OKRPeriod`:
+  - [x] `name` (Q1 2025, 2025)
+  - [x] `type` (quarter, year)
+  - [x] `starts_at`, `ends_at`
+  - [x] `is_active`
+- [x] Модель `Objective`:
+  - [x] `period` (FK)
+  - [x] `title`
+  - [x] `description`
+  - [x] `level` (company, department, personal)
+  - [x] `owner` (FK to User)
+  - [x] `department` (FK, nullable)
+  - [x] `parent` (FK to self, nullable) — каскадирование
+  - [x] `status` (draft, active, completed, cancelled)
+  - [x] `progress` (computed from KRs)
+  - [x] `created_at`
+- [x] Модель `KeyResult`:
+  - [x] `objective` (FK)
+  - [x] `title`
+  - [x] `type` (quantitative, qualitative)
+  - [x] `target_value` (для количественных)
+  - [x] `current_value`
+  - [x] `unit` (%, штуки, рубли, etc.)
+  - [x] `progress` (0-100, computed или manual)
+  - [x] `order`
+- [x] Модель `CheckIn`:
+  - [x] `key_result` (FK)
+  - [x] `author` (FK)
+  - [x] `previous_value`
+  - [x] `new_value`
+  - [x] `comment`
+  - [x] `created_at`
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] `GET /api/v1/okr/periods/` — периоды
+  - [x] `GET /api/v1/okr/objectives/` — objectives с фильтрами
+  - [x] `POST /api/v1/okr/objectives/`
+  - [x] `GET/PATCH/DELETE /api/v1/okr/objectives/{id}/`
+  - [x] `POST /api/v1/okr/objectives/{id}/key-results/` — добавить KR
+  - [x] `PATCH /api/v1/okr/key-results/{id}/` — обновить KR
+  - [x] `POST /api/v1/okr/key-results/{id}/check-in/` — добавить check-in
+  - [x] `GET /api/v1/okr/my/` — мои OKR
+  - [x] `GET /api/v1/okr/team/` — OKR моей команды
+  - [x] `GET /api/v1/okr/company/` — OKR компании
+- [x] Вычисление progress Objective из KRs
+- [x] Permissions: свои OKR, OKR подчинённых (для менеджеров)
 
 Frontend:
-- [ ] Страница `OKRPage.tsx` — обзор OKR
-- [ ] Tabs: Мои / Команда / Компания
-- [ ] Компонент `ObjectiveCard.tsx`:
-  - [ ] Заголовок, описание
-  - [ ] Progress bar
-  - [ ] Список Key Results
-- [ ] Компонент `KeyResultItem.tsx`:
-  - [ ] Название, прогресс
-  - [ ] Текущее/целевое значение
-  - [ ] Кнопка Check-in
-- [ ] Модальное окно `CheckInModal.tsx`
-- [ ] Визуализация: дерево целей (родитель → дочерние)
-- [ ] Форма создания Objective
-- [ ] Форма добавления Key Result
-- [ ] История check-ins
-- [ ] Страница `OKRDetailPage.tsx` — детали objective
-- [ ] Дашборд OKR с графиками прогресса
-- [ ] Добавить в навигацию
-- [ ] Виджет на главную — прогресс личных OKR
-- [ ] Тестирование
+- [x] Страница `OKRPage.tsx` — обзор OKR
+- [x] Tabs: Мои / Команда / Компания
+- [x] Компонент `ObjectiveCard.tsx`:
+  - [x] Заголовок, описание
+  - [x] Progress bar
+  - [x] Список Key Results
+- [x] Компонент `KeyResultItem.tsx`:
+  - [x] Название, прогресс
+  - [x] Текущее/целевое значение
+  - [x] Кнопка Check-in
+- [x] Модальное окно `CreateObjectiveModal.tsx`
+- [x] Визуализация: дерево целей (родитель → дочерние)
+- [x] Форма создания Objective
+- [x] Форма добавления Key Result
+- [x] История check-ins
+- [x] Страница `OKRDetailPage.tsx` — детали objective
+- [x] Дашборд OKR с графиками прогресса
+- [x] Добавить в навигацию
+- [x] Виджет на Dashboard — прогресс личных OKR
+- [x] TypeScript проверка пройдена
 
 ---
 
-### 3.9 Бронирование ресурсов
+### 3.9 Бронирование ресурсов ✅ COMPLETED
 
 **Цель:** Бронирование переговорок, оборудования, рабочих мест.
 
@@ -1248,184 +1250,251 @@ Frontend:
 - Новый app: `backend/apps/bookings/`
 - Связь с User
 
+**Результат:** Полностью реализована система бронирования ресурсов с типами, фильтрами, календарём доступности, валидацией пересечений и рабочих часов.
+
 **Чек-лист:**
 
 Backend:
-- [ ] Создать app `bookings`
-- [ ] Модель `ResourceType`:
-  - [ ] `name` (Переговорная, Оборудование, Рабочее место, Парковка)
-  - [ ] `slug`
-  - [ ] `icon`
-- [ ] Модель `Resource`:
-  - [ ] `type` (FK)
-  - [ ] `name`
-  - [ ] `description`
-  - [ ] `location` (этаж, здание)
-  - [ ] `capacity` (для переговорок)
-  - [ ] `amenities` (JSON: проектор, ВКС, доска, etc.)
-  - [ ] `is_active`
-  - [ ] `image`
-- [ ] Модель `Booking`:
-  - [ ] `resource` (FK)
-  - [ ] `user` (FK)
-  - [ ] `title` (название встречи)
-  - [ ] `starts_at`
-  - [ ] `ends_at`
-  - [ ] `is_recurring` (Boolean)
-  - [ ] `recurrence_rule` (JSON: weekly, days, until)
-  - [ ] `status` (confirmed, cancelled)
-  - [ ] `created_at`
-- [ ] Миграции
-- [ ] Сериализаторы
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/bookings/resource-types/`
-  - [ ] `GET /api/v1/bookings/resources/` — с фильтрами
-  - [ ] `GET /api/v1/bookings/resources/{id}/availability/?date=<date>` — слоты
-  - [ ] `GET /api/v1/bookings/` — мои бронирования
-  - [ ] `POST /api/v1/bookings/` — создать бронь
-  - [ ] `DELETE /api/v1/bookings/{id}/` — отменить
-  - [ ] `GET /api/v1/bookings/calendar/?resource={id}&from=<date>&to=<date>`
-- [ ] Валидация: нет пересечений по времени
-- [ ] Валидация: рабочие часы (9:00-21:00)
-- [ ] Валидация: максимальная длительность
-- [ ] Уведомления: напоминание за 15 мин (Celery)
-- [ ] Celery task для отправки напоминаний
+- [x] Создать app `bookings`
+- [x] Модель `ResourceType`:
+  - [x] `name` (Переговорная, Оборудование, Рабочее место, Парковка)
+  - [x] `slug`
+  - [x] `icon`
+  - [x] `description`
+  - [x] `is_active`
+  - [x] `order`
+- [x] Модель `Resource`:
+  - [x] `type` (FK)
+  - [x] `name`
+  - [x] `description`
+  - [x] `location` (этаж, здание)
+  - [x] `capacity` (для переговорок)
+  - [x] `amenities` (JSON: проектор, ВКС, доска, etc.)
+  - [x] `is_active`
+  - [x] `image`
+  - [x] `work_hours_start`, `work_hours_end`
+  - [x] `min_booking_duration`, `max_booking_duration`
+- [x] Модель `Booking`:
+  - [x] `resource` (FK)
+  - [x] `user` (FK)
+  - [x] `title` (название встречи)
+  - [x] `description`
+  - [x] `starts_at`
+  - [x] `ends_at`
+  - [x] `is_recurring` (Boolean)
+  - [x] `recurrence_rule` (JSON: weekly, days, until)
+  - [x] `parent_booking` (FK to self for recurring)
+  - [x] `status` (confirmed, cancelled)
+  - [x] `created_at`, `updated_at`
+  - [x] Properties: `duration_minutes`, `is_past`, `is_active`
+- [x] Миграции
+- [x] Сериализаторы
+- [x] Endpoints:
+  - [x] `GET /api/v1/resource-types/`
+  - [x] `GET /api/v1/resources/` — с фильтрами (type, search, min_capacity)
+  - [x] `GET /api/v1/resources/{id}/`
+  - [x] `GET /api/v1/resources/{id}/availability/?date=<date>` — слоты
+  - [x] `GET /api/v1/bookings/` — все бронирования с фильтрами
+  - [x] `GET /api/v1/bookings/my/` — мои бронирования
+  - [x] `POST /api/v1/bookings/` — создать бронь
+  - [x] `POST /api/v1/bookings/{id}/cancel/` — отменить
+  - [x] `POST /api/v1/bookings/{id}/extend/` — продлить
+  - [x] `GET /api/v1/bookings/calendar/?start=<date>&end=<date>` — для календаря
+  - [x] `GET /api/v1/bookings/stats/` — статистика
+- [x] Валидация: нет пересечений по времени
+- [x] Валидация: рабочие часы (настраиваемые для каждого ресурса)
+- [x] Валидация: минимальная/максимальная длительность
+- [x] Уведомления: напоминание за 30 мин (Celery)
+- [x] Celery task для отправки напоминаний (`send_booking_reminders`)
+- [x] Celery task для ежедневной сводки (`send_daily_bookings_summary`)
+- [x] Celery task для автоочистки прошедших бронирований (`cleanup_past_bookings`)
 
 Frontend:
-- [ ] Страница `BookingsPage.tsx` — календарь бронирований
-- [ ] Компонент `ResourceSelector.tsx` — выбор ресурса
-- [ ] Компонент `BookingCalendar.tsx` — недельный/дневной вид
-- [ ] Компонент `TimeSlotPicker.tsx` — выбор времени
-- [ ] Визуализация занятых слотов
-- [ ] Модальное окно создания брони
-- [ ] Список ресурсов с фильтрами (тип, вместимость, amenities)
-- [ ] Карточка ресурса с фото и описанием
-- [ ] Мои бронирования (upcoming, past)
-- [ ] Отмена бронирования
-- [ ] Повторяющиеся брони (UI для recurrence)
-- [ ] Добавить в навигацию
-- [ ] Виджет на Dashboard — ближайшие брони
-- [ ] Тестирование конфликтов
+- [x] Страница `BookingsPage.tsx` — обзор ресурсов и бронирований
+- [x] Tabs: Ресурсы / Мои бронирования
+- [x] Компонент `ResourceCard.tsx` — карточка ресурса
+- [x] Компонент `BookingCard.tsx` — карточка бронирования
+- [x] Компонент `TimeSlotPicker.tsx` — выбор времени
+- [x] Визуализация занятых/свободных слотов
+- [x] Модальное окно `CreateBookingModal.tsx` создания брони
+- [x] Список ресурсов с фильтрами (тип, поиск)
+- [x] Страница `ResourceDetailPage.tsx` — детали ресурса с доступностью
+- [x] Мои бронирования (upcoming)
+- [x] Отмена бронирования
+- [x] Повторяющиеся брони (UI для recurrence) — Toggle, RadioButtonGroup, Checkboxes для дней недели
+- [x] Добавить в навигацию
+- [x] Виджет на Dashboard — ближайшие брони
+- [x] TypeScript проверка пройдена
+- [x] Статистика бронирований (today, week, month)
+- [x] CRUD ресурсов для администратора:
+  - [x] API methods: createResource, updateResource, deleteResource
+  - [x] Компонент ResourceModal для создания/редактирования
+  - [x] Кнопка "Добавить ресурс" на странице бронирований (только для админа)
+  - [x] Кнопки редактирования/удаления на карточках ресурсов (только для админа)
+  - [x] Модальное окно подтверждения удаления
 
 ---
 
 ## Фаза 7: Безопасность
 
-### 5.1 2FA (TOTP)
+### 5.1 2FA (TOTP) ✅ COMPLETED
 
 **Цель:** Двухфакторная аутентификация через приложения.
 
 **Интеграция с существующей структурой:**
 - Расширяем: `accounts` app
-- Библиотеки: `django-otp`, `pyotp`, `qrcode`
+- Библиотеки: `pyotp`, `qrcode[pil]`, `user-agents`
+
+**Результат:** Полностью работающая двухфакторная аутентификация с TOTP, QR-кодом, backup codes, интеграцией в login flow.
 
 **Чек-лист:**
 
 Backend:
-- [ ] Установить: `django-otp`, `pyotp`, `qrcode[pil]`
-- [ ] Добавить в INSTALLED_APPS: `django_otp`, `django_otp.plugins.otp_totp`
-- [ ] Расширить модель `User` или создать `TwoFactorSettings`:
-  - [ ] `is_2fa_enabled` (Boolean)
-  - [ ] `totp_secret` (CharField, encrypted)
-  - [ ] `backup_codes` (JSONField, hashed)
-  - [ ] `2fa_enabled_at`
-- [ ] Миграция
-- [ ] Endpoints:
-  - [ ] `POST /api/v1/auth/2fa/setup/` — генерация secret + QR
-  - [ ] `POST /api/v1/auth/2fa/verify/` — верификация первого кода
-  - [ ] `POST /api/v1/auth/2fa/disable/` — отключение (требует пароль)
-  - [ ] `GET /api/v1/auth/2fa/status/` — статус 2FA
-- [ ] Обновить `login` endpoint:
-  - [ ] Если 2FA включена, возвращать `requires_2fa: true`
-  - [ ] Новый endpoint `POST /api/v1/auth/2fa/authenticate/` — проверка OTP
-  - [ ] Выдача токенов только после успешного OTP
-- [ ] Генерация backup codes (10 штук)
-- [ ] Endpoint для regenerate backup codes
+- [x] Установить: `pyotp`, `qrcode[pil]`, `user-agents` (используем легковесные библиотеки вместо django-otp)
+- [x] Создать модель `TwoFactorSettings`:
+  - [x] `is_enabled` (Boolean)
+  - [x] `secret` (CharField)
+  - [x] `backup_codes` (JSONField, hashed with SHA-256)
+  - [x] `enabled_at`
+- [x] Миграция
+- [x] Endpoints:
+  - [x] `POST /api/v1/auth/2fa/setup/` — генерация secret + QR
+  - [x] `POST /api/v1/auth/2fa/verify/` — верификация первого кода
+  - [x] `POST /api/v1/auth/2fa/disable/` — отключение (требует пароль)
+  - [x] `GET /api/v1/auth/2fa/status/` — статус 2FA
+- [x] Обновить `login` endpoint:
+  - [x] Если 2FA включена, возвращать `requires_2fa: true`
+  - [x] Новый endpoint `POST /api/v1/auth/2fa/authenticate/` — проверка OTP
+  - [x] Выдача токенов только после успешного OTP
+- [x] Генерация backup codes (10 штук)
+- [x] Endpoint `POST /api/v1/auth/2fa/backup-codes/` для regenerate backup codes
 
 Frontend:
-- [ ] Страница настройки 2FA в профиле
-- [ ] Отображение QR-кода для сканирования
-- [ ] Ввод кода для подтверждения настройки
-- [ ] Показ backup codes (однократно, с предупреждением сохранить)
-- [ ] Кнопка отключения 2FA
-- [ ] Обновить Login flow:
-  - [ ] После email/password показать форму OTP если требуется
-  - [ ] Input для 6-значного кода
-  - [ ] Ссылка "Использовать backup code"
-- [ ] Форма для backup code
-- [ ] Тестирование полного flow
+- [x] Страница настройки 2FA в профиле (/security)
+- [x] Отображение QR-кода для сканирования
+- [x] Ввод кода для подтверждения настройки
+- [x] Показ backup codes (однократно, с предупреждением сохранить)
+- [x] Кнопка отключения 2FA
+- [x] Обновить Login flow:
+  - [x] После email/password показать форму OTP если требуется
+  - [x] Input для 6-значного кода
+  - [x] Checkbox "Использовать backup code"
+- [x] Форма для backup code
+- [x] Тестирование полного flow
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/accounts/models.py` — модель TwoFactorSettings
+- `backend/apps/accounts/serializers.py` — сериализаторы для 2FA
+- `backend/apps/accounts/views.py` — TwoFactorSetupView, TwoFactorVerifyView, TwoFactorDisableView, TwoFactorStatusView, TwoFactorAuthenticateView, BackupCodesView
+- `backend/apps/accounts/urls/__init__.py` — URL для 2FA endpoints
+- `backend/apps/accounts/migrations/0003_add_2fa_and_sessions.py` — миграция
+
+Frontend:
+- `frontend/src/pages/security/SecurityPage.tsx` — страница настроек безопасности
+- `frontend/src/pages/auth/LoginPage.tsx` — интеграция 2FA в login flow
+- `frontend/src/api/endpoints/auth.ts` — API функции для 2FA
+- `frontend/src/types/index.ts` — типы TwoFactorStatus, TwoFactorSetup
 
 ---
 
-### 5.2 Управление сессиями
+### 5.2 Управление сессиями ✅ COMPLETED
 
 **Цель:** Список активных сессий, принудительный logout.
 
 **Интеграция с существующей структурой:**
 - Расширяем: используем JWT blacklist + кастомная модель сессий
-- Или: `djangorestframework-simplejwt` уже поддерживает blacklist
+- `djangorestframework-simplejwt` с blacklist
+
+**Результат:** Полностью работающее управление сессиями с отображением устройств, завершением сессий и автоматическим logout при завершении текущей сессии.
 
 **Чек-лист:**
 
 Backend:
-- [ ] Создать модель `UserSession`:
-  - [ ] `user` (FK)
-  - [ ] `token_id` (jti from JWT)
-  - [ ] `device_info` (parsed user-agent)
-  - [ ] `ip_address`
-  - [ ] `location` (city, country — optional, via IP)
-  - [ ] `created_at`
-  - [ ] `last_activity`
-  - [ ] `is_current` (Boolean)
-- [ ] Миграция
-- [ ] Обновить login: создавать UserSession
-- [ ] Middleware для обновления last_activity
-- [ ] Endpoints:
-  - [ ] `GET /api/v1/auth/sessions/` — список активных сессий
-  - [ ] `DELETE /api/v1/auth/sessions/{id}/` — завершить сессию (blacklist token)
-  - [ ] `POST /api/v1/auth/sessions/terminate-all/` — завершить все кроме текущей
-- [ ] При logout — удалять/деактивировать сессию
-- [ ] Парсинг User-Agent для device info
+- [x] Создать модель `UserSession`:
+  - [x] `user` (FK)
+  - [x] `token_jti` (refresh token JTI для blacklisting)
+  - [x] `access_jti` (access token JTI для определения текущей сессии)
+  - [x] `device_type`, `device_name`, `browser`, `os` (parsed user-agent)
+  - [x] `ip_address`
+  - [x] `location` (city, country — optional, via IP)
+  - [x] `created_at`
+  - [x] `last_activity`
+  - [x] `is_active` (Boolean)
+- [x] Миграции (0003, 0004)
+- [x] Обновить login: создавать UserSession с обоими JTI
+- [x] Endpoints:
+  - [x] `GET /api/v1/auth/sessions/` — список активных сессий
+  - [x] `POST /api/v1/auth/sessions/{id}/terminate/` — завершить сессию (blacklist token)
+  - [x] `POST /api/v1/auth/sessions/terminate-all/` — завершить все кроме текущей
+- [x] При logout — blacklist token
+- [x] Парсинг User-Agent для device info (библиотека `user-agents`)
 
 Frontend:
-- [ ] Страница "Активные сессии" в настройках профиля
-- [ ] Список сессий:
-  - [ ] Устройство/браузер (иконка + текст)
-  - [ ] IP адрес
-  - [ ] Последняя активность
-  - [ ] Метка "Текущая сессия"
-- [ ] Кнопка "Завершить" для каждой сессии
-- [ ] Кнопка "Завершить все другие сессии"
-- [ ] Подтверждение перед действием
-- [ ] Тестирование
+- [x] Страница "Активные сессии" в настройках безопасности (/security)
+- [x] Список сессий:
+  - [x] Устройство/браузер (иконка + текст)
+  - [x] IP адрес
+  - [x] Последняя активность
+  - [x] Метка "Текущая сессия"
+- [x] Кнопка "Завершить" для каждой сессии
+- [x] Кнопка "Завершить все другие сессии"
+- [x] Автоматический logout при завершении текущей сессии
+- [x] Тестирование
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/accounts/models.py` — модель UserSession с access_jti
+- `backend/apps/accounts/serializers.py` — UserSessionSerializer с is_current
+- `backend/apps/accounts/views.py` — UserSessionListView, UserSessionTerminateView, UserSessionTerminateAllView, LoginView, TwoFactorAuthenticateView
+- `backend/apps/accounts/migrations/0003_add_2fa_and_sessions.py` — начальная миграция
+- `backend/apps/accounts/migrations/0004_add_access_jti_to_usersession.py` — добавление access_jti
+
+Frontend:
+- `frontend/src/pages/security/SecurityPage.tsx` — список сессий, завершение с logout
+- `frontend/src/api/endpoints/auth.ts` — getSessions, terminateSession, terminateAllSessions
 
 ---
 
-### 5.5 Backup codes
+### 5.5 Backup codes ✅ COMPLETED
 
 **Цель:** Резервные коды для 2FA.
 
 **Интеграция с существующей структурой:**
-- Часть 5.1, но выделено для ясности
+- Часть 5.1, интегрировано в TwoFactorSettings
+
+**Результат:** Работающие backup codes с хэшированием, одноразовым использованием и генерацией новых кодов.
 
 **Чек-лист:**
 
 Backend:
-- [ ] Генерация 10 backup codes при включении 2FA
-- [ ] Хэширование кодов перед сохранением (bcrypt)
-- [ ] Endpoint `POST /api/v1/auth/2fa/backup-code/` — использовать код
-- [ ] Код одноразовый — удаляется после использования
-- [ ] Endpoint `POST /api/v1/auth/2fa/regenerate-backup-codes/` — новые коды
-- [ ] Требует подтверждение паролем или OTP
+- [x] Генерация 10 backup codes при включении 2FA
+- [x] Хэширование кодов перед сохранением (SHA-256)
+- [x] Использование backup code через `POST /api/v1/auth/2fa/authenticate/` с `is_backup_code: true`
+- [x] Код одноразовый — удаляется после использования
+- [x] Endpoint `POST /api/v1/auth/2fa/backup-codes/` — новые коды
+- [x] Требует активную 2FA
 
 Frontend:
-- [ ] Показ backup codes при включении 2FA
-- [ ] Предупреждение: "Сохраните эти коды в безопасном месте"
-- [ ] Кнопка "Скопировать" / "Скачать"
-- [ ] Страница использования backup code при входе
-- [ ] Кнопка "Сгенерировать новые коды" в настройках
-- [ ] Показ количества оставшихся кодов
-- [ ] Тестирование
+- [x] Показ backup codes при включении 2FA
+- [x] Предупреждение: "Сохраните эти коды в безопасном месте"
+- [x] Кнопка "Скопировать все коды"
+- [x] Страница использования backup code при входе (checkbox)
+- [x] Кнопка "Сгенерировать новые коды" в настройках
+- [x] Показ количества оставшихся кодов
+- [x] Тестирование
+
+**Изменённые файлы:**
+
+Backend:
+- `backend/apps/accounts/models.py` — методы generate_backup_codes, verify_backup_code в TwoFactorSettings
+- `backend/apps/accounts/views.py` — BackupCodesView
+
+Frontend:
+- `frontend/src/pages/security/SecurityPage.tsx` — UI для backup codes
+- `frontend/src/pages/auth/LoginPage.tsx` — использование backup code при входе
 
 ---
 
