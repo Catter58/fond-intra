@@ -475,6 +475,43 @@ Base URL: `/api/v1/`
 - Recent check-ins timeline with progress delta indicators
 - Props: `stats: OKRStats, loading?: boolean`
 
+### PageBreadcrumb (`frontend/src/components/ui/PageBreadcrumb.tsx`)
+- Automatic breadcrumb navigation based on route configuration
+- Pattern matching for dynamic routes (e.g., `/employees/:id`)
+- Russian labels for all routes
+- Uses Carbon Breadcrumb components
+- Props: `className?: string, customLabel?: string`
+
+### Skeletons (`frontend/src/components/ui/Skeletons.tsx`)
+- Collection of skeleton loading components:
+  - EmployeeCardSkeleton, NewsCardSkeleton, AchievementCardSkeleton
+  - ProfileSkeleton, TableSkeleton, TableRowSkeleton
+  - StatTileSkeleton, ListItemSkeleton, PageHeaderSkeleton
+  - KudosCardSkeleton, SurveyCardSkeleton, BookingCardSkeleton, OKRCardSkeleton
+- Uses Carbon SkeletonText and SkeletonPlaceholder
+
+### KeyboardHelpModal (`frontend/src/components/ui/KeyboardHelpModal.tsx`)
+- Modal showing available keyboard shortcuts
+- Grouped by category (Navigation, Actions)
+- Keyboard key styling with `<kbd>` elements
+- Toggle via Shift+? or custom event
+
+## Hooks
+
+### useKeyboardShortcuts (`frontend/src/hooks/useKeyboardShortcuts.ts`)
+- Global keyboard shortcut handler
+- Gmail-style multi-key sequences (e.g., `g h` for home)
+- Navigation shortcuts: g+h (home), g+e (employees), g+n (news), etc.
+- Action shortcuts: / (focus search), Esc (blur), Shift+? (help)
+- Ignores shortcuts when typing in inputs/textareas
+
+### useThemeStore (`frontend/src/store/themeStore.ts`)
+- Zustand store for theme preferences
+- ThemePreference: 'light' | 'dark' | 'system'
+- ResolvedTheme: 'g10' (light) | 'g100' (dark)
+- System theme detection via matchMedia
+- Persisted to localStorage
+
 ## Known Issues & Technical Debt
 
 1. ~~**Mixed UI Libraries**~~ - Radix UI removed, using Carbon only ✅
@@ -563,6 +600,12 @@ docker compose -f docker-compose.prod.yml up -d
 
 - Main branch: `main`
 - Recent commits focus on:
+  - **Phase 8 Implementation (Polish & UX):**
+    - Dark theme support with light/dark/system options (Zustand + localStorage)
+    - Breadcrumb navigation with route pattern matching
+    - Skeleton loading states for all major pages
+    - Keyboard shortcuts (Gmail-style g+key navigation, Shift+? help)
+    - KeyboardHelpModal component for shortcut documentation
   - **Phase 7 Implementation (Security):**
     - Two-Factor Authentication (TOTP) via pyotp
     - QR code generation for authenticator apps
@@ -602,7 +645,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 1. ~~**Unify UI Components**~~ - Radix UI removed, using Carbon exclusively ✅
 2. ~~**Implement Carbon Grid**~~ - Main pages using Carbon Grid ✅
-3. **Add Dark Theme** - Consider `g100` theme option
+3. ~~**Add Dark Theme**~~ - Implemented with light/dark/system options ✅
 4. **Use Carbon DataTable** - For all admin panel tables (already partially done)
 5. **Add Carbon Notifications** - ToastNotification, InlineNotification
 6. **Setup CI/CD** - Add GitHub Actions for tests, linting, deployment
@@ -631,4 +674,4 @@ docker compose -f docker-compose.prod.yml up -d
 ---
 
 *Document created: 2025-11-23*
-*Last updated: 2025-11-25 - Completed Phase 7 (Security: 2FA with TOTP, Sessions management, Backup codes)*
+*Last updated: 2025-11-25 - Completed Phase 8 (Polish & UX: Dark theme, Breadcrumbs, Skeleton loading, Keyboard shortcuts)*

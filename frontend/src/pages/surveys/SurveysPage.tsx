@@ -7,13 +7,13 @@ import {
   Tab,
   TabPanels,
   TabPanel,
-  Loading,
 } from '@carbon/react'
 import { Add, Document } from '@carbon/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { surveysApi } from '@/api/endpoints/surveys'
 import { SurveyCard } from '@/components/features/surveys'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SurveyCardSkeleton } from '@/components/ui/Skeletons'
 import { useAuthStore } from '@/store/authStore'
 
 export function SurveysPage() {
@@ -78,8 +78,10 @@ export function SurveysPage() {
           <TabPanel>
             <div style={{ marginTop: '1rem' }}>
               {isLoadingAvailable ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                  <Loading withOverlay={false} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <SurveyCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : pendingSurveys.length > 0 ? (
                 <div>
@@ -101,8 +103,10 @@ export function SurveysPage() {
           <TabPanel>
             <div style={{ marginTop: '1rem' }}>
               {isLoadingAvailable ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                  <Loading withOverlay={false} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <SurveyCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : completedSurveys.length > 0 ? (
                 <div>
@@ -125,8 +129,10 @@ export function SurveysPage() {
             <TabPanel>
               <div style={{ marginTop: '1rem' }}>
                 {isLoadingMy ? (
-                  <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                    <Loading withOverlay={false} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <SurveyCardSkeleton key={i} />
+                    ))}
                   </div>
                 ) : mySurveys?.results && mySurveys.results.length > 0 ? (
                   <div>

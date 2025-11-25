@@ -36,8 +36,15 @@ import {
   Crossroads,
   Calendar,
   Security,
+  Light,
+  Asleep,
+  Screen,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
+import { useThemeStore } from '@/store/themeStore'
+import { PageBreadcrumb } from '@/components/ui/PageBreadcrumb'
+import { KeyboardHelpModal } from '@/components/ui/KeyboardHelpModal'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { searchApi, type SearchResult } from '@/api/endpoints/search'
 import { notificationsApi } from '@/api/endpoints/notifications'
 
@@ -62,15 +69,28 @@ export function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const { preference: themePreference, setPreference: setThemePreference } = useThemeStore()
   const isMobile = useIsMobile()
   const [sideNavOpen, setSideNavOpen] = useState(!isMobile)
   const [showMobileSearch, setShowMobileSearch] = useState(false)
   const [showUserPanel, setShowUserPanel] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
 
   const isAdmin = user?.role?.is_admin || user?.is_superuser
+
+  // Initialize keyboard shortcuts
+  useKeyboardShortcuts()
+
+  const getThemeIcon = () => {
+    switch (themePreference) {
+      case 'light': return <Light size={20} />
+      case 'dark': return <Asleep size={20} />
+      case 'system': return <Screen size={20} />
+    }
+  }
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -223,11 +243,24 @@ export function MainLayout() {
             </HeaderGlobalAction>
           )}
 
+          {/* Theme switcher */}
+          <HeaderGlobalAction
+            aria-label={`Тема: ${themePreference === 'light' ? 'Светлая' : themePreference === 'dark' ? 'Тёмная' : 'Системная'}`}
+            onClick={() => {
+              setShowThemeMenu(!showThemeMenu)
+              setShowUserPanel(false)
+              setShowNotifications(false)
+            }}
+          >
+            {getThemeIcon()}
+          </HeaderGlobalAction>
+
           <HeaderGlobalAction
             aria-label="Notifications"
             onClick={() => {
               setShowNotifications(!showNotifications)
               setShowUserPanel(false)
+              setShowThemeMenu(false)
             }}
           >
             <div style={{ position: 'relative' }}>
@@ -260,6 +293,7 @@ export function MainLayout() {
             onClick={() => {
               setShowUserPanel(!showUserPanel)
               setShowNotifications(false)
+              setShowThemeMenu(false)
             }}
             tooltipAlignment="end"
           >
@@ -268,6 +302,41 @@ export function MainLayout() {
         </HeaderGlobalBar>
       </Header>
 
+      {/* Theme menu dropdown */}
+      {showThemeMenu && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 7000 }}
+            onClick={() => setShowThemeMenu(false)}
+          />
+          <div className="user-menu" style={{ top: '48px', right: '144px', width: '200px', zIndex: 7001 }}>
+            <div style={{ padding: '0.5rem 0' }}>
+              <button
+                className={`user-menu-item ${themePreference === 'light' ? 'user-menu-item--active' : ''}`}
+                onClick={() => { setThemePreference('light'); setShowThemeMenu(false); }}
+              >
+                <Light size={16} />
+                Светлая
+              </button>
+              <button
+                className={`user-menu-item ${themePreference === 'dark' ? 'user-menu-item--active' : ''}`}
+                onClick={() => { setThemePreference('dark'); setShowThemeMenu(false); }}
+              >
+                <Asleep size={16} />
+                Тёмная
+              </button>
+              <button
+                className={`user-menu-item ${themePreference === 'system' ? 'user-menu-item--active' : ''}`}
+                onClick={() => { setThemePreference('system'); setShowThemeMenu(false); }}
+              >
+                <Screen size={16} />
+                Системная
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Notifications dropdown */}
       {showNotifications && (
         <>
@@ -275,7 +344,7 @@ export function MainLayout() {
             style={{ position: 'fixed', inset: 0, zIndex: 7000 }}
             onClick={() => setShowNotifications(false)}
           />
-          <div className="user-menu" style={{ top: '48px', right: '48px', width: '280px', zIndex: 7001 }}>
+          <div className="user-menu" style={{ top: '48px', right: '96px', width: '280px', zIndex: 7001 }}>
             <div style={{ padding: '1rem' }}>
               <h4 style={{ marginBottom: '1rem', fontWeight: 600 }}>Уведомления</h4>
               <Link
@@ -650,9 +719,13 @@ export function MainLayout() {
             overflow: 'auto',
           }}
         >
+          <PageBreadcrumb />
           <Outlet />
         </main>
       </div>
+
+      {/* Keyboard shortcuts help modal */}
+      <KeyboardHelpModal />
     </div>
   )
 }

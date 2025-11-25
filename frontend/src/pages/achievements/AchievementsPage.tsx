@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Tile, Button, Pagination, Loading } from '@carbon/react'
+import { Tile, Button, Pagination } from '@carbon/react'
 import { Add, Trophy, ChartLineSmooth } from '@carbon/icons-react'
 import { AwardAchievementModal, AchievementLeaderboard, AchievementProgress } from '@/components/features/achievements'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { formatDate } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { AchievementCardSkeleton } from '@/components/ui/Skeletons'
 
 const getInitials = (name: string) => {
   return name
@@ -113,8 +114,10 @@ export function AchievementsPage() {
             Лента достижений
           </h3>
           {isLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <Loading withOverlay={false} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <AchievementCardSkeleton key={i} />
+              ))}
             </div>
           ) : feed?.results && feed.results.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

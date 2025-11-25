@@ -8,11 +8,11 @@ import {
   ContentSwitcher,
   Switch,
   Tag,
-  Loading,
 } from '@carbon/react'
 import { Grid, List, UserMultiple, SearchLocate } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { EmployeeCardSkeleton } from '@/components/ui/Skeletons'
 import { EmployeeFilters } from '@/components/features/employees'
 
 interface Filters {
@@ -143,8 +143,14 @@ export function EmployeesPage() {
 
       {/* Employees grid/list */}
       {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-          <Loading withOverlay={false} />
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+          gap: '1rem'
+        }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <EmployeeCardSkeleton key={i} />
+          ))}
         </div>
       ) : data?.results && data.results.length > 0 ? (
         <>

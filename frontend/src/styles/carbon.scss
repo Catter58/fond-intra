@@ -255,6 +255,12 @@
   color: var(--cds-support-error);
 }
 
+.user-menu-item--active {
+  background: var(--cds-layer-selected-01);
+  color: var(--cds-text-primary);
+  font-weight: 500;
+}
+
 // Navigation
 .nav-section-title {
   padding: 1rem 1rem 0.5rem;

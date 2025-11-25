@@ -4,7 +4,6 @@ import {
   Button,
   Select,
   SelectItem,
-  Loading,
   Tile,
   Tabs,
   TabList,
@@ -16,6 +15,7 @@ import { Add, Favorite, Trophy, ChartColumn } from '@carbon/icons-react'
 import { kudosApi } from '@/api/endpoints/kudos'
 import { KudosCard, SendKudosModal } from '@/components/features/kudos'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { KudosCardSkeleton } from '@/components/ui/Skeletons'
 import type { KudosCategory } from '@/types'
 
 export function KudosPage() {
@@ -131,8 +131,10 @@ export function KudosPage() {
             </div>
 
             {isFeedLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                <Loading withOverlay={false} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <KudosCardSkeleton key={i} />
+                ))}
               </div>
             ) : kudosFeed?.results && kudosFeed.results.length > 0 ? (
               <div>
@@ -157,8 +159,10 @@ export function KudosPage() {
           <TabPanel>
             <div style={{ marginTop: '1rem' }}>
               {isReceivedLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                  <Loading withOverlay={false} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <KudosCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : receivedKudos?.results && receivedKudos.results.length > 0 ? (
                 <div>
@@ -180,8 +184,10 @@ export function KudosPage() {
           <TabPanel>
             <div style={{ marginTop: '1rem' }}>
               {isSentLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-                  <Loading withOverlay={false} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <KudosCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : sentKudos?.results && sentKudos.results.length > 0 ? (
                 <div>

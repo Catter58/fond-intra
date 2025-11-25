@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Tile, Button, Tag, Loading } from '@carbon/react'
+import { Tile, Button, Tag } from '@carbon/react'
 import { Edit, Email, Phone, Calendar, Events, Catalog, ArrowRight, UserAvatar } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { skillsApi } from '@/api/endpoints/skills'
 import { formatDate } from '@/lib/utils'
 import { levelLabels } from '@/components/features/skills'
+import { ProfileSkeleton } from '@/components/ui/Skeletons'
 
 const getInitials = (name: string) => {
   return name
@@ -25,11 +26,7 @@ export function ProfilePage() {
   })
 
   if (!user) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-        <Loading withOverlay={false} />
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   return (

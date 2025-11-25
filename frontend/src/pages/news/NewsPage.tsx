@@ -5,13 +5,13 @@ import {
   ClickableTile,
   Button,
   Pagination,
-  Loading,
   Tag,
 } from '@carbon/react'
 import { Add, Chat, Favorite, Calendar, Document, Close, Image as ImageIcon, DocumentBlank } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
 import { formatDate } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { NewsCardSkeleton } from '@/components/ui/Skeletons'
 import type { EditorJSContent } from '@/types'
 
 // Helper function to extract text preview from Editor.js content
@@ -150,8 +150,10 @@ export function NewsPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
-          <Loading withOverlay={false} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <NewsCardSkeleton key={i} />
+          ))}
         </div>
       ) : data?.results && data.results.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

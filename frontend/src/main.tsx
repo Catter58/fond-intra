@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { Theme } from '@carbon/react'
 import App from './App'
+import { useThemeStore } from './store/themeStore'
 import './styles/carbon.scss'
 
 const queryClient = new QueryClient({
@@ -16,14 +17,23 @@ const queryClient = new QueryClient({
   },
 })
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Theme theme="g10">
+// Theme wrapper component that subscribes to theme store
+function ThemedApp() {
+  const resolvedTheme = useThemeStore((state) => state.resolvedTheme)
+
+  return (
+    <Theme theme={resolvedTheme}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <App />
         </BrowserRouter>
       </QueryClientProvider>
     </Theme>
+  )
+}
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ThemedApp />
   </React.StrictMode>,
 )
