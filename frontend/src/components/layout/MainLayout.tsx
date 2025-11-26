@@ -39,11 +39,14 @@ import {
   Light,
   Asleep,
   Screen,
+  Education,
+  Bookmark,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
 import { PageBreadcrumb } from '@/components/ui/PageBreadcrumb'
 import { KeyboardHelpModal } from '@/components/ui/KeyboardHelpModal'
+import { OnboardingTour } from '@/components/ui/OnboardingTour'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { searchApi, type SearchResult } from '@/api/endpoints/search'
 import { notificationsApi } from '@/api/endpoints/notifications'
@@ -78,6 +81,7 @@ export function MainLayout() {
   const [showThemeMenu, setShowThemeMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [showOnboardingTour, setShowOnboardingTour] = useState(false)
 
   const isAdmin = user?.role?.is_admin || user?.is_superuser
 
@@ -168,7 +172,7 @@ export function MainLayout() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+    <div className="main-layout">
       {/* Header */}
       <Header aria-label="Fond Intra">
         <SkipToContent />
@@ -184,8 +188,8 @@ export function MainLayout() {
 
         {/* Search in header - desktop */}
         {!isMobile && (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '1rem', position: 'relative' }}>
-            <div style={{ width: '300px', position: 'relative' }}>
+          <div className="header-search-wrapper">
+            <div className="header-search-container">
               <Search
                 size="sm"
                 placeholder="Поиск..."
@@ -208,7 +212,7 @@ export function MainLayout() {
                       onClick={() => handleSelectResult(result)}
                       className="search-result-item"
                     >
-                      <div className="list-item-avatar" style={{ background: 'var(--cds-layer-02)' }}>
+                      <div className="list-item-avatar">
                         {result.avatar ? (
                           <img src={result.avatar} alt={result.title} />
                         ) : (
@@ -230,7 +234,7 @@ export function MainLayout() {
         )}
 
         {/* Spacer for mobile */}
-        {isMobile && <div style={{ flex: 1 }} />}
+        {isMobile && <div className="header-spacer" />}
 
         <HeaderGlobalBar>
           {/* Mobile search button */}
@@ -263,25 +267,10 @@ export function MainLayout() {
               setShowThemeMenu(false)
             }}
           >
-            <div style={{ position: 'relative' }}>
+            <div className="notification-badge-wrapper">
               <Notification size={20} />
               {unreadCount && unreadCount > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    background: '#da1e28',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: '16px',
-                    height: '16px',
-                    fontSize: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
+                <span className="notification-badge">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -306,11 +295,11 @@ export function MainLayout() {
       {showThemeMenu && (
         <>
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 7000 }}
+            className="dropdown-overlay"
             onClick={() => setShowThemeMenu(false)}
           />
-          <div className="user-menu" style={{ top: '48px', right: '144px', width: '200px', zIndex: 7001 }}>
-            <div style={{ padding: '0.5rem 0' }}>
+          <div className="user-menu user-menu--theme">
+            <div className="user-menu__content">
               <button
                 className={`user-menu-item ${themePreference === 'light' ? 'user-menu-item--active' : ''}`}
                 onClick={() => { setThemePreference('light'); setShowThemeMenu(false); }}
@@ -341,16 +330,16 @@ export function MainLayout() {
       {showNotifications && (
         <>
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 7000 }}
+            className="dropdown-overlay"
             onClick={() => setShowNotifications(false)}
           />
-          <div className="user-menu" style={{ top: '48px', right: '96px', width: '280px', zIndex: 7001 }}>
-            <div style={{ padding: '1rem' }}>
-              <h4 style={{ marginBottom: '1rem', fontWeight: 600 }}>Уведомления</h4>
+          <div className="user-menu user-menu--notifications">
+            <div className="user-menu__notifications-content">
+              <h4 className="user-menu__title">Уведомления</h4>
               <Link
                 to="/notifications"
                 onClick={() => setShowNotifications(false)}
-                style={{ color: 'var(--cds-link-primary)', textDecoration: 'none' }}
+                className="notifications-link"
               >
                 Посмотреть все уведомления
               </Link>
@@ -363,15 +352,13 @@ export function MainLayout() {
       {showUserPanel && (
         <>
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 7000 }}
+            className="dropdown-overlay"
             onClick={() => setShowUserPanel(false)}
           />
-          <div className="user-menu" style={{ top: '48px', right: '0', zIndex: 7001 }}>
-            <div style={{ padding: '1rem', borderBottom: '1px solid var(--cds-border-subtle-01)' }}>
-              <strong>{user?.full_name}</strong>
-              <div style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>
-                {user?.email}
-              </div>
+          <div className="user-menu user-menu--user">
+            <div className="user-menu__header">
+              <div className="user-menu__name">{user?.full_name}</div>
+              <div className="user-menu__email">{user?.email}</div>
             </div>
             <nav>
               <Link
@@ -399,6 +386,16 @@ export function MainLayout() {
                 Безопасность
               </Link>
               <button
+                className="user-menu-item"
+                onClick={() => {
+                  setShowUserPanel(false)
+                  setShowOnboardingTour(true)
+                }}
+              >
+                <Education size={16} />
+                О портале
+              </button>
+              <button
                 onClick={handleLogout}
                 className="user-menu-item user-menu-item--danger"
               >
@@ -412,20 +409,8 @@ export function MainLayout() {
 
       {/* Mobile search panel */}
       {isMobile && showMobileSearch && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '48px',
-            left: 0,
-            right: 0,
-            background: 'var(--cds-layer-01)',
-            padding: '1rem',
-            zIndex: 8000,
-            borderBottom: '1px solid var(--cds-border-subtle-01)',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          <div style={{ position: 'relative' }}>
+        <div className="mobile-search-panel">
+          <div className="header-search-container">
             <Search
               size="lg"
               placeholder="Поиск..."
@@ -448,7 +433,7 @@ export function MainLayout() {
                     onClick={() => handleSelectResult(result)}
                     className="search-result-item"
                   >
-                    <div className="list-item-avatar" style={{ background: 'var(--cds-layer-02)' }}>
+                    <div className="list-item-avatar">
                       {result.avatar ? (
                         <img src={result.avatar} alt={result.title} />
                       ) : (
@@ -470,17 +455,11 @@ export function MainLayout() {
       )}
 
       {/* Main content area */}
-      <div style={{ display: 'flex', flex: 1, marginTop: '48px' }}>
+      <div className="main-layout__content-wrapper">
         {/* Mobile sidebar backdrop */}
         {isMobile && sideNavOpen && (
           <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              top: '48px',
-              background: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 5999,
-            }}
+            className="sidebar-backdrop"
             onClick={() => setSideNavOpen(false)}
           />
         )}
@@ -491,16 +470,7 @@ export function MainLayout() {
           expanded={sideNavOpen}
           isFixedNav
           isChildOfHeader={false}
-          style={{
-            position: 'fixed',
-            top: '48px',
-            left: 0,
-            bottom: 0,
-            width: sideNavOpen ? '256px' : '0',
-            overflow: 'hidden',
-            transition: 'width 0.11s cubic-bezier(0.2, 0, 1, 0.9)',
-            zIndex: 6000,
-          }}
+          className={`sidebar-nav ${sideNavOpen ? 'sidebar-nav--expanded' : 'sidebar-nav--collapsed'}`}
         >
           <SideNavItems>
             <SideNavLink
@@ -635,6 +605,17 @@ export function MainLayout() {
             >
               Бронирование
             </SideNavLink>
+            <SideNavLink
+              renderIcon={Bookmark}
+              href="/bookmarks"
+              isActive={isActive('/bookmarks')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/bookmarks')
+              }}
+            >
+              Избранное
+            </SideNavLink>
 
             {isAdmin && (
               <SideNavMenu
@@ -683,6 +664,16 @@ export function MainLayout() {
                   Роли
                 </SideNavMenuItem>
                 <SideNavMenuItem
+                  href="/admin/skills"
+                  isActive={location.pathname === '/admin/skills'}
+                  onClick={(e: React.MouseEvent) => {
+                    e.preventDefault()
+                    navigate('/admin/skills')
+                  }}
+                >
+                  Навыки
+                </SideNavMenuItem>
+                <SideNavMenuItem
                   href="/admin/achievements"
                   isActive={location.pathname === '/admin/achievements'}
                   onClick={(e: React.MouseEvent) => {
@@ -691,6 +682,16 @@ export function MainLayout() {
                   }}
                 >
                   Типы достижений
+                </SideNavMenuItem>
+                <SideNavMenuItem
+                  href="/admin/faq"
+                  isActive={location.pathname === '/admin/faq'}
+                  onClick={(e: React.MouseEvent) => {
+                    e.preventDefault()
+                    navigate('/admin/faq')
+                  }}
+                >
+                  FAQ
                 </SideNavMenuItem>
                 <SideNavMenuItem
                   href="/admin/audit"
@@ -708,17 +709,7 @@ export function MainLayout() {
         </SideNav>
 
         {/* Content */}
-        <main
-          style={{
-            flex: 1,
-            marginLeft: isMobile ? 0 : (sideNavOpen ? '256px' : '0'),
-            padding: isMobile ? '1rem' : '2rem',
-            transition: 'margin-left 0.11s cubic-bezier(0.2, 0, 1, 0.9)',
-            background: 'var(--cds-background)',
-            minHeight: 'calc(100vh - 48px)',
-            overflow: 'auto',
-          }}
-        >
+        <main className={`main-layout__main ${!isMobile && sideNavOpen ? 'main-layout__main--with-sidebar' : ''}`}>
           <PageBreadcrumb />
           <Outlet />
         </main>
@@ -726,6 +717,12 @@ export function MainLayout() {
 
       {/* Keyboard shortcuts help modal */}
       <KeyboardHelpModal />
+
+      {/* Onboarding tour for new users */}
+      <OnboardingTour
+        forceRun={showOnboardingTour}
+        onComplete={() => setShowOnboardingTour(false)}
+      />
     </div>
   )
 }

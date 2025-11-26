@@ -38,13 +38,20 @@ class DepartmentViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         department = serializer.save()
+        # Convert validated_data to JSON-serializable format
+        new_values = {}
+        for key, value in serializer.validated_data.items():
+            if hasattr(value, 'pk'):
+                new_values[key] = value.pk
+            else:
+                new_values[key] = value
         AuditLog.log(
             user=self.request.user,
             action=AuditLog.Action.CREATE,
             entity_type='Department',
             entity_id=department.id,
             entity_repr=str(department),
-            new_values=serializer.validated_data,
+            new_values=new_values,
             ip_address=getattr(self.request, 'audit_ip', None),
             user_agent=getattr(self.request, 'audit_user_agent', '')
         )
@@ -52,6 +59,13 @@ class DepartmentViewSet(ModelViewSet):
     def perform_update(self, serializer):
         old_values = DepartmentSerializer(self.get_object()).data
         department = serializer.save()
+        # Convert validated_data to JSON-serializable format
+        new_values = {}
+        for key, value in serializer.validated_data.items():
+            if hasattr(value, 'pk'):
+                new_values[key] = value.pk
+            else:
+                new_values[key] = value
         AuditLog.log(
             user=self.request.user,
             action=AuditLog.Action.UPDATE,
@@ -59,7 +73,7 @@ class DepartmentViewSet(ModelViewSet):
             entity_id=department.id,
             entity_repr=str(department),
             old_values=old_values,
-            new_values=serializer.validated_data,
+            new_values=new_values,
             ip_address=getattr(self.request, 'audit_ip', None),
             user_agent=getattr(self.request, 'audit_user_agent', '')
         )

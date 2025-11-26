@@ -12,6 +12,7 @@ import {
   Report,
   Catalog,
   Help,
+  Bookmark,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -27,7 +28,8 @@ const navItems = [
   { to: '/achievements', icon: Trophy, label: 'Достижения' },
   { to: '/news', icon: Document, label: 'Новости' },
   { to: '/organization', icon: Building, label: 'Структура' },
-]
+  { to: '/bookmarks', icon: Bookmark, label: 'Избранное' },
+] as const
 
 const adminItems = [
   { to: '/admin', icon: Dashboard, label: 'Дашборд' },

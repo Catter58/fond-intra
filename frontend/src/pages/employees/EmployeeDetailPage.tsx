@@ -1,13 +1,16 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { Tile, Button, Tag, Loading } from '@carbon/react'
 import { ArrowLeft, Email, Phone, Calendar, Events, Trophy, Catalog, UserAvatar, Edit } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { skillsApi } from '@/api/endpoints/skills'
+import { interactionsApi } from '@/api/endpoints/interactions'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
 import { SkillBadge } from '@/components/features/skills'
+import { BookmarkButton } from '@/components/ui/BookmarkButton'
 
 const getInitials = (name: string) => {
   return name
@@ -45,6 +48,25 @@ export function EmployeeDetailPage() {
   })
 
   const isOwnProfile = user?.id === Number(id)
+
+  // Check if bookmarked
+  const { data: bookmarkStatus } = useQuery({
+    queryKey: ['bookmark-check', 'user', id],
+    queryFn: () => interactionsApi.checkBookmarks('user', [Number(id)]),
+    enabled: !!id && !isOwnProfile,
+  })
+  const isBookmarked = bookmarkStatus?.[id as string] ?? false
+
+  // Record profile view
+  const recordViewMutation = useMutation({
+    mutationFn: (userId: number) => interactionsApi.recordProfileView(userId),
+  })
+
+  useEffect(() => {
+    if (id && !isOwnProfile) {
+      recordViewMutation.mutate(Number(id))
+    }
+  }, [id, isOwnProfile])
 
   if (isLoading) {
     return (
@@ -85,15 +107,26 @@ export function EmployeeDetailPage() {
         >
           Назад к списку
         </Button>
-        {canEdit && (
-          <Button
-            kind="primary"
-            renderIcon={Edit}
-            onClick={() => navigate(`/admin/users/${id}/edit`)}
-          >
-            Редактировать
-          </Button>
-        )}
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {!isOwnProfile && (
+            <BookmarkButton
+              contentType="user"
+              objectId={Number(id)}
+              initialBookmarked={isBookmarked}
+              size="md"
+              kind="tertiary"
+            />
+          )}
+          {canEdit && (
+            <Button
+              kind="primary"
+              renderIcon={Edit}
+              onClick={() => navigate(`/admin/users/${id}/edit`)}
+            >
+              Редактировать
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Profile Header */}

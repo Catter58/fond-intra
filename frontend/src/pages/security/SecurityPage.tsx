@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -34,9 +34,13 @@ import {
   TrashCan,
   Warning,
   Checkmark,
+  Information,
+  Renew as Tour,
 } from '@carbon/icons-react'
 import { authApi } from '@/api/endpoints/auth'
+import { usersApi } from '@/api/endpoints/users'
 import { useAuthStore } from '@/store/authStore'
+import { OnboardingTour } from '@/components/ui/OnboardingTour'
 import type { TwoFactorSetup } from '@/types'
 
 export function SecurityPage() {
@@ -55,6 +59,7 @@ export function SecurityPage() {
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ kind: 'success' | 'error'; title: string; subtitle: string } | null>(null)
   const [terminatingCurrentSession, setTerminatingCurrentSession] = useState(false)
+  const [showTour, setShowTour] = useState(false)
 
   // Queries
   const { data: twoFactorStatus, isLoading: statusLoading } = useQuery({
@@ -156,6 +161,21 @@ export function SecurityPage() {
       setToast({ kind: 'error', title: 'Ошибка', subtitle: err.response?.data?.detail || 'Не удалось завершить сессии' })
     },
   })
+
+  const resetOnboardingMutation = useMutation({
+    mutationFn: usersApi.resetOnboarding,
+    onSuccess: () => {
+      setShowTour(true)
+    },
+    onError: (err: any) => {
+      setToast({ kind: 'error', title: 'Ошибка', subtitle: err.response?.data?.detail || 'Не удалось запустить тур' })
+    },
+  })
+
+  const handleTourComplete = useCallback(() => {
+    setShowTour(false)
+    setToast({ kind: 'success', title: 'Готово', subtitle: 'Тур по порталу завершён' })
+  }, [])
 
   const getDeviceIcon = (deviceType: string) => {
     switch (deviceType) {
@@ -284,6 +304,33 @@ export function SecurityPage() {
                 style={{ marginTop: '1rem' }}
               />
             )}
+          </Tile>
+        </Column>
+
+        {/* Help & Onboarding Section */}
+        <Column lg={8} md={8} sm={4}>
+          <Tile style={{ marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
+              <Information size={24} />
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0 }}>Помощь</h3>
+                <p style={{ color: 'var(--cds-text-secondary)', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                  Ознакомьтесь с основными функциями портала или запустите тур повторно.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <Button
+                kind="tertiary"
+                size="sm"
+                renderIcon={Tour}
+                onClick={() => resetOnboardingMutation.mutate()}
+                disabled={resetOnboardingMutation.isPending}
+              >
+                {resetOnboardingMutation.isPending ? 'Загрузка...' : 'Запустить тур по порталу'}
+              </Button>
+            </div>
           </Tile>
         </Column>
 
@@ -552,6 +599,11 @@ export function SecurityPage() {
           </Button>
         </div>
       </Modal>
+
+      {/* Onboarding Tour */}
+      {showTour && (
+        <OnboardingTour forceRun={true} onComplete={handleTourComplete} />
+      )}
     </div>
   )
 }

@@ -14,6 +14,9 @@ from apps.accounts.views import (
     BirthdayListView,
     AdminUserViewSet,
     UserStatusViewSet,
+    CompleteOnboardingView,
+    ResetOnboardingView,
+    DashboardSettingsView,
 )
 from apps.skills.views import UserSkillsView
 
@@ -25,6 +28,9 @@ urlpatterns = [
     # Current user
     path('me/', CurrentUserView.as_view(), name='user-me'),
     path('me/avatar/', CurrentUserAvatarView.as_view(), name='user-me-avatar'),
+    path('me/complete-onboarding/', CompleteOnboardingView.as_view(), name='complete-onboarding'),
+    path('me/reset-onboarding/', ResetOnboardingView.as_view(), name='reset-onboarding'),
+    path('me/dashboard-settings/', DashboardSettingsView.as_view(), name='dashboard-settings'),
 
     # User list and search
     path('', UserListView.as_view(), name='user-list'),

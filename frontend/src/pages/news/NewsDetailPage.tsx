@@ -4,9 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Tile, Button, Loading, Tag } from '@carbon/react'
 import { ArrowLeft, Favorite, FavoriteFilled, Chat, Send, Attachment, Edit } from '@carbon/icons-react'
 import { newsApi } from '@/api/endpoints/news'
+import { interactionsApi } from '@/api/endpoints/interactions'
 import { RichTextViewer } from '@/components/ui/EditorJSViewer'
 import { ImageGallery } from '@/components/ui/ImageGallery'
 import { MentionInput } from '@/components/ui/MentionInput'
+import { BookmarkButton } from '@/components/ui/BookmarkButton'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
 
@@ -37,6 +39,14 @@ export function NewsDetailPage() {
     queryFn: () => newsApi.getComments(Number(id)),
     enabled: !!id,
   })
+
+  // Check if bookmarked
+  const { data: bookmarkStatus } = useQuery({
+    queryKey: ['bookmark-check', 'news', id],
+    queryFn: () => interactionsApi.checkBookmarks('news', [Number(id)]),
+    enabled: !!id,
+  })
+  const isBookmarked = bookmarkStatus?.[id as string] ?? false
 
   const addCommentMutation = useMutation({
     mutationFn: (text: string) => newsApi.addComment(Number(id), { content: text }),
@@ -125,11 +135,19 @@ export function NewsDetailPage() {
             <p style={{ fontWeight: 500 }}>{news.author?.full_name || 'Автор'}</p>
             <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>{formatDate(news.created_at)}</p>
           </div>
-          {(user?.id === news.author?.id || user?.is_superuser) && (
-            <Button kind="ghost" size="sm" renderIcon={Edit} as={Link} to={`/news/${id}/edit`}>
-              Редактировать
-            </Button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <BookmarkButton
+              contentType="news"
+              objectId={Number(id)}
+              initialBookmarked={isBookmarked}
+              size="sm"
+            />
+            {(user?.id === news.author?.id || user?.is_superuser) && (
+              <Button kind="ghost" size="sm" renderIcon={Edit} as={Link} to={`/news/${id}/edit`}>
+                Редактировать
+              </Button>
+            )}
+          </div>
         </div>
 
         <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>{news.title}</h1>

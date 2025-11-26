@@ -106,4 +106,44 @@ export const usersApi = {
   restore: async (id: number): Promise<void> => {
     await apiClient.post(`/users/admin/${id}/restore/`)
   },
+
+  bulkArchive: async (ids: number[]): Promise<{ count: number }> => {
+    const response = await apiClient.post('/users/admin/bulk-archive/', { ids })
+    return response.data
+  },
+
+  bulkRestore: async (ids: number[]): Promise<{ count: number }> => {
+    const response = await apiClient.post('/users/admin/bulk-restore/', { ids })
+    return response.data
+  },
+
+  // Onboarding
+  completeOnboarding: async (): Promise<{ has_completed_onboarding: boolean }> => {
+    const response = await apiClient.post('/users/me/complete-onboarding/')
+    return response.data
+  },
+
+  resetOnboarding: async (): Promise<{ has_completed_onboarding: boolean }> => {
+    const response = await apiClient.post('/users/me/reset-onboarding/')
+    return response.data
+  },
+
+  // Dashboard settings
+  getDashboardSettings: async (): Promise<{ dashboard_settings: DashboardSettings }> => {
+    const response = await apiClient.get('/users/me/dashboard-settings/')
+    return response.data
+  },
+
+  updateDashboardSettings: async (settings: Partial<DashboardSettings>): Promise<{ dashboard_settings: DashboardSettings }> => {
+    const response = await apiClient.patch('/users/me/dashboard-settings/', {
+      dashboard_settings: settings,
+    })
+    return response.data
+  },
+}
+
+// Types
+export interface DashboardSettings {
+  widgetOrder?: string[]
+  hiddenWidgets?: string[]
 }

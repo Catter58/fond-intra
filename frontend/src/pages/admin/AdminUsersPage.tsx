@@ -13,6 +13,10 @@ import {
   TableToolbar,
   TableToolbarContent,
   TableToolbarSearch,
+  TableSelectAll,
+  TableSelectRow,
+  TableBatchActions,
+  TableBatchAction,
   Button,
   Pagination,
   Tag,
@@ -21,9 +25,11 @@ import {
   Loading,
   ContentSwitcher,
   Switch,
+  Modal,
 } from '@carbon/react'
-import { Add, Archive } from '@carbon/icons-react'
+import { Add, Archive, Renew, Download, UserMultiple } from '@carbon/icons-react'
 import { usersApi } from '@/api/endpoints/users'
+import { exportToCSV } from '@/components/admin'
 import { formatDate } from '@/lib/utils'
 
 export function AdminUsersPage() {
@@ -32,6 +38,8 @@ export function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [showArchived, setShowArchived] = useState(0)
   const [page, setPage] = useState(1)
+  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  const [bulkConfirmModal, setBulkConfirmModal] = useState<'archive' | 'restore' | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'users', { search, showArchived, page }],
@@ -57,6 +65,24 @@ export function AdminUsersPage() {
     },
   })
 
+  const bulkArchiveMutation = useMutation({
+    mutationFn: (ids: number[]) => usersApi.bulkArchive(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      setSelectedRows([])
+      setBulkConfirmModal(null)
+    },
+  })
+
+  const bulkRestoreMutation = useMutation({
+    mutationFn: (ids: number[]) => usersApi.bulkRestore(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      setSelectedRows([])
+      setBulkConfirmModal(null)
+    },
+  })
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -64,6 +90,38 @@ export function AdminUsersPage() {
       .join('')
       .toUpperCase()
       .slice(0, 2)
+  }
+
+  const handleExport = () => {
+    if (!data?.results) return
+    exportToCSV(
+      data.results.map((user) => ({
+        full_name: user.full_name,
+        email: user.email,
+        department: user.department?.name || '',
+        position: user.position?.name || '',
+        hire_date: user.hire_date || '',
+        is_archived: user.is_archived ? 'Да' : 'Нет',
+      })),
+      [
+        { key: 'full_name', label: 'ФИО' },
+        { key: 'email', label: 'Email' },
+        { key: 'department', label: 'Отдел' },
+        { key: 'position', label: 'Должность' },
+        { key: 'hire_date', label: 'Дата найма' },
+        { key: 'is_archived', label: 'В архиве' },
+      ],
+      `users_${showArchived === 1 ? 'archived_' : ''}${new Date().toISOString().split('T')[0]}`
+    )
+  }
+
+  const handleBulkAction = () => {
+    const ids = selectedRows.map(id => Number(id))
+    if (bulkConfirmModal === 'archive') {
+      bulkArchiveMutation.mutate(ids)
+    } else if (bulkConfirmModal === 'restore') {
+      bulkRestoreMutation.mutate(ids)
+    }
   }
 
   const headers = [
@@ -107,6 +165,7 @@ export function AdminUsersPage() {
             if (e.index !== undefined) {
               setShowArchived(e.index)
               setPage(1)
+              setSelectedRows([])
             }
           }}
           selectedIndex={showArchived}
@@ -133,100 +192,146 @@ export function AdminUsersPage() {
             getHeaderProps,
             getRowProps,
             getToolbarProps,
-          }) => (
-            <TableContainer>
-              <TableToolbar {...getToolbarProps()}>
-                <TableToolbarContent>
-                  <TableToolbarSearch
-                    placeholder="Поиск по имени или email..."
-                    value={search}
-                    onChange={(e) => {
-                      const value = typeof e === 'string' ? e : e.target.value
-                      setSearch(value)
-                      setPage(1)
-                    }}
-                  />
-                </TableToolbarContent>
-              </TableToolbar>
-              <Table {...getTableProps()}>
-                <TableHead>
-                  <TableRow>
-                    {tableHeaders.map((header) => (
-                      <TableHeader {...getHeaderProps({ header })} key={header.key}>
-                        {header.header}
-                      </TableHeader>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tableRows.length > 0 ? (
-                    tableRows.map((row) => {
-                      const userData = rows.find(r => r.id === row.id)
-                      return (
-                        <TableRow {...getRowProps({ row })} key={row.id}>
-                          <TableCell>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                              <div className="list-item-avatar" style={{ width: '40px', height: '40px' }}>
-                                {userData?.avatar ? (
-                                  <img src={userData.avatar} alt={userData.name} />
-                                ) : (
-                                  getInitials(userData?.name || '')
-                                )}
-                              </div>
-                              <div>
-                                <span style={{ fontWeight: 500 }}>{userData?.name}</span>
-                                {userData?.is_archived && (
-                                  <Tag type="red" size="sm" style={{ marginLeft: '0.5rem' }}>
-                                    В архиве
-                                  </Tag>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{userData?.email}</TableCell>
-                          <TableCell>{userData?.department}</TableCell>
-                          <TableCell>{userData?.position}</TableCell>
-                          <TableCell>{userData?.hire_date}</TableCell>
-                          <TableCell>
-                            <OverflowMenu flipped ariaLabel="Actions">
-                              <OverflowMenuItem
-                                itemText="Редактировать"
-                                onClick={() => navigate(`/admin/users/${row.id}/edit`)}
-                              />
-                              {userData?.is_archived ? (
-                                <OverflowMenuItem
-                                  itemText="Восстановить"
-                                  onClick={() => restoreMutation.mutate(Number(row.id))}
-                                />
-                              ) : (
-                                <OverflowMenuItem
-                                  itemText="Архивировать"
-                                  isDelete
-                                  onClick={() => archiveMutation.mutate(Number(row.id))}
-                                />
-                              )}
-                            </OverflowMenu>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  ) : (
+            getSelectionProps,
+            getBatchActionProps,
+            selectedRows: batchSelectedRows,
+          }) => {
+            // Sync selection state
+            const currentSelectedIds = batchSelectedRows.map((r: any) => r.id)
+            if (JSON.stringify(currentSelectedIds) !== JSON.stringify(selectedRows)) {
+              setSelectedRows(currentSelectedIds)
+            }
+
+            const batchActionProps = getBatchActionProps()
+
+            return (
+              <TableContainer>
+                <TableToolbar {...getToolbarProps()}>
+                  <TableBatchActions {...batchActionProps}>
+                    {showArchived === 0 ? (
+                      <TableBatchAction
+                        tabIndex={batchActionProps.shouldShowBatchActions ? 0 : -1}
+                        renderIcon={Archive}
+                        onClick={() => setBulkConfirmModal('archive')}
+                      >
+                        Архивировать
+                      </TableBatchAction>
+                    ) : (
+                      <TableBatchAction
+                        tabIndex={batchActionProps.shouldShowBatchActions ? 0 : -1}
+                        renderIcon={Renew}
+                        onClick={() => setBulkConfirmModal('restore')}
+                      >
+                        Восстановить
+                      </TableBatchAction>
+                    )}
+                  </TableBatchActions>
+                  <TableToolbarContent>
+                    <TableToolbarSearch
+                      placeholder="Поиск по имени или email..."
+                      value={search}
+                      onChange={(e) => {
+                        const value = typeof e === 'string' ? e : e.target.value
+                        setSearch(value)
+                        setPage(1)
+                      }}
+                      persistent
+                    />
+                    <Button
+                      kind="ghost"
+                      hasIconOnly
+                      renderIcon={Download}
+                      iconDescription="Экспорт CSV"
+                      onClick={handleExport}
+                      tooltipPosition="bottom"
+                    />
+                  </TableToolbarContent>
+                </TableToolbar>
+                <Table {...getTableProps()}>
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={headers.length}>
-                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>
-                          {search
-                            ? 'Сотрудники не найдены'
-                            : showArchived === 1
-                              ? 'Архив пуст'
-                              : 'Нет сотрудников'}
-                        </div>
-                      </TableCell>
+                      <TableSelectAll {...getSelectionProps()} />
+                      {tableHeaders.map((header) => (
+                        <TableHeader {...getHeaderProps({ header })} key={header.key}>
+                          {header.header}
+                        </TableHeader>
+                      ))}
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+                  </TableHead>
+                  <TableBody>
+                    {tableRows.length > 0 ? (
+                      tableRows.map((row) => {
+                        const userData = rows.find(r => r.id === row.id)
+                        return (
+                          <TableRow {...getRowProps({ row })} key={row.id}>
+                            <TableSelectRow {...getSelectionProps({ row })} />
+                            <TableCell>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div className="list-item-avatar" style={{ width: '40px', height: '40px' }}>
+                                  {userData?.avatar ? (
+                                    <img src={userData.avatar} alt={userData.name} />
+                                  ) : (
+                                    getInitials(userData?.name || '')
+                                  )}
+                                </div>
+                                <div>
+                                  <span style={{ fontWeight: 500 }}>{userData?.name}</span>
+                                  {userData?.is_archived && (
+                                    <Tag type="red" size="sm" style={{ marginLeft: '0.5rem' }}>
+                                      В архиве
+                                    </Tag>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>{userData?.email}</TableCell>
+                            <TableCell>{userData?.department}</TableCell>
+                            <TableCell>{userData?.position}</TableCell>
+                            <TableCell>{userData?.hire_date}</TableCell>
+                            <TableCell>
+                              <OverflowMenu flipped ariaLabel="Actions" size="sm">
+                                <OverflowMenuItem
+                                  itemText="Редактировать"
+                                  onClick={() => navigate(`/admin/users/${row.id}/edit`)}
+                                />
+                                {userData?.is_archived ? (
+                                  <OverflowMenuItem
+                                    itemText="Восстановить"
+                                    onClick={() => restoreMutation.mutate(Number(row.id))}
+                                  />
+                                ) : (
+                                  <OverflowMenuItem
+                                    itemText="Архивировать"
+                                    isDelete
+                                    onClick={() => archiveMutation.mutate(Number(row.id))}
+                                  />
+                                )}
+                              </OverflowMenu>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={headers.length + 1}>
+                          <div style={{ textAlign: 'center', padding: '2rem' }}>
+                            <UserMultiple size={48} style={{ color: 'var(--cds-text-helper)', marginBottom: '0.5rem' }} />
+                            <p style={{ color: 'var(--cds-text-secondary)' }}>
+                              {search
+                                ? 'Сотрудники не найдены'
+                                : showArchived === 1
+                                  ? 'Архив пуст'
+                                  : 'Нет сотрудников'}
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )
+          }}
         </DataTable>
       )}
 
@@ -244,6 +349,24 @@ export function AdminUsersPage() {
           />
         </div>
       )}
+
+      {/* Bulk action confirmation modal */}
+      <Modal
+        open={bulkConfirmModal !== null}
+        modalHeading={bulkConfirmModal === 'archive' ? 'Архивировать сотрудников?' : 'Восстановить сотрудников?'}
+        primaryButtonText={bulkConfirmModal === 'archive' ? 'Архивировать' : 'Восстановить'}
+        secondaryButtonText="Отмена"
+        danger={bulkConfirmModal === 'archive'}
+        onRequestClose={() => setBulkConfirmModal(null)}
+        onRequestSubmit={handleBulkAction}
+      >
+        <p>
+          {bulkConfirmModal === 'archive'
+            ? `Вы уверены, что хотите архивировать ${selectedRows.length} сотрудника(ов)? Они потеряют доступ к системе.`
+            : `Вы уверены, что хотите восстановить ${selectedRows.length} сотрудника(ов)?`
+          }
+        </p>
+      </Modal>
     </div>
   )
 }

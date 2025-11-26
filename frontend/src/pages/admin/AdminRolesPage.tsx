@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, Checkbox, Loading, InlineNotification } from '@carbon/react'
-import { Add, Edit, TrashCan, Security } from '@carbon/icons-react'
+import {
+  Tile,
+  Button,
+  TextInput,
+  Checkbox,
+  InlineNotification,
+  Modal,
+  Tag,
+} from '@carbon/react'
+import { Add, Security } from '@carbon/icons-react'
 import { apiClient } from '@/api/client'
+import { AdminDataTable, exportToCSV } from '@/components/admin'
 import type { Role, Permission } from '@/types'
 
 export function AdminRolesPage() {
@@ -11,6 +20,8 @@ export function AdminRolesPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', permissions: [] as number[] })
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
 
   const { data: roles, isLoading } = useQuery({
     queryKey: ['roles'],
@@ -34,7 +45,6 @@ export function AdminRolesPage() {
     if (!data) return 'Ошибка сети'
     if (typeof data === 'string') return data
     if (data.detail) return data.detail
-    // Handle field validation errors
     const fieldErrors = Object.entries(data)
       .map(([field, errors]) => {
         const errorList = Array.isArray(errors) ? errors.join(', ') : String(errors)
@@ -72,7 +82,10 @@ export function AdminRolesPage() {
     mutationFn: async (id: number) => {
       await apiClient.delete(`/admin/roles/${id}/`)
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+      setDeleteConfirmId(null)
+    },
   })
 
   const resetForm = () => {
@@ -117,6 +130,39 @@ export function AdminRolesPage() {
     acc[category].push(perm)
     return acc
   }, {} as Record<string, Permission[]>)
+
+  // Filter roles by search
+  const filteredRoles = roles?.filter(role =>
+    role.name.toLowerCase().includes(search.toLowerCase()) ||
+    role.description?.toLowerCase().includes(search.toLowerCase())
+  ) || []
+
+  const handleExport = () => {
+    if (!roles) return
+    exportToCSV(
+      roles.map(role => ({
+        name: role.name,
+        description: role.description || '',
+        is_system: role.is_system ? 'Да' : 'Нет',
+        permissions_count: role.permissions?.length || 0,
+        permissions: role.permissions?.map(p => p.codename).join(', ') || '',
+      })),
+      [
+        { key: 'name', label: 'Название' },
+        { key: 'description', label: 'Описание' },
+        { key: 'is_system', label: 'Системная' },
+        { key: 'permissions_count', label: 'Кол-во прав' },
+        { key: 'permissions', label: 'Права' },
+      ],
+      `roles_${new Date().toISOString().split('T')[0]}`
+    )
+  }
+
+  const headers = [
+    { key: 'name', header: 'Роль' },
+    { key: 'description', header: 'Описание' },
+    { key: 'permissions', header: 'Права' },
+  ]
 
   return (
     <div>
@@ -197,64 +243,74 @@ export function AdminRolesPage() {
         </Tile>
       )}
 
-      {/* Roles list */}
-      <Tile>
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-            <Loading withOverlay={false} />
-          </div>
-        ) : roles && roles.length > 0 ? (
-          <div>
-            {roles.map((role, index) => (
-              <div
-                key={role.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1rem',
-                  borderBottom: index < roles.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
-                }}
-              >
-                <Security size={20} style={{ color: 'var(--cds-text-secondary)', marginTop: '0.125rem' }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 500 }}>
-                    {role.name}
-                    {role.is_system && (
-                      <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', background: 'var(--cds-layer-02)', padding: '0.125rem 0.5rem' }}>
-                        Системная
-                      </span>
-                    )}
-                  </p>
-                  {role.description && (
-                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{role.description}</p>
-                  )}
-                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)', marginTop: '0.25rem' }}>
-                    {role.permissions?.length || 0} прав
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(role)} />
-                  {!role.is_system && (
-                    <Button
-                      kind="danger--tertiary"
-                      hasIconOnly
-                      renderIcon={TrashCan}
-                      iconDescription="Удалить"
-                      size="sm"
-                      onClick={() => {
-                        if (confirm('Удалить роль?')) deleteMutation.mutate(role.id)
-                      }}
-                    />
+      {/* Roles table */}
+      <AdminDataTable
+        rows={filteredRoles}
+        headers={headers}
+        isLoading={isLoading}
+        emptyMessage="Роли не созданы"
+        emptyIcon={Security}
+        searchPlaceholder="Поиск по названию..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        exportConfig={{
+          enabled: true,
+          onExport: handleExport,
+        }}
+        rowActions={[
+          {
+            label: 'Редактировать',
+            onClick: handleEdit,
+          },
+          {
+            label: 'Удалить',
+            onClick: (role) => setDeleteConfirmId(role.id),
+            isDelete: true,
+            isHidden: (role) => role.is_system,
+          },
+        ]}
+        renderCell={(role, key) => {
+          switch (key) {
+            case 'name':
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Security size={16} style={{ color: 'var(--cds-text-secondary)' }} />
+                  <span style={{ fontWeight: 500 }}>{role.name}</span>
+                  {role.is_system && (
+                    <Tag size="sm" type="gray">Системная</Tag>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Роли не созданы</p>
-        )}
-      </Tile>
+              )
+            case 'description':
+              return (
+                <span style={{ color: role.description ? 'inherit' : 'var(--cds-text-helper)' }}>
+                  {role.description || '—'}
+                </span>
+              )
+            case 'permissions':
+              return (
+                <span style={{ color: 'var(--cds-text-secondary)' }}>
+                  {role.permissions?.length || 0} прав
+                </span>
+              )
+            default:
+              return null
+          }
+        }}
+      />
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteConfirmId !== null}
+        modalHeading="Удалить роль?"
+        primaryButtonText="Удалить"
+        secondaryButtonText="Отмена"
+        danger
+        onRequestClose={() => setDeleteConfirmId(null)}
+        onRequestSubmit={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
+      >
+        <p>Это действие нельзя отменить. Пользователи с этой ролью потеряют связанные с ней права.</p>
+      </Modal>
     </div>
   )
 }

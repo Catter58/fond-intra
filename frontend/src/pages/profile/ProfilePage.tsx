@@ -7,6 +7,7 @@ import { skillsApi } from '@/api/endpoints/skills'
 import { formatDate } from '@/lib/utils'
 import { levelLabels } from '@/components/features/skills'
 import { ProfileSkeleton } from '@/components/ui/Skeletons'
+import { ProfileStatsWidget } from '@/components/features/interactions'
 
 const getInitials = (name: string) => {
   return name
@@ -203,13 +204,20 @@ export function ProfilePage() {
         )}
       </Tile>
 
-      {/* Bio */}
-      {user.bio && (
-        <Tile style={{ marginTop: '1.5rem' }}>
-          <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>О себе</h3>
-          <p style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>{user.bio}</p>
-        </Tile>
-      )}
+      {/* Stats and Bio */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1.5rem' }}>
+        <ProfileStatsWidget compact />
+
+        {/* Bio */}
+        {user.bio ? (
+          <Tile>
+            <h3 style={{ fontWeight: 600, marginBottom: '1rem' }}>О себе</h3>
+            <p style={{ color: 'var(--cds-text-secondary)', whiteSpace: 'pre-wrap' }}>{user.bio}</p>
+          </Tile>
+        ) : (
+          <div /> // Empty div to maintain grid
+        )}
+      </div>
     </div>
   )
 }

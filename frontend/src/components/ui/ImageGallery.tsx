@@ -63,17 +63,22 @@ export function ImageGallery({ images, showThumbnails = true }: ImageGalleryProp
   if (images.length === 1) {
     return (
       <>
-        <div className="image-gallery image-gallery--single">
-          <div className="image-gallery__item" onClick={() => openLightbox(0)}>
+        <div className="image-gallery image-gallery--single" role="group" aria-label="Галерея изображений">
+          <button
+            className="image-gallery__item"
+            onClick={() => openLightbox(0)}
+            type="button"
+            aria-label={`Открыть изображение: ${images[0].file_name}`}
+          >
             <img
               src={images[0].thumbnail || images[0].file}
-              alt={images[0].file_name}
+              alt={images[0].file_name || 'Изображение'}
               loading="lazy"
             />
-            <div className="image-gallery__overlay">
+            <div className="image-gallery__overlay" aria-hidden="true">
               <ZoomIn size={24} />
             </div>
-          </div>
+          </button>
         </div>
         {lightboxOpen && (
           <Lightbox
@@ -91,43 +96,51 @@ export function ImageGallery({ images, showThumbnails = true }: ImageGalleryProp
   // Grid layout for multiple images
   return (
     <>
-      <div className={`image-gallery image-gallery--grid image-gallery--count-${Math.min(images.length, 4)}`}>
+      <div
+        className={`image-gallery image-gallery--grid image-gallery--count-${Math.min(images.length, 4)}`}
+        role="group"
+        aria-label={`Галерея изображений (${images.length} фото)`}
+      >
         {images.slice(0, 4).map((image, index) => (
-          <div
+          <button
             key={image.id}
+            type="button"
             className={`image-gallery__item ${index === 0 ? 'image-gallery__item--main' : ''}`}
             onClick={() => openLightbox(index)}
+            aria-label={`Открыть изображение ${index + 1} из ${images.length}: ${image.file_name || 'Изображение'}`}
           >
             <img
               src={image.thumbnail || image.file}
-              alt={image.file_name}
+              alt={image.file_name || 'Изображение'}
               loading="lazy"
             />
-            <div className="image-gallery__overlay">
+            <div className="image-gallery__overlay" aria-hidden="true">
               {index === 3 && images.length > 4 ? (
                 <span className="image-gallery__more">+{images.length - 4}</span>
               ) : (
                 <ZoomIn size={24} />
               )}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       {showThumbnails && images.length > 4 && (
-        <div className="image-gallery__thumbnails">
+        <div className="image-gallery__thumbnails" role="group" aria-label="Миниатюры">
           {images.slice(4).map((image, index) => (
-            <div
+            <button
               key={image.id}
+              type="button"
               className="image-gallery__thumbnail"
               onClick={() => openLightbox(index + 4)}
+              aria-label={`Открыть изображение ${index + 5} из ${images.length}`}
             >
               <img
                 src={image.thumbnail || image.file}
-                alt={image.file_name}
+                alt={image.file_name || 'Изображение'}
                 loading="lazy"
               />
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -157,15 +170,22 @@ function Lightbox({ images, currentIndex, onClose, onPrevious, onNext }: Lightbo
   const currentImage = images[currentIndex]
 
   return (
-    <div className="lightbox" onClick={onClose}>
+    <div
+      className="lightbox"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Просмотр изображения ${currentIndex + 1} из ${images.length}`}
+    >
       <div className="lightbox__content" onClick={(e) => e.stopPropagation()}>
         <Button
           kind="ghost"
           hasIconOnly
           renderIcon={Close}
-          iconDescription="Закрыть"
+          iconDescription="Закрыть (Escape)"
           className="lightbox__close"
           onClick={onClose}
+          autoFocus
         />
 
         {images.length > 1 && (
@@ -174,7 +194,7 @@ function Lightbox({ images, currentIndex, onClose, onPrevious, onNext }: Lightbo
               kind="ghost"
               hasIconOnly
               renderIcon={ChevronLeft}
-              iconDescription="Предыдущее"
+              iconDescription="Предыдущее изображение (←)"
               className="lightbox__nav lightbox__nav--prev"
               onClick={onPrevious}
             />
@@ -182,7 +202,7 @@ function Lightbox({ images, currentIndex, onClose, onPrevious, onNext }: Lightbo
               kind="ghost"
               hasIconOnly
               renderIcon={ChevronRight}
-              iconDescription="Следующее"
+              iconDescription="Следующее изображение (→)"
               className="lightbox__nav lightbox__nav--next"
               onClick={onNext}
             />
@@ -192,21 +212,25 @@ function Lightbox({ images, currentIndex, onClose, onPrevious, onNext }: Lightbo
         <div className="lightbox__image-container">
           <img
             src={currentImage.file}
-            alt={currentImage.file_name}
+            alt={currentImage.file_name || 'Изображение'}
           />
         </div>
 
         {images.length > 1 && (
-          <div className="lightbox__counter">
+          <div className="lightbox__counter" aria-live="polite" aria-atomic="true">
             {currentIndex + 1} / {images.length}
           </div>
         )}
 
         {images.length > 1 && (
-          <div className="lightbox__thumbnails">
+          <div className="lightbox__thumbnails" role="tablist" aria-label="Миниатюры изображений">
             {images.map((image, index) => (
-              <div
+              <button
                 key={image.id}
+                type="button"
+                role="tab"
+                aria-selected={index === currentIndex}
+                aria-label={`Изображение ${index + 1}`}
                 className={`lightbox__thumbnail ${index === currentIndex ? 'lightbox__thumbnail--active' : ''}`}
                 onClick={() => {
                   const diff = index - currentIndex
@@ -219,9 +243,10 @@ function Lightbox({ images, currentIndex, onClose, onPrevious, onNext }: Lightbo
               >
                 <img
                   src={image.thumbnail || image.file}
-                  alt={image.file_name}
+                  alt=""
+                  aria-hidden="true"
                 />
-              </div>
+              </button>
             ))}
           </div>
         )}

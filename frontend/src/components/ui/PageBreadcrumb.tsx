@@ -34,6 +34,8 @@ const routeConfig: Record<string, { label: string; parent?: string }> = {
   '/profile/skills': { label: 'Навыки', parent: '/profile' },
   '/profile/change-password': { label: 'Сменить пароль', parent: '/profile' },
   '/security': { label: 'Безопасность', parent: '/' },
+  '/bookmarks': { label: 'Избранное', parent: '/' },
+  '/skills': { label: 'Навыки', parent: '/' },
   '/notifications': { label: 'Уведомления', parent: '/' },
   '/notifications/settings': { label: 'Настройки', parent: '/notifications' },
   '/admin': { label: 'Администрирование', parent: '/' },
@@ -135,7 +137,7 @@ export function PageBreadcrumb({ className, customLabel }: PageBreadcrumbProps) 
   }
 
   return (
-    <Breadcrumb className={className} noTrailingSlash>
+    <Breadcrumb className={className} noTrailingSlash style={{ marginBottom: '1rem' }}>
       {breadcrumbs.map((crumb, index) => (
         <BreadcrumbItem
           key={crumb.path}

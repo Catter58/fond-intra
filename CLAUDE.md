@@ -68,7 +68,7 @@ fond-intra/
 │   └── tsconfig.json
 │
 ├── backend/
-│   ├── apps/                    # 16 Django apps
+│   ├── apps/                    # 17 Django apps
 │   │   ├── accounts/            # User model, auth, profiles, statuses
 │   │   ├── organization/        # Department, Position
 │   │   ├── roles/               # RBAC - Role, Permission
@@ -83,7 +83,8 @@ fond-intra/
 │   │   ├── faq/                 # FAQCategory, FAQItem
 │   │   ├── classifieds/         # Classified, ClassifiedImage (объявления)
 │   │   ├── okr/                 # OKRPeriod, Objective, KeyResult, CheckIn (OKR)
-│   │   └── bookings/            # ResourceType, Resource, Booking (бронирование)
+│   │   ├── bookings/            # ResourceType, Resource, Booking (бронирование)
+│   │   └── interactions/        # Bookmark, ViewHistory, ProfileView
 │   ├── config/
 │   │   ├── settings/            # base.py, development.py, production.py, test.py
 │   │   ├── urls.py
@@ -224,6 +225,19 @@ fond-intra/
   - Properties: duration_minutes, is_past, is_active
   - FK to: resource, user
   - Validation: no time conflicts, within work hours, min/max duration
+
+### interactions.Bookmark, ViewHistory, ProfileView
+- Bookmark: Generic content-type based bookmarks
+  - ContentType choices: 'user', 'news'
+  - Fields: user (FK), content_type, object_id, created_at
+  - Unique constraint: (user, content_type, object_id)
+- ViewHistory: Recent profile views tracking
+  - Fields: user (FK), viewed_user (FK), viewed_at
+  - Unique constraint: (user, viewed_user), auto-updates viewed_at
+  - Limited to 20 most recent views
+- ProfileView: Aggregated profile view stats
+  - Fields: user (OneToOne), view_count, last_viewed_at
+  - Incremented when user views another profile
 
 ## API Endpoints (v1)
 
@@ -372,6 +386,18 @@ Base URL: `/api/v1/`
 - POST `/bookings/{id}/extend/` - Extend booking duration
 - GET `/bookings/stats/` - Booking statistics
 
+### Interactions (Bookmarks, View History, Profile Stats)
+- GET/POST `/bookmarks/` - List bookmarks / toggle bookmark (create or delete)
+- DELETE `/bookmarks/{id}/` - Delete bookmark by ID
+- GET `/bookmarks/users/` - Get bookmarked users
+- GET `/bookmarks/news/` - Get bookmarked news
+- GET `/bookmarks/check/?type=user&ids=1,2,3` - Check if items are bookmarked
+- GET `/view-history/` - Recent profile views (last 20)
+- POST `/view-history/record/` - Record profile view (body: user_id)
+- DELETE `/view-history/clear/` - Clear view history
+- GET `/profile-stats/` - Current user's profile stats
+- GET `/profile-stats/{user_id}/` - User's profile stats (views, achievements, kudos, skills, etc.)
+
 ## RBAC Permissions
 
 14 permission categories with codenames:
@@ -496,6 +522,43 @@ Base URL: `/api/v1/`
 - Keyboard key styling with `<kbd>` elements
 - Toggle via Shift+? or custom event
 
+### OnboardingTour (`frontend/src/components/ui/OnboardingTour.tsx`)
+- Interactive tour for new users using react-joyride
+- 11 steps covering main portal features
+- Auto-starts for users with `has_completed_onboarding: false`
+- Can be restarted from Security page
+- Stores completion status on server
+- Props: `forceRun?: boolean, onComplete?: () => void`
+
+### DashboardWidget (`frontend/src/components/features/dashboard/DashboardWidget.tsx`)
+- Draggable dashboard widget wrapper
+- Uses @dnd-kit for drag & drop
+- Edit mode with visibility toggle
+- Props: `id, title, icon, children, isEditMode, isVisible, onToggleVisibility`
+
+### AdminDataTable (`frontend/src/components/admin/AdminDataTable.tsx`)
+- Reusable Carbon DataTable wrapper for admin pages
+- Features: search, pagination, row actions, bulk selection, CSV export
+- Generic typing: `<T extends { id: string | number }>`
+- Props:
+  - `rows, headers, renderCell` - data and rendering
+  - `isLoading, emptyMessage, emptyIcon` - state display
+  - `searchPlaceholder, searchValue, onSearchChange` - search
+  - `totalItems, page, pageSize, onPageChange` - pagination
+  - `rowActions` - OverflowMenu actions per row
+  - `enableSelection, bulkActions` - batch operations
+  - `exportConfig` - CSV export button
+- Also exports `exportToCSV()` utility function
+
+## Stores
+
+### dashboardStore (`frontend/src/store/dashboardStore.ts`)
+- Zustand store for dashboard customization
+- Persists to localStorage and syncs to server
+- Manages widget order and visibility
+- Edit mode toggle
+- Methods: `setEditMode, toggleWidgetVisibility, reorderWidgets, resetToDefault, loadFromServer, saveToServer`
+
 ## Hooks
 
 ### useKeyboardShortcuts (`frontend/src/hooks/useKeyboardShortcuts.ts`)
@@ -515,11 +578,11 @@ Base URL: `/api/v1/`
 ## Known Issues & Technical Debt
 
 1. ~~**Mixed UI Libraries**~~ - Radix UI removed, using Carbon only ✅
-2. **Inline Styles** - MainLayout.tsx has many inline styles instead of Carbon classes
-3. **Custom Dropdowns** - `.user-menu`, `.search-results` implemented manually; should use Carbon OverflowMenu/ComboBox
+2. ~~**Inline Styles**~~ - MainLayout.tsx refactored to use CSS/SCSS classes ✅
+3. ~~**Custom Dropdowns**~~ - User menu, notifications, theme menu using CSS classes ✅
 4. ~~**Grid System**~~ - Main pages using Carbon Grid ✅
-5. **DataTable** - Admin tables should use Carbon DataTable
-6. **Notifications** - Should use Carbon ToastNotification instead of custom toaster
+5. ~~**DataTable**~~ - Admin tables using AdminDataTable component ✅
+6. ~~**Notifications**~~ - Using Carbon ToastNotification with CSS classes ✅
 7. **CI/CD** - `.github/` directory is empty, no workflows configured
 
 ## Development Commands
@@ -634,6 +697,8 @@ docker compose -f docker-compose.prod.yml up -d
     - Automatic achievements system with 9 trigger types
     - Skills matrix (heat map) for departments with CSV export
     - Interactive org chart diagram with zoom/pan
+    - OrgChart: expandable employee list within department cards with profile navigation
+    - OrgChart: curved/rounded connector lines between departments
   - Skills module with endorsements
   - Carbon Design System migration
   - News drafts, scheduling, and rich-text editor
@@ -646,7 +711,7 @@ docker compose -f docker-compose.prod.yml up -d
 1. ~~**Unify UI Components**~~ - Radix UI removed, using Carbon exclusively ✅
 2. ~~**Implement Carbon Grid**~~ - Main pages using Carbon Grid ✅
 3. ~~**Add Dark Theme**~~ - Implemented with light/dark/system options ✅
-4. **Use Carbon DataTable** - For all admin panel tables (already partially done)
+4. ~~**Use Carbon DataTable**~~ - Admin panel tables refactored with AdminDataTable component ✅
 5. **Add Carbon Notifications** - ToastNotification, InlineNotification
 6. **Setup CI/CD** - Add GitHub Actions for tests, linting, deployment
 7. **Expand Tests** - Add more unit and integration tests
@@ -674,4 +739,4 @@ docker compose -f docker-compose.prod.yml up -d
 ---
 
 *Document created: 2025-11-23*
-*Last updated: 2025-11-25 - Completed Phase 8 (Polish & UX: Dark theme, Breadcrumbs, Skeleton loading, Keyboard shortcuts)*
+*Last updated: 2025-11-26 - OrgChart improvements: expandable employee list, curved connector lines, fixed expand/collapse buttons*

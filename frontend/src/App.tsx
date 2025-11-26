@@ -55,6 +55,7 @@ const OKRDetailPage = lazy(() => import('@/pages/okr/OKRDetailPage'))
 const BookingsPage = lazy(() => import('@/pages/bookings/BookingsPage'))
 const ResourceDetailPage = lazy(() => import('@/pages/bookings/ResourceDetailPage'))
 const SecurityPage = lazy(() => import('@/pages/security/SecurityPage').then(m => ({ default: m.SecurityPage })))
+const BookmarksPage = lazy(() => import('@/pages/bookmarks/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
 
 // Lazy loaded pages - Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })))
@@ -143,6 +144,7 @@ function App() {
             <Route path="/bookings" element={<BookingsPage />} />
             <Route path="/bookings/resources/:id" element={<ResourceDetailPage />} />
             <Route path="/security" element={<SecurityPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
 
             {/* Admin routes */}
             <Route

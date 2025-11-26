@@ -1,8 +1,17 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, Select, SelectItem, Loading, InlineNotification } from '@carbon/react'
-import { Add, Edit, TrashCan, Building } from '@carbon/icons-react'
+import {
+  Tile,
+  Button,
+  TextInput,
+  Select,
+  SelectItem,
+  InlineNotification,
+  Modal,
+} from '@carbon/react'
+import { Add, Building } from '@carbon/icons-react'
 import { apiClient } from '@/api/client'
+import { AdminDataTable, exportToCSV } from '@/components/admin'
 import type { Department } from '@/types'
 
 export function AdminDepartmentsPage() {
@@ -11,6 +20,8 @@ export function AdminDepartmentsPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({ name: '', description: '', parent_id: '' })
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
 
   const { data: departments, isLoading } = useQuery({
     queryKey: ['departments'],
@@ -21,7 +32,7 @@ export function AdminDepartmentsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; parent_id: number | null }) => {
+    mutationFn: async (data: { name: string; description: string; parent: number | null }) => {
       const response = await apiClient.post('/organization/departments/', data)
       return response.data
     },
@@ -33,7 +44,7 @@ export function AdminDepartmentsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { name: string; description: string; parent_id: number | null } }) => {
+    mutationFn: async ({ id, data }: { id: number; data: { name: string; description: string; parent: number | null } }) => {
       const response = await apiClient.patch(`/organization/departments/${id}/`, data)
       return response.data
     },
@@ -48,7 +59,10 @@ export function AdminDepartmentsPage() {
     mutationFn: async (id: number) => {
       await apiClient.delete(`/organization/departments/${id}/`)
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['departments'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] })
+      setDeleteConfirmId(null)
+    },
   })
 
   const resetForm = () => {
@@ -73,7 +87,7 @@ export function AdminDepartmentsPage() {
     const data = {
       name: formData.name,
       description: formData.description,
-      parent_id: formData.parent_id ? Number(formData.parent_id) : null,
+      parent: formData.parent_id ? Number(formData.parent_id) : null,
     }
     if (editingId) {
       updateMutation.mutate({ id: editingId, data })
@@ -81,6 +95,35 @@ export function AdminDepartmentsPage() {
       createMutation.mutate(data)
     }
   }
+
+  // Filter departments by search
+  const filteredDepartments = departments?.filter(dept =>
+    dept.name.toLowerCase().includes(search.toLowerCase()) ||
+    dept.description?.toLowerCase().includes(search.toLowerCase())
+  ) || []
+
+  const handleExport = () => {
+    if (!departments) return
+    exportToCSV(
+      departments.map(dept => ({
+        name: dept.name,
+        description: dept.description || '',
+        parent: dept.parent_name || '',
+      })),
+      [
+        { key: 'name', label: 'Название' },
+        { key: 'description', label: 'Описание' },
+        { key: 'parent', label: 'Родительский отдел' },
+      ],
+      `departments_${new Date().toISOString().split('T')[0]}`
+    )
+  }
+
+  const headers = [
+    { key: 'name', header: 'Отдел' },
+    { key: 'description', header: 'Описание' },
+    { key: 'parent', header: 'Родитель' },
+  ]
 
   return (
     <div>
@@ -148,55 +191,70 @@ export function AdminDepartmentsPage() {
         </Tile>
       )}
 
-      {/* Departments list */}
-      <Tile>
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-            <Loading withOverlay={false} />
-          </div>
-        ) : departments && departments.length > 0 ? (
-          <div>
-            {departments.map((dept, index) => (
-              <div
-                key={dept.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  borderBottom: index < departments.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
-                }}
-              >
-                <Building size={20} style={{ color: 'var(--cds-text-secondary)' }} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 500 }}>{dept.name}</p>
-                  {dept.description && (
-                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{dept.description}</p>
-                  )}
-                  {dept.parent_name && (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>Родитель: {dept.parent_name}</p>
-                  )}
+      {/* Departments table */}
+      <AdminDataTable
+        rows={filteredDepartments}
+        headers={headers}
+        isLoading={isLoading}
+        emptyMessage="Отделы не созданы"
+        emptyIcon={Building}
+        searchPlaceholder="Поиск по названию..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        exportConfig={{
+          enabled: true,
+          onExport: handleExport,
+        }}
+        rowActions={[
+          {
+            label: 'Редактировать',
+            onClick: handleEdit,
+          },
+          {
+            label: 'Удалить',
+            onClick: (dept) => setDeleteConfirmId(dept.id),
+            isDelete: true,
+          },
+        ]}
+        renderCell={(dept, key) => {
+          switch (key) {
+            case 'name':
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Building size={16} style={{ color: 'var(--cds-text-secondary)' }} />
+                  <span style={{ fontWeight: 500 }}>{dept.name}</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(dept)} />
-                  <Button
-                    kind="danger--tertiary"
-                    hasIconOnly
-                    renderIcon={TrashCan}
-                    iconDescription="Удалить"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm('Удалить отдел?')) deleteMutation.mutate(dept.id)
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Отделы не созданы</p>
-        )}
-      </Tile>
+              )
+            case 'description':
+              return (
+                <span style={{ color: dept.description ? 'inherit' : 'var(--cds-text-helper)' }}>
+                  {dept.description || '—'}
+                </span>
+              )
+            case 'parent':
+              return (
+                <span style={{ color: dept.parent_name ? 'inherit' : 'var(--cds-text-helper)' }}>
+                  {dept.parent_name || 'Корневой'}
+                </span>
+              )
+            default:
+              return null
+          }
+        }}
+      />
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteConfirmId !== null}
+        modalHeading="Удалить отдел?"
+        primaryButtonText="Удалить"
+        secondaryButtonText="Отмена"
+        danger
+        onRequestClose={() => setDeleteConfirmId(null)}
+        onRequestSubmit={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
+      >
+        <p>Это действие нельзя отменить. Все подотделы и сотрудники этого отдела будут отвязаны.</p>
+      </Modal>
     </div>
   )
 }

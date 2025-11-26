@@ -43,6 +43,7 @@ export interface UserBasic {
   phone_personal?: string
   telegram?: string
   bio?: string
+  has_completed_onboarding?: boolean
 }
 
 export interface UserStatus {

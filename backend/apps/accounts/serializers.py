@@ -137,7 +137,7 @@ class UserBasicSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'patronymic',
-                  'full_name', 'avatar', 'is_superuser']
+                  'full_name', 'avatar', 'is_superuser', 'has_completed_onboarding']
 
 
 class UserListSerializer(serializers.ModelSerializer):

@@ -37,6 +37,8 @@ export function Avatar({ src, name, size = 32, showIcon = true }: AvatarProps) {
 
   return (
     <div
+      role="img"
+      aria-label={`Аватар пользователя ${name}`}
       style={{
         width: `${size}px`,
         height: `${size}px`,

@@ -50,6 +50,9 @@ urlpatterns = [
     # Bookings
     path('', include('apps.bookings.urls')),
 
+    # Interactions (bookmarks, view history, profile stats)
+    path('', include('apps.interactions.urls')),
+
     # Admin endpoints
     path('admin/', include('apps.roles.urls')),
     path('admin/audit/', include('apps.audit.urls')),

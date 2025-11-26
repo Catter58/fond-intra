@@ -1,8 +1,21 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Tile, Button, TextInput, TextArea, Select, SelectItem, Loading, InlineNotification, Checkbox, NumberInput } from '@carbon/react'
-import { Add, Edit, TrashCan } from '@carbon/icons-react'
+import {
+  Tile,
+  Button,
+  TextInput,
+  TextArea,
+  Select,
+  SelectItem,
+  InlineNotification,
+  Checkbox,
+  NumberInput,
+  Modal,
+  Tag,
+} from '@carbon/react'
+import { Add, Trophy } from '@carbon/icons-react'
 import { achievementsApi } from '@/api/endpoints/achievements'
+import { AdminDataTable, exportToCSV } from '@/components/admin'
 import type { Achievement } from '@/types'
 
 const EMOJI_OPTIONS = ['🏆', '⭐', '🎯', '🚀', '💡', '🔥', '💪', '🎉', '👏', '❤️', '🌟', '✨']
@@ -27,6 +40,8 @@ export function AdminAchievementTypesPage() {
     trigger_value: 1,
   })
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
 
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['achievement-types'],
@@ -58,7 +73,10 @@ export function AdminAchievementTypesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: achievementsApi.deleteType,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['achievement-types'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['achievement-types'] })
+      setDeleteConfirmId(null)
+    },
   })
 
   const resetForm = () => {
@@ -93,7 +111,6 @@ export function AdminAchievementTypesPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Prepare data: if not automatic, set trigger fields to null
     const submitData = {
       ...formData,
       trigger_type: formData.is_automatic && formData.trigger_type ? formData.trigger_type : null,
@@ -106,6 +123,43 @@ export function AdminAchievementTypesPage() {
       createMutation.mutate(submitData)
     }
   }
+
+  // Filter achievements by search
+  const filteredAchievements = achievements?.filter(a =>
+    a.name.toLowerCase().includes(search.toLowerCase()) ||
+    a.description?.toLowerCase().includes(search.toLowerCase())
+  ) || []
+
+  const handleExport = () => {
+    if (!achievements) return
+    exportToCSV(
+      achievements.map(a => ({
+        name: a.name,
+        description: a.description,
+        category: CATEGORIES.find(c => c.value === a.category)?.label || a.category,
+        icon: a.icon,
+        is_automatic: a.is_automatic ? 'Да' : 'Нет',
+        trigger_type: a.trigger_type_display || '',
+        trigger_value: a.trigger_value || '',
+      })),
+      [
+        { key: 'name', label: 'Название' },
+        { key: 'description', label: 'Описание' },
+        { key: 'category', label: 'Категория' },
+        { key: 'icon', label: 'Иконка' },
+        { key: 'is_automatic', label: 'Автоматическое' },
+        { key: 'trigger_type', label: 'Триггер' },
+        { key: 'trigger_value', label: 'Порог' },
+      ],
+      `achievement_types_${new Date().toISOString().split('T')[0]}`
+    )
+  }
+
+  const headers = [
+    { key: 'name', header: 'Достижение' },
+    { key: 'category', header: 'Категория' },
+    { key: 'trigger', header: 'Условие' },
+  ]
 
   return (
     <div>
@@ -237,71 +291,84 @@ export function AdminAchievementTypesPage() {
         </Tile>
       )}
 
-      {/* List */}
-      <Tile>
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-            <Loading withOverlay={false} />
-          </div>
-        ) : achievements && achievements.length > 0 ? (
-          <div>
-            {achievements.map((achievement, index) => (
-              <div
-                key={achievement.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  borderBottom: index < achievements.length - 1 ? '1px solid var(--cds-border-subtle-01)' : 'none',
-                }}
-              >
-                <span style={{ fontSize: '2rem' }}>{achievement.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                    <p style={{ fontWeight: 500 }}>{achievement.name}</p>
-                    {achievement.is_automatic && (
-                      <span
-                        style={{
-                          fontSize: '0.75rem',
-                          padding: '0.125rem 0.5rem',
-                          background: 'var(--cds-layer-accent-01)',
-                          color: 'var(--cds-text-on-color)',
-                          borderRadius: '12px',
-                        }}
-                      >
-                        Авто
-                      </span>
-                    )}
+      {/* Achievements table */}
+      <AdminDataTable
+        rows={filteredAchievements}
+        headers={headers}
+        isLoading={isLoading}
+        emptyMessage="Типы достижений не созданы"
+        emptyIcon={Trophy}
+        searchPlaceholder="Поиск по названию..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        exportConfig={{
+          enabled: true,
+          onExport: handleExport,
+        }}
+        rowActions={[
+          {
+            label: 'Редактировать',
+            onClick: handleEdit,
+          },
+          {
+            label: 'Удалить',
+            onClick: (a) => setDeleteConfirmId(a.id),
+            isDelete: true,
+          },
+        ]}
+        renderCell={(achievement, key) => {
+          switch (key) {
+            case 'name':
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{achievement.icon}</span>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontWeight: 500 }}>{achievement.name}</span>
+                      {achievement.is_automatic && (
+                        <Tag size="sm" type="blue">Авто</Tag>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)', marginTop: '0.125rem' }}>
+                      {achievement.description.length > 60
+                        ? achievement.description.slice(0, 60) + '...'
+                        : achievement.description}
+                    </p>
                   </div>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--cds-text-secondary)' }}>{achievement.description}</p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--cds-text-helper)' }}>
-                    {CATEGORIES.find(c => c.value === achievement.category)?.label}
-                    {achievement.is_automatic && achievement.trigger_type_display && achievement.trigger_value && (
-                      <> • {achievement.trigger_type_display}: {achievement.trigger_value}</>
-                    )}
-                  </p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <Button kind="ghost" hasIconOnly renderIcon={Edit} iconDescription="Редактировать" size="sm" onClick={() => handleEdit(achievement)} />
-                  <Button
-                    kind="danger--tertiary"
-                    hasIconOnly
-                    renderIcon={TrashCan}
-                    iconDescription="Удалить"
-                    size="sm"
-                    onClick={() => {
-                      if (confirm('Удалить тип достижения?')) deleteMutation.mutate(achievement.id)
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--cds-text-secondary)' }}>Типы достижений не созданы</p>
-        )}
-      </Tile>
+              )
+            case 'category':
+              return (
+                <Tag size="sm" type="gray">
+                  {CATEGORIES.find(c => c.value === achievement.category)?.label || achievement.category}
+                </Tag>
+              )
+            case 'trigger':
+              return achievement.is_automatic && achievement.trigger_type_display ? (
+                <span style={{ color: 'var(--cds-text-secondary)' }}>
+                  {achievement.trigger_type_display}: {achievement.trigger_value}
+                </span>
+              ) : (
+                <span style={{ color: 'var(--cds-text-helper)' }}>—</span>
+              )
+            default:
+              return null
+          }
+        }}
+      />
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteConfirmId !== null}
+        modalHeading="Удалить тип достижения?"
+        primaryButtonText="Удалить"
+        secondaryButtonText="Отмена"
+        danger
+        onRequestClose={() => setDeleteConfirmId(null)}
+        onRequestSubmit={() => deleteConfirmId && deleteMutation.mutate(deleteConfirmId)}
+      >
+        <p>Это действие нельзя отменить. Все награждения этим достижением будут сохранены.</p>
+      </Modal>
     </div>
   )
 }

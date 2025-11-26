@@ -5,7 +5,15 @@ import { BrowserRouter } from 'react-router-dom'
 import { Theme } from '@carbon/react'
 import App from './App'
 import { useThemeStore } from './store/themeStore'
+import { ToastProvider } from './components/ui/Toaster'
 import './styles/carbon.scss'
+
+// Enable accessibility testing in development
+if (import.meta.env.DEV) {
+  import('@axe-core/react').then((axe) => {
+    axe.default(React, ReactDOM, 1000)
+  })
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,9 +32,11 @@ function ThemedApp() {
   return (
     <Theme theme={resolvedTheme}>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ToastProvider>
       </QueryClientProvider>
     </Theme>
   )

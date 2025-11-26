@@ -461,6 +461,68 @@ class AdminUserViewSet(ModelViewSet):
         serializer = UserListSerializer(users, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'], url_path='bulk-archive')
+    def bulk_archive(self, request):
+        """Archive multiple users at once."""
+        user_ids = request.data.get('ids', [])
+        if not user_ids:
+            return Response(
+                {'detail': 'No user IDs provided.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        users = User.objects.filter(id__in=user_ids, is_archived=False)
+        count = users.count()
+
+        for user in users:
+            user.is_archived = True
+            user.is_active = False
+            user.archived_at = timezone.now()
+            user.save()
+
+            AuditLog.log(
+                user=request.user,
+                action=AuditLog.Action.ARCHIVE,
+                entity_type='User',
+                entity_id=user.id,
+                entity_repr=str(user),
+                ip_address=getattr(request, 'audit_ip', None),
+                user_agent=getattr(request, 'audit_user_agent', '')
+            )
+
+        return Response({'detail': f'{count} users archived successfully.', 'count': count})
+
+    @action(detail=False, methods=['post'], url_path='bulk-restore')
+    def bulk_restore(self, request):
+        """Restore multiple users at once."""
+        user_ids = request.data.get('ids', [])
+        if not user_ids:
+            return Response(
+                {'detail': 'No user IDs provided.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        users = User.objects.filter(id__in=user_ids, is_archived=True)
+        count = users.count()
+
+        for user in users:
+            user.is_archived = False
+            user.is_active = True
+            user.archived_at = None
+            user.save()
+
+            AuditLog.log(
+                user=request.user,
+                action=AuditLog.Action.RESTORE,
+                entity_type='User',
+                entity_id=user.id,
+                entity_repr=str(user),
+                ip_address=getattr(request, 'audit_ip', None),
+                user_agent=getattr(request, 'audit_user_agent', '')
+            )
+
+        return Response({'detail': f'{count} users restored successfully.', 'count': count})
+
 
 # =============================================================================
 # UserStatus Views
@@ -908,4 +970,58 @@ class UserSessionTerminateAllView(APIView):
 
         return Response({
             'detail': f'{terminated_count} session(s) have been terminated.'
+        })
+
+
+class CompleteOnboardingView(APIView):
+    """Mark onboarding as completed for the current user."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.has_completed_onboarding = True
+        user.save(update_fields=['has_completed_onboarding'])
+        return Response({'has_completed_onboarding': True})
+
+
+class ResetOnboardingView(APIView):
+    """Reset onboarding status (for testing or re-touring)."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.has_completed_onboarding = False
+        user.save(update_fields=['has_completed_onboarding'])
+        return Response({'has_completed_onboarding': False})
+
+
+class DashboardSettingsView(APIView):
+    """Get and update dashboard widget settings."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            'dashboard_settings': request.user.dashboard_settings or {}
+        })
+
+    def patch(self, request):
+        user = request.user
+        settings = request.data.get('dashboard_settings', {})
+
+        # Validate settings structure
+        if not isinstance(settings, dict):
+            return Response(
+                {'detail': 'dashboard_settings must be an object'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Merge with existing settings
+        user.dashboard_settings = {
+            **(user.dashboard_settings or {}),
+            **settings
+        }
+        user.save(update_fields=['dashboard_settings'])
+
+        return Response({
+            'dashboard_settings': user.dashboard_settings
         })

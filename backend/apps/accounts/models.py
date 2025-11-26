@@ -97,6 +97,12 @@ class User(AbstractUser):
     is_archived = models.BooleanField(_('archived'), default=False)
     archived_at = models.DateTimeField(_('archived at'), null=True, blank=True)
 
+    # Onboarding
+    has_completed_onboarding = models.BooleanField(_('completed onboarding'), default=False)
+
+    # Dashboard settings (JSON: widget order, visibility)
+    dashboard_settings = models.JSONField(_('dashboard settings'), default=dict, blank=True)
+
     # Roles (RBAC)
     roles = models.ManyToManyField(
         'roles.Role',
