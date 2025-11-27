@@ -1,0 +1,94 @@
+# =============================================================================
+# FondSmena Intranet Portal - All-in-One Container
+# =============================================================================
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql \
+    postgresql-contrib \
+    redis-server \
+    python3 \
+    python3-venv \
+    python3-dev \
+    python3-pip \
+    build-essential \
+    libpq-dev \
+    nginx \
+    curl \
+    ca-certificates \
+    gnupg \
+    supervisor \
+    sudo \
+    cron \
+    certbot \
+    python3-certbot-nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 20
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application user
+RUN useradd -m -s /bin/bash appuser
+
+# Set up directories
+WORKDIR /app
+RUN mkdir -p /app/backend /app/frontend /app/data/postgres /app/data/redis /app/logs /var/www/html /var/www/static /var/www/media /etc/letsencrypt \
+    && mkdir -p /run/postgresql /var/run/redis \
+    && chown -R postgres:postgres /app/data/postgres /run/postgresql \
+    && chown -R redis:redis /app/data/redis /var/run/redis
+
+# Copy backend requirements and install
+COPY backend/requirements.txt /app/backend/
+RUN pip3 install --no-cache-dir -r /app/backend/requirements.txt
+
+# Copy backend
+COPY backend /app/backend/
+
+# Copy frontend and build
+COPY frontend/package*.json /app/frontend/
+WORKDIR /app/frontend
+RUN npm ci --legacy-peer-deps 2>/dev/null || npm install --legacy-peer-deps
+
+COPY frontend /app/frontend/
+RUN npm run build && cp -r dist/* /var/www/html/
+
+WORKDIR /app
+
+# Configure Redis
+RUN sed -i 's/^daemonize yes/daemonize no/' /etc/redis/redis.conf 2>/dev/null || true \
+    && echo "daemonize no" >> /etc/redis/redis.conf \
+    && echo "dir /app/data/redis" >> /etc/redis/redis.conf \
+    && echo "logfile \"\"" >> /etc/redis/redis.conf
+
+# Copy configurations
+COPY nginx/nginx-allinone.conf /etc/nginx/nginx.conf
+COPY nginx/nginx-ssl.conf /etc/nginx/nginx-ssl.conf
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# Copy supervisor config
+COPY scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy scripts
+COPY scripts/entrypoint.sh /app/entrypoint.sh
+COPY scripts/setup-ssl.sh /app/setup-ssl.sh
+COPY scripts/renew-ssl.sh /app/renew-ssl.sh
+RUN chmod +x /app/*.sh /app/scripts/*.sh 2>/dev/null || true
+
+# Set permissions
+RUN chown -R appuser:appuser /app/backend /app/logs /var/www
+
+EXPOSE 80 443
+
+VOLUME ["/app/data/postgres", "/app/data/redis", "/var/www/media", "/etc/letsencrypt"]
+
+ENTRYPOINT ["/app/entrypoint.sh"]

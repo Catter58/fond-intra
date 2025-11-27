@@ -40,7 +40,7 @@ const OKRDashboard: FC<OKRDashboardProps> = ({ stats, loading }) => {
   const navigate = useNavigate()
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Загрузка...</div>
   }
 
   const getProgressColor = (progress: number): string => {

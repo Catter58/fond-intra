@@ -119,7 +119,7 @@ export default function KeyResultItem({
             }}>
               <Time size={12} />
               <span>
-                Последний check-in: {formatDate(keyResult.last_check_in.created_at)}
+                Последнее обновление: {formatDate(keyResult.last_check_in.created_at)}
                 {keyResult.last_check_in.comment && ` — ${keyResult.last_check_in.comment}`}
               </span>
             </div>
@@ -134,7 +134,7 @@ export default function KeyResultItem({
               renderIcon={Add}
               onClick={() => setCheckInModalOpen(true)}
               hasIconOnly
-              iconDescription="Check-in"
+              iconDescription="Добавить отчёт"
             />
             <OverflowMenu size="sm" flipped>
               {onUpdate && (
@@ -160,7 +160,7 @@ export default function KeyResultItem({
         open={checkInModalOpen}
         onRequestClose={() => setCheckInModalOpen(false)}
         onRequestSubmit={handleCheckIn}
-        modalHeading="Добавить Check-in"
+        modalHeading="Обновить прогресс"
         primaryButtonText="Сохранить"
         secondaryButtonText="Отмена"
         primaryButtonDisabled={isSubmitting}

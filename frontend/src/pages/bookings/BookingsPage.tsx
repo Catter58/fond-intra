@@ -154,7 +154,7 @@ export default function BookingsPage() {
         )}
 
         <Tabs selectedIndex={selectedTab} onChange={({ selectedIndex }) => setSelectedTab(selectedIndex)}>
-          <TabList aria-label="Booking tabs">
+          <TabList aria-label="Вкладки бронирования">
             <Tab renderIcon={Building}>Ресурсы</Tab>
             <Tab renderIcon={Calendar}>Мои бронирования</Tab>
           </TabList>

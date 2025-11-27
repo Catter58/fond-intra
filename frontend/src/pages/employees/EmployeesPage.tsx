@@ -113,7 +113,7 @@ export function EmployeesPage() {
       {/* Search */}
       <div style={{ maxWidth: '400px', marginBottom: '1rem' }}>
         <Search
-          labelText="Search"
+          labelText="Поиск"
           placeholder="Поиск по имени или должности..."
           value={search}
           onChange={(e) => {
@@ -121,7 +121,7 @@ export function EmployeesPage() {
             setSearch(value)
             setPage(1)
           }}
-          closeButtonLabelText="Clear search"
+          closeButtonLabelText="Очистить поиск"
         />
       </div>
 

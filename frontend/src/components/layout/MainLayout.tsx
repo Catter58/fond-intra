@@ -177,7 +177,7 @@ export function MainLayout() {
       <Header aria-label="Fond Intra">
         <SkipToContent />
         <HeaderGlobalAction
-          aria-label={sideNavOpen ? 'Close menu' : 'Open menu'}
+          aria-label={sideNavOpen ? 'Закрыть меню' : 'Открыть меню'}
           onClick={() => setSideNavOpen(!sideNavOpen)}
         >
           {sideNavOpen ? <Close size={20} /> : <Menu size={20} />}
@@ -193,8 +193,8 @@ export function MainLayout() {
               <Search
                 size="sm"
                 placeholder="Поиск..."
-                labelText="Search"
-                closeButtonLabelText="Clear"
+                labelText="Поиск"
+                closeButtonLabelText="Очистить"
                 value={searchQuery}
                 onChange={(e) => {
                   const value = typeof e === 'string' ? e : e.target.value
@@ -240,7 +240,7 @@ export function MainLayout() {
           {/* Mobile search button */}
           {isMobile && (
             <HeaderGlobalAction
-              aria-label="Search"
+              aria-label="Поиск"
               onClick={() => setShowMobileSearch(!showMobileSearch)}
             >
               <SearchIcon size={20} />
@@ -260,7 +260,7 @@ export function MainLayout() {
           </HeaderGlobalAction>
 
           <HeaderGlobalAction
-            aria-label="Notifications"
+            aria-label="Уведомления"
             onClick={() => {
               setShowNotifications(!showNotifications)
               setShowUserPanel(false)
@@ -278,7 +278,7 @@ export function MainLayout() {
           </HeaderGlobalAction>
 
           <HeaderGlobalAction
-            aria-label="User"
+            aria-label="Профиль"
             onClick={() => {
               setShowUserPanel(!showUserPanel)
               setShowNotifications(false)
@@ -414,8 +414,8 @@ export function MainLayout() {
             <Search
               size="lg"
               placeholder="Поиск..."
-              labelText="Search"
-              closeButtonLabelText="Clear"
+              labelText="Поиск"
+              closeButtonLabelText="Очистить"
               value={searchQuery}
               onChange={(e) => {
                 const value = typeof e === 'string' ? e : e.target.value
@@ -466,7 +466,7 @@ export function MainLayout() {
 
         {/* Sidebar */}
         <SideNav
-          aria-label="Side navigation"
+          aria-label="Боковое меню"
           expanded={sideNavOpen}
           isFixedNav
           isChildOfHeader={false}

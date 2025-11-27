@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Tile, Button, Tag } from '@carbon/react'
-import { Edit, Email, Phone, Calendar, Events, Catalog, ArrowRight, UserAvatar } from '@carbon/icons-react'
+import { Edit, Email, Phone, Calendar, Events, Catalog, ArrowRight, UserAvatar, Help } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { skillsApi } from '@/api/endpoints/skills'
 import { formatDate } from '@/lib/utils'
 import { levelLabels } from '@/components/features/skills'
 import { ProfileSkeleton } from '@/components/ui/Skeletons'
 import { ProfileStatsWidget } from '@/components/features/interactions'
+import { OnboardingTour, useModuleTour } from '@/components/ui/OnboardingTour'
 
 const getInitials = (name: string) => {
   return name
@@ -20,6 +21,7 @@ const getInitials = (name: string) => {
 
 export function ProfilePage() {
   const { user } = useAuthStore()
+  const { showTour, handleComplete, resetTour } = useModuleTour('profile')
 
   const { data: mySkills = [] } = useQuery({
     queryKey: ['my-skills'],
@@ -35,9 +37,19 @@ export function ProfilePage() {
       {/* Header with Edit button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Мой профиль</h1>
-        <Button renderIcon={Edit} as={Link} to="/profile/edit">
-          Редактировать
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            kind="ghost"
+            size="sm"
+            hasIconOnly
+            iconDescription="Справка по странице"
+            renderIcon={Help}
+            onClick={resetTour}
+          />
+          <Button renderIcon={Edit} as={Link} to="/profile/edit" className="edit-profile-btn">
+            Редактировать
+          </Button>
+        </div>
       </div>
 
       {/* Profile Header */}
@@ -218,6 +230,13 @@ export function ProfilePage() {
           <div /> // Empty div to maintain grid
         )}
       </div>
+
+      {/* Module-specific onboarding tour */}
+      <OnboardingTour
+        tourType="profile"
+        forceRun={showTour}
+        onComplete={handleComplete}
+      />
     </div>
   )
 }

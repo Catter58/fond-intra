@@ -282,7 +282,7 @@ export function AdminDataTable<T extends { id: string | number }>({
                           ))}
                           {rowActions && rowActions.length > 0 && (
                             <TableCell>
-                              <OverflowMenu flipped ariaLabel="Actions" size="sm">
+                              <OverflowMenu flipped ariaLabel="Действия" size="sm">
                                 {rowActions
                                   .filter((action) => !action.isHidden?.(originalRow))
                                   .map((action) => (

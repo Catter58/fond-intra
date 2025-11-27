@@ -46,15 +46,15 @@ def create_test_data():
     # Create departments
     departments = {}
     dept_data = [
-        ('IT отдел', 'Разработка и поддержка IT-систем', 'it-otdel'),
-        ('HR отдел', 'Управление персоналом', 'hr-otdel'),
-        ('Маркетинг', 'Маркетинг и PR', 'marketing'),
-        ('Администрация', 'Административное управление', 'administraciya'),
+        ('IT отдел', 'Разработка и поддержка IT-систем'),
+        ('HR отдел', 'Управление персоналом'),
+        ('Маркетинг', 'Маркетинг и PR'),
+        ('Администрация', 'Административное управление'),
     ]
-    for name, desc, slug in dept_data:
+    for name, desc in dept_data:
         dept, _ = Department.objects.get_or_create(
-            slug=slug,
-            defaults={'name': name, 'description': desc}
+            name=name,
+            defaults={'description': desc}
         )
         departments[name] = dept
     print(f"  Departments: {len(departments)}")
@@ -160,7 +160,8 @@ def create_test_data():
                 defaults={
                     'description': 'Внедрить корпоративный портал для всех сотрудников',
                     'owner': admin,
-                    'progress': 50,
+                    'level': 'company',
+                    'status': 'active',
                 }
             )
         print("  OKR Period: 1, Objectives: 1")

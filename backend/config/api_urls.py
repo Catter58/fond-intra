@@ -2,8 +2,18 @@
 API URL configuration for version 1.
 """
 from django.urls import path, include
+from django.http import JsonResponse
+
+
+def health_check(request):
+    """Health check endpoint for container orchestration."""
+    return JsonResponse({'status': 'ok'})
+
 
 urlpatterns = [
+    # Health check
+    path('health/', health_check, name='health-check'),
+
     # Global search
     path('', include('core.urls')),
 

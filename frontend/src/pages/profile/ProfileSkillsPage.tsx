@@ -11,11 +11,12 @@ import {
   Select,
   SelectItem,
 } from '@carbon/react'
-import { Add, ArrowLeft, Education } from '@carbon/icons-react'
+import { Add, ArrowLeft, Education, Help } from '@carbon/icons-react'
 import { skillsApi } from '@/api/endpoints/skills'
 import { AddSkillForm, SkillBadge, levelLabels } from '@/components/features/skills'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useAuthStore } from '@/store/authStore'
+import { OnboardingTour, useModuleTour } from '@/components/ui/OnboardingTour'
 import type { UserSkill } from '@/types'
 
 export function ProfileSkillsPage() {
@@ -25,6 +26,7 @@ export function ProfileSkillsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingSkill, setEditingSkill] = useState<UserSkill | null>(null)
   const [newLevel, setNewLevel] = useState<UserSkill['level']>('intermediate')
+  const { showTour, handleComplete, resetTour } = useModuleTour('skills')
 
   const { data: mySkills = [], isLoading, error } = useQuery({
     queryKey: ['my-skills'],
@@ -102,12 +104,23 @@ export function ProfileSkillsPage() {
           </Button>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 600 }}>Мои навыки</h1>
         </div>
-        <Button
-          renderIcon={Add}
-          onClick={() => setShowAddForm(true)}
-        >
-          Добавить навык
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            kind="ghost"
+            size="sm"
+            hasIconOnly
+            iconDescription="Справка по странице"
+            renderIcon={Help}
+            onClick={resetTour}
+          />
+          <Button
+            renderIcon={Add}
+            onClick={() => setShowAddForm(true)}
+            className="add-skill-btn"
+          >
+            Добавить навык
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -180,6 +193,13 @@ export function ProfileSkillsPage() {
           <SelectItem value="expert" text={levelLabels.expert} />
         </Select>
       </Modal>
+
+      {/* Module-specific onboarding tour */}
+      <OnboardingTour
+        tourType="skills"
+        forceRun={showTour}
+        onComplete={handleComplete}
+      />
     </div>
   )
 }

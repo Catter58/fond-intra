@@ -289,7 +289,7 @@ export function AdminUsersPage() {
                             <TableCell>{userData?.position}</TableCell>
                             <TableCell>{userData?.hire_date}</TableCell>
                             <TableCell>
-                              <OverflowMenu flipped ariaLabel="Actions" size="sm">
+                              <OverflowMenu flipped ariaLabel="Действия" size="sm">
                                 <OverflowMenuItem
                                   itemText="Редактировать"
                                   onClick={() => navigate(`/admin/users/${row.id}/edit`)}

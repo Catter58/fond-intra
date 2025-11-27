@@ -13,6 +13,28 @@ from apps.achievements.models import Achievement
 from apps.skills.models import Skill
 
 
+def extract_plain_text_from_editorjs(content):
+    """Extract plain text from Editor.js JSON content."""
+    if not content or not isinstance(content, dict):
+        return ''
+
+    blocks = content.get('blocks', [])
+    text_parts = []
+
+    for block in blocks:
+        if block.get('type') == 'paragraph':
+            text_parts.append(block.get('data', {}).get('text', ''))
+        elif block.get('type') == 'header':
+            text_parts.append(block.get('data', {}).get('text', ''))
+        elif block.get('type') == 'list':
+            items = block.get('data', {}).get('items', [])
+            text_parts.extend(items)
+        elif block.get('type') == 'quote':
+            text_parts.append(block.get('data', {}).get('text', ''))
+
+    return ' '.join(text_parts)
+
+
 class GlobalSearchView(APIView):
     """
     Global search across Users, News, Departments, Achievements, and Skills.
@@ -53,13 +75,14 @@ class GlobalSearchView(APIView):
                 Q(last_name__icontains=query) |
                 Q(patronymic__icontains=query) |
                 Q(email__icontains=query) |
+                Q(department__name__icontains=query) |
                 Q(position__name__icontains=query)
-            ).select_related('department', 'position')[:limit]
+            ).select_related('department', 'position').distinct()[:limit]
 
             results['users'] = [{
                 'id': u.id,
                 'type': 'user',
-                'title': u.full_name,
+                'title': u.get_full_name(),
                 'subtitle': u.position.name if u.position else None,
                 'description': u.department.name if u.department else None,
                 'avatar': u.avatar.url if u.avatar else None,
@@ -76,15 +99,20 @@ class GlobalSearchView(APIView):
                 Q(content__icontains=query)
             ).select_related('author')[:limit]
 
-            results['news'] = [{
-                'id': n.id,
-                'type': 'news',
-                'title': n.title,
-                'subtitle': n.author.full_name if n.author else None,
-                'description': n.content[:150] + '...' if len(n.content) > 150 else n.content,
-                'avatar': None,
-                'url': f'/news/{n.id}'
-            } for n in news]
+            news_results = []
+            for n in news:
+                plain_text = extract_plain_text_from_editorjs(n.content)
+                description = plain_text[:150] + '...' if len(plain_text) > 150 else plain_text
+                news_results.append({
+                    'id': n.id,
+                    'type': 'news',
+                    'title': n.title,
+                    'subtitle': n.author.get_full_name() if n.author else None,
+                    'description': description,
+                    'avatar': None,
+                    'url': f'/news/{n.id}'
+                })
+            results['news'] = news_results
             total += len(results['news'])
 
         # Search Departments

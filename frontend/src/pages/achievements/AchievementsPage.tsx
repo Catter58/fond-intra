@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Tile, Button, Pagination } from '@carbon/react'
-import { Add, Trophy, ChartLineSmooth } from '@carbon/icons-react'
+import { Add, Trophy, ChartLineSmooth, Help } from '@carbon/icons-react'
 import { AwardAchievementModal, AchievementLeaderboard, AchievementProgress } from '@/components/features/achievements'
 import { achievementsApi } from '@/api/endpoints/achievements'
 import { formatDate } from '@/lib/utils'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AchievementCardSkeleton } from '@/components/ui/Skeletons'
+import { OnboardingTour, useModuleTour } from '@/components/ui/OnboardingTour'
 
 const getInitials = (name: string) => {
   return name
@@ -20,6 +21,7 @@ const getInitials = (name: string) => {
 export function AchievementsPage() {
   const [page, setPage] = useState(1)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const { showTour, handleComplete, resetTour } = useModuleTour('achievements')
 
   const { data: achievementTypes } = useQuery({
     queryKey: ['achievement-types'],
@@ -41,9 +43,19 @@ export function AchievementsPage() {
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1 className="page-title">Достижения</h1>
-          <Button renderIcon={Add} onClick={() => setShowCreateModal(true)}>
-            Наградить коллегу
-          </Button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button
+              kind="ghost"
+              size="sm"
+              hasIconOnly
+              iconDescription="Справка по странице"
+              renderIcon={Help}
+              onClick={resetTour}
+            />
+            <Button renderIcon={Add} onClick={() => setShowCreateModal(true)} className="award-button">
+              Наградить коллегу
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -206,6 +218,13 @@ export function AchievementsPage() {
       <AwardAchievementModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
+      />
+
+      {/* Module-specific onboarding tour */}
+      <OnboardingTour
+        tourType="achievements"
+        forceRun={showTour}
+        onComplete={handleComplete}
       />
     </div>
   )

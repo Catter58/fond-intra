@@ -11,16 +11,18 @@ import {
   TabPanels,
   TabPanel,
 } from '@carbon/react'
-import { Add, Favorite, Trophy, ChartColumn } from '@carbon/icons-react'
+import { Add, Favorite, Trophy, ChartColumn, Help } from '@carbon/icons-react'
 import { kudosApi } from '@/api/endpoints/kudos'
 import { KudosCard, SendKudosModal } from '@/components/features/kudos'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { KudosCardSkeleton } from '@/components/ui/Skeletons'
+import { OnboardingTour, useModuleTour } from '@/components/ui/OnboardingTour'
 import type { KudosCategory } from '@/types'
 
 export function KudosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<KudosCategory | ''>('')
+  const { showTour, handleComplete, resetTour } = useModuleTour('kudos')
 
   const { data: categories } = useQuery({
     queryKey: ['kudos-categories'],
@@ -56,9 +58,19 @@ export function KudosPage() {
             Отправляйте благодарности коллегам за помощь и отличную работу
           </p>
         </div>
-        <Button renderIcon={Add} onClick={() => setIsModalOpen(true)}>
-          Отправить благодарность
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            kind="ghost"
+            size="sm"
+            hasIconOnly
+            iconDescription="Справка по странице"
+            renderIcon={Help}
+            onClick={resetTour}
+          />
+          <Button renderIcon={Add} onClick={() => setIsModalOpen(true)} className="send-kudos-btn">
+            Отправить благодарность
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -212,6 +224,13 @@ export function KudosPage() {
       </Tabs>
 
       <SendKudosModal open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* Module-specific onboarding tour */}
+      <OnboardingTour
+        tourType="kudos"
+        forceRun={showTour}
+        onComplete={handleComplete}
+      />
     </div>
   )
 }

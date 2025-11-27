@@ -29,6 +29,7 @@ import {
   Checkmark,
   Reset,
   Time,
+  Help,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { useDashboardStore, getOrderedWidgets, type WidgetId } from '@/store/dashboardStore'
@@ -43,11 +44,13 @@ import { formatDate } from '@/lib/utils'
 import { AchievementLeaderboard } from '@/components/features/achievements'
 import { DashboardWidget } from '@/components/features/dashboard'
 import { ViewHistoryWidget } from '@/components/features/interactions'
+import { OnboardingTour, useModuleTour } from '@/components/ui/OnboardingTour'
 
 export function DashboardPage() {
   const { user } = useAuthStore()
   const dashboardStore = useDashboardStore()
   const orderedWidgets = getOrderedWidgets(dashboardStore)
+  const { showTour, handleComplete, resetTour } = useModuleTour('dashboard')
 
   // Load settings from server on mount
   useEffect(() => {
@@ -527,14 +530,25 @@ export function DashboardPage() {
               </Button>
             </>
           ) : (
-            <Button
-              kind="ghost"
-              size="sm"
-              renderIcon={Settings}
-              onClick={() => dashboardStore.setEditMode(true)}
-            >
-              Настроить
-            </Button>
+            <>
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                iconDescription="Справка по странице"
+                renderIcon={Help}
+                onClick={resetTour}
+              />
+              <Button
+                kind="ghost"
+                size="sm"
+                renderIcon={Settings}
+                onClick={() => dashboardStore.setEditMode(true)}
+                className="settings-btn"
+              >
+                Настроить
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -616,6 +630,13 @@ export function DashboardPage() {
           </div>
         </SortableContext>
       </DndContext>
+
+      {/* Module-specific onboarding tour */}
+      <OnboardingTour
+        tourType="dashboard"
+        forceRun={showTour}
+        onComplete={handleComplete}
+      />
     </div>
   )
 }

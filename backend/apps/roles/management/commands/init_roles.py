@@ -36,12 +36,18 @@ class Command(BaseCommand):
                 name=role_name,
                 defaults={
                     'description': role_data['description'],
-                    'is_system': role_data['is_system']
+                    'is_system': role_data['is_system'],
+                    'is_admin': role_data.get('is_admin', False)
                 }
             )
 
             if created:
                 created_roles += 1
+            else:
+                # Update is_admin flag for existing roles
+                if role.is_admin != role_data.get('is_admin', False):
+                    role.is_admin = role_data.get('is_admin', False)
+                    role.save(update_fields=['is_admin'])
 
             # Assign permissions
             if role_data['permissions'] == '__all__':

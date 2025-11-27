@@ -207,7 +207,7 @@ export default function OKRPage() {
         )}
 
         <Tabs selectedIndex={activeTab} onChange={({ selectedIndex }) => setActiveTab(selectedIndex)}>
-          <TabList aria-label="OKR tabs" contained>
+          <TabList aria-label="Вкладки OKR" contained>
             <Tab renderIcon={Dashboard}>Дашборд</Tab>
             <Tab renderIcon={Crossroads}>Мои OKR ({myObjectives.length})</Tab>
             <Tab renderIcon={UserMultiple}>Команда ({teamObjectives.length})</Tab>

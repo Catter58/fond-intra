@@ -301,7 +301,7 @@ class UserDetailView(generics.RetrieveAPIView):
 
 
 class UserSearchView(generics.ListAPIView):
-    """Quick search users by name."""
+    """Quick search users by name, email, department, or position."""
     serializer_class = UserListSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None  # Search returns limited results, no pagination needed
@@ -317,8 +317,11 @@ class UserSearchView(generics.ListAPIView):
         ).filter(
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
-            Q(patronymic__icontains=query)
-        ).select_related('department', 'position')[:20]
+            Q(patronymic__icontains=query) |
+            Q(email__icontains=query) |
+            Q(department__name__icontains=query) |
+            Q(position__name__icontains=query)
+        ).select_related('department', 'position').distinct()[:20]
 
 
 class DashboardStatsView(APIView):
