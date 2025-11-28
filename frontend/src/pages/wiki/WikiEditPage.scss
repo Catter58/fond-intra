@@ -1,0 +1,22 @@
+.wiki-edit-page {
+  padding: 1rem 2rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  &__form {
+    margin-top: 1.5rem;
+  }
+
+  &__editor {
+    min-height: 400px;
+    background: var(--cds-layer-01);
+    border: 1px solid var(--cds-border-subtle-01);
+    border-radius: 4px;
+    padding: 1rem;
+  }
+}

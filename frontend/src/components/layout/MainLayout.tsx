@@ -41,6 +41,7 @@ import {
   Screen,
   Education,
   Bookmark,
+  Book,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 import { useThemeStore } from '@/store/themeStore'
@@ -615,6 +616,17 @@ export function MainLayout() {
               }}
             >
               Избранное
+            </SideNavLink>
+            <SideNavLink
+              renderIcon={Book}
+              href="/wiki"
+              isActive={isActive('/wiki')}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                navigate('/wiki')
+              }}
+            >
+              База знаний
             </SideNavLink>
 
             {isAdmin && (

@@ -103,4 +103,22 @@ export const authApi = {
     const response = await apiClient.post('/auth/sessions/terminate-all/')
     return response.data
   },
+
+  // Site settings
+  getSiteSettings: async (): Promise<{ registration_enabled: boolean }> => {
+    const response = await apiClient.get('/settings/')
+    return response.data
+  },
+
+  // Registration
+  register: async (data: {
+    email: string
+    password: string
+    first_name: string
+    last_name: string
+    patronymic?: string
+  }): Promise<{ detail: string; user: { id: number; email: string; full_name: string } }> => {
+    const response = await apiClient.post('/register/', data)
+    return response.data
+  },
 }

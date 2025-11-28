@@ -57,6 +57,9 @@ urlpatterns = [
     # OKR
     path('okr/', include('apps.okr.urls')),
 
+    # Wiki
+    path('wiki/', include('apps.wiki.urls')),
+
     # Bookings
     path('', include('apps.bookings.urls')),
 

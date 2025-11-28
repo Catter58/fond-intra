@@ -7,13 +7,55 @@ interface EditorJSViewerProps {
   className?: string
 }
 
+// List item can be a string or an object with content and nested items
+interface ListItem {
+  content?: string
+  items?: ListItem[]
+}
+
 interface BlockData {
   text?: string
   level?: number
   style?: 'unordered' | 'ordered'
-  items?: string[]
+  items?: (string | ListItem)[]
   caption?: string
   code?: string
+}
+
+// Helper to extract text content from list item
+function getItemContent(item: string | ListItem): string {
+  if (typeof item === 'string') {
+    return item
+  }
+  return item.content || ''
+}
+
+// Helper to get nested items
+function getNestedItems(item: string | ListItem): ListItem[] {
+  if (typeof item === 'string') {
+    return []
+  }
+  return item.items || []
+}
+
+// Recursive list item renderer
+function renderListItems(items: (string | ListItem)[], style: 'unordered' | 'ordered'): JSX.Element[] {
+  return items.map((item, i) => {
+    const content = getItemContent(item)
+    const nestedItems = getNestedItems(item)
+    const ListTag = style === 'ordered' ? 'ol' : 'ul'
+
+    return (
+      <li key={i} className="editorjs-list-item">
+        <span dangerouslySetInnerHTML={{ __html: content }} />
+        {nestedItems.length > 0 && (
+          <ListTag className="editorjs-list editorjs-list--nested">
+            {renderListItems(nestedItems, style)}
+          </ListTag>
+        )}
+      </li>
+    )
+  })
 }
 
 function renderBlock(block: OutputBlockData<string, BlockData>, index: number): JSX.Element | null {
@@ -41,15 +83,10 @@ function renderBlock(block: OutputBlockData<string, BlockData>, index: number): 
 
     case 'list':
       const ListTag = data.style === 'ordered' ? 'ol' : 'ul'
+      const items = data.items || []
       return (
         <ListTag key={index} className="editorjs-list">
-          {(data.items || []).map((item, i) => (
-            <li
-              key={i}
-              className="editorjs-list-item"
-              dangerouslySetInnerHTML={{ __html: item }}
-            />
-          ))}
+          {renderListItems(items, data.style || 'unordered')}
         </ListTag>
       )
 

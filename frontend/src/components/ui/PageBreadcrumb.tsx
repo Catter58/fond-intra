@@ -1,6 +1,12 @@
 import { useLocation, Link } from 'react-router-dom'
 import { Breadcrumb, BreadcrumbItem } from '@carbon/react'
 
+// Custom breadcrumb item type for dynamic breadcrumbs
+export interface BreadcrumbItemData {
+  path: string
+  label: string
+}
+
 // Route configuration for breadcrumbs
 const routeConfig: Record<string, { label: string; parent?: string }> = {
   '/': { label: 'Главная' },
@@ -38,6 +44,7 @@ const routeConfig: Record<string, { label: string; parent?: string }> = {
   '/skills': { label: 'Навыки', parent: '/' },
   '/notifications': { label: 'Уведомления', parent: '/' },
   '/notifications/settings': { label: 'Настройки', parent: '/notifications' },
+  '/wiki': { label: 'База знаний', parent: '/' },
   '/admin': { label: 'Администрирование', parent: '/' },
   '/admin/users': { label: 'Пользователи', parent: '/admin' },
   '/admin/users/:id': { label: 'Пользователь', parent: '/admin/users' },
@@ -120,20 +127,29 @@ function buildBreadcrumbs(pathname: string): Array<{ path: string; label: string
 interface PageBreadcrumbProps {
   className?: string
   customLabel?: string // Override the label for the current page
+  items?: BreadcrumbItemData[] // Custom breadcrumb items (overrides automatic generation)
 }
 
-export function PageBreadcrumb({ className, customLabel }: PageBreadcrumbProps) {
+export function PageBreadcrumb({ className, customLabel, items }: PageBreadcrumbProps) {
   const location = useLocation()
-  const breadcrumbs = buildBreadcrumbs(location.pathname)
+
+  // Use custom items if provided, otherwise build from route config
+  let breadcrumbs: Array<{ path: string; label: string }>
+
+  if (items && items.length > 0) {
+    breadcrumbs = items
+  } else {
+    breadcrumbs = buildBreadcrumbs(location.pathname)
+
+    // Override last item's label if customLabel provided
+    if (customLabel && breadcrumbs.length > 0) {
+      breadcrumbs[breadcrumbs.length - 1].label = customLabel
+    }
+  }
 
   // Don't show breadcrumb on home page or if only one item
   if (breadcrumbs.length <= 1) {
     return null
-  }
-
-  // Override last item's label if customLabel provided
-  if (customLabel && breadcrumbs.length > 0) {
-    breadcrumbs[breadcrumbs.length - 1].label = customLabel
   }
 
   return (

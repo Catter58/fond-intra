@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Grid, Column, Tile, ClickableTile } from '@carbon/react'
-import { UserMultiple, Building, Security, Trophy, Document, ChartLineSmooth, Archive } from '@carbon/icons-react'
+import { UserMultiple, Building, Security, Trophy, Document, ChartLineSmooth, Archive, Settings } from '@carbon/icons-react'
 import { apiClient } from '@/api/client'
 
 interface AdminStats {
@@ -58,6 +58,13 @@ export function AdminDashboardPage() {
       icon: Document,
       href: '/admin/audit',
       stats: 'Просмотр логов',
+    },
+    {
+      title: 'Настройки',
+      description: 'Настройки портала',
+      icon: Settings,
+      href: '/admin/settings',
+      stats: 'Регистрация и др.',
     },
   ]
 

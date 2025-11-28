@@ -2,15 +2,19 @@
 Global search view for unified search across all entities.
 """
 from django.db.models import Q
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from apps.accounts.models import User
 from apps.news.models import News
 from apps.organization.models import Department
 from apps.achievements.models import Achievement
 from apps.skills.models import Skill
+from apps.wiki.models import WikiPage, WikiSpace
+from apps.roles.permissions import CanManageRoles
+from .models import SiteSettings
 
 
 def extract_plain_text_from_editorjs(content):
@@ -37,11 +41,11 @@ def extract_plain_text_from_editorjs(content):
 
 class GlobalSearchView(APIView):
     """
-    Global search across Users, News, Departments, Achievements, and Skills.
+    Global search across Users, News, Departments, Achievements, Skills, and Wiki.
 
     Query params:
         q: search query (min 2 chars)
-        type: filter by type (users, news, departments, achievements, skills)
+        type: filter by type (users, news, departments, achievements, skills, wiki)
         limit: results per category (default 5, max 20)
     """
     permission_classes = [IsAuthenticated]
@@ -169,8 +173,185 @@ class GlobalSearchView(APIView):
             } for s in skills]
             total += len(results['skills'])
 
+        # Search Wiki
+        if not search_type or search_type == 'wiki':
+            user = request.user
+            # Get accessible spaces
+            accessible_spaces = WikiSpace.objects.filter(
+                Q(is_public=True) |
+                Q(owner=user) |
+                Q(department=user.department) |
+                Q(allowed_departments=user.department) |
+                Q(allowed_roles__in=user.roles.all())
+            ).distinct() if not user.is_superuser else WikiSpace.objects.all()
+
+            wiki_pages = WikiPage.objects.filter(
+                space__in=accessible_spaces,
+                is_archived=False,
+                is_published=True
+            ).filter(
+                Q(title__icontains=query) |
+                Q(excerpt__icontains=query)
+            ).select_related('space', 'author')[:limit]
+
+            wiki_results = []
+            for p in wiki_pages:
+                wiki_results.append({
+                    'id': p.id,
+                    'type': 'wiki',
+                    'title': p.title,
+                    'subtitle': p.space.name if p.space else None,
+                    'description': p.excerpt[:150] if p.excerpt else None,
+                    'avatar': None,
+                    'url': f'/wiki/{p.space.slug}/{p.slug}'
+                })
+            results['wiki'] = wiki_results
+            total += len(results['wiki'])
+
         return Response({
             'query': query,
             'results': results,
             'total': total
         })
+
+
+class SiteSettingsView(APIView):
+    """Get and update site settings (admin only)."""
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated(), CanManageRoles()]
+
+    def get(self, request):
+        """Get public site settings."""
+        settings = SiteSettings.get_settings()
+        return Response({
+            'registration_enabled': settings.registration_enabled,
+        })
+
+    def patch(self, request):
+        """Update site settings (admin only)."""
+        settings = SiteSettings.get_settings()
+
+        if 'registration_enabled' in request.data:
+            settings.registration_enabled = request.data['registration_enabled']
+
+        if 'default_role' in request.data:
+            from apps.roles.models import Role
+            role_id = request.data['default_role']
+            if role_id:
+                try:
+                    role = Role.objects.get(pk=role_id)
+                    settings.default_role = role
+                except Role.DoesNotExist:
+                    return Response(
+                        {'detail': 'Role not found.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                settings.default_role = None
+
+        settings.save()
+
+        return Response({
+            'registration_enabled': settings.registration_enabled,
+            'default_role': settings.default_role.id if settings.default_role else None,
+            'default_role_name': settings.default_role.name if settings.default_role else None,
+        })
+
+
+class AdminSiteSettingsView(APIView):
+    """Get full site settings for admin panel."""
+    permission_classes = [IsAuthenticated, CanManageRoles]
+
+    def get(self, request):
+        settings = SiteSettings.get_settings()
+        return Response({
+            'registration_enabled': settings.registration_enabled,
+            'default_role': settings.default_role.id if settings.default_role else None,
+            'default_role_name': settings.default_role.name if settings.default_role else None,
+        })
+
+
+class RegistrationView(APIView):
+    """Self-registration endpoint for new users."""
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        settings = SiteSettings.get_settings()
+
+        # Check if registration is enabled
+        if not settings.registration_enabled:
+            return Response(
+                {'detail': 'Регистрация временно закрыта.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validate required fields
+        email = request.data.get('email', '').strip().lower()
+        password = request.data.get('password', '')
+        first_name = request.data.get('first_name', '').strip()
+        last_name = request.data.get('last_name', '').strip()
+        patronymic = request.data.get('patronymic', '').strip()
+
+        errors = {}
+
+        if not email:
+            errors['email'] = 'Email обязателен'
+        elif User.objects.filter(email=email).exists():
+            errors['email'] = 'Пользователь с таким email уже существует'
+
+        if not password:
+            errors['password'] = 'Пароль обязателен'
+        elif len(password) < 6:
+            errors['password'] = 'Пароль должен быть не менее 6 символов'
+
+        if not first_name:
+            errors['first_name'] = 'Имя обязательно'
+
+        if not last_name:
+            errors['last_name'] = 'Фамилия обязательна'
+
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create user
+        user = User.objects.create_user(
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            patronymic=patronymic,
+        )
+
+        # Assign default role if configured
+        if settings.default_role:
+            user.roles.add(settings.default_role)
+
+        # Log registration
+        from apps.audit.models import AuditLog
+        AuditLog.log(
+            user=user,
+            action=AuditLog.Action.CREATE,
+            entity_type='User',
+            entity_id=user.id,
+            entity_repr=f'Self-registration: {user}',
+            ip_address=self.get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+        )
+
+        return Response({
+            'detail': 'Регистрация прошла успешно. Теперь вы можете войти.',
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'full_name': user.get_full_name(),
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')

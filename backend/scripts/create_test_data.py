@@ -35,6 +35,24 @@ def create_test_data():
     """Create all test data."""
     print("Creating test data...")
 
+    # Create superuser first
+    superuser, created = User.objects.get_or_create(
+        email='admin@test.com',
+        defaults={
+            'first_name': 'Администратор',
+            'last_name': 'Системы',
+            'is_superuser': True,
+            'is_staff': True,
+            'is_active': True,
+        }
+    )
+    if created:
+        superuser.set_password('admin123')
+        superuser.save()
+        print("  Superuser: admin@test.com (created)")
+    else:
+        print("  Superuser: admin@test.com (exists)")
+
     # Create positions
     positions = {}
     position_names = ['Директор', 'Менеджер', 'Разработчик', 'Аналитик', 'Специалист']
@@ -214,8 +232,9 @@ def create_test_data():
     print(f"News: {News.objects.count()}")
 
     print("\n🔑 Test user credentials:")
-    print("   Password for all test users: test123")
-    print("\n   Users:")
+    print("\n   Superuser (full admin access):")
+    print("   - admin@test.com / admin123")
+    print("\n   Regular users (password: test123):")
     for email, first, last, dept, pos in users_data:
         print(f"   - {email} ({first} {last}, {pos})")
 

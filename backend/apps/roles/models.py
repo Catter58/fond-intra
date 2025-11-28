@@ -17,6 +17,16 @@ class Permission(models.Model):
         COMMENTS = 'comments', _('Comments')
         ROLES = 'roles', _('Roles')
         AUDIT = 'audit', _('Audit')
+        SKILLS = 'skills', _('Skills')
+        KUDOS = 'kudos', _('Kudos')
+        SURVEYS = 'surveys', _('Surveys')
+        IDEAS = 'ideas', _('Ideas')
+        FAQ = 'faq', _('FAQ')
+        CLASSIFIEDS = 'classifieds', _('Classifieds')
+        OKR = 'okr', _('OKR')
+        BOOKINGS = 'bookings', _('Bookings')
+        WIKI = 'wiki', _('Wiki')
+        SETTINGS = 'settings', _('Settings')
 
     codename = models.CharField(_('codename'), max_length=100, unique=True)
     name = models.CharField(_('name'), max_length=200)
@@ -78,96 +88,146 @@ class Role(models.Model):
 # Default permissions to be created via migration/fixture
 DEFAULT_PERMISSIONS = [
     # Users
-    ('users.view_all', 'View all profiles', 'users'),
-    ('users.view_private', 'View private data', 'users'),
-    ('users.edit_own', 'Edit own profile', 'users'),
-    ('users.edit_all', 'Edit all profiles', 'users'),
-    ('users.create', 'Create users', 'users'),
-    ('users.archive', 'Archive users', 'users'),
-    ('users.manage_statuses', 'Manage user statuses', 'users'),
+    ('users.view_all', 'Просмотр всех профилей', 'users'),
+    ('users.view_private', 'Просмотр приватных данных', 'users'),
+    ('users.edit_own', 'Редактирование своего профиля', 'users'),
+    ('users.edit_all', 'Редактирование всех профилей', 'users'),
+    ('users.create', 'Создание пользователей', 'users'),
+    ('users.archive', 'Архивирование пользователей', 'users'),
+    ('users.manage_statuses', 'Управление статусами пользователей', 'users'),
 
     # Organization
-    ('organization.view', 'View organization structure', 'organization'),
-    ('organization.manage', 'Manage organization structure', 'organization'),
+    ('organization.view', 'Просмотр структуры организации', 'organization'),
+    ('organization.manage', 'Управление структурой организации', 'organization'),
 
     # Achievements
-    ('achievements.view', 'View achievements', 'achievements'),
-    ('achievements.award', 'Award achievements', 'achievements'),
-    ('achievements.manage', 'Manage achievement types', 'achievements'),
+    ('achievements.view', 'Просмотр достижений', 'achievements'),
+    ('achievements.award', 'Награждение достижениями', 'achievements'),
+    ('achievements.manage', 'Управление типами достижений', 'achievements'),
 
     # News
-    ('news.view', 'View news', 'news'),
-    ('news.create', 'Create news', 'news'),
-    ('news.edit_own', 'Edit own news', 'news'),
-    ('news.edit_all', 'Edit all news', 'news'),
-    ('news.delete_own', 'Delete own news', 'news'),
-    ('news.delete_all', 'Delete all news', 'news'),
-    ('news.pin', 'Pin/unpin news', 'news'),
+    ('news.view', 'Просмотр новостей', 'news'),
+    ('news.create', 'Создание новостей', 'news'),
+    ('news.edit_own', 'Редактирование своих новостей', 'news'),
+    ('news.edit_all', 'Редактирование всех новостей', 'news'),
+    ('news.delete_own', 'Удаление своих новостей', 'news'),
+    ('news.delete_all', 'Удаление всех новостей', 'news'),
+    ('news.pin', 'Закрепление новостей', 'news'),
 
     # Comments
-    ('comments.create', 'Create comments', 'comments'),
-    ('comments.edit_own', 'Edit own comments', 'comments'),
-    ('comments.delete_all', 'Delete any comment', 'comments'),
+    ('comments.create', 'Создание комментариев', 'comments'),
+    ('comments.edit_own', 'Редактирование своих комментариев', 'comments'),
+    ('comments.delete_all', 'Удаление любых комментариев', 'comments'),
+
+    # Skills
+    ('skills.view', 'Просмотр навыков', 'skills'),
+    ('skills.manage_own', 'Управление своими навыками', 'skills'),
+    ('skills.manage_all', 'Управление всеми навыками', 'skills'),
+    ('skills.endorse', 'Подтверждение навыков коллег', 'skills'),
+
+    # Kudos
+    ('kudos.view', 'Просмотр благодарностей', 'kudos'),
+    ('kudos.send', 'Отправка благодарностей', 'kudos'),
+    ('kudos.manage', 'Управление благодарностями', 'kudos'),
+
+    # Surveys
+    ('surveys.view', 'Просмотр опросов', 'surveys'),
+    ('surveys.respond', 'Участие в опросах', 'surveys'),
+    ('surveys.create', 'Создание опросов', 'surveys'),
+    ('surveys.manage', 'Управление всеми опросами', 'surveys'),
+    ('surveys.view_results', 'Просмотр результатов опросов', 'surveys'),
+
+    # Ideas
+    ('ideas.view', 'Просмотр идей', 'ideas'),
+    ('ideas.create', 'Создание идей', 'ideas'),
+    ('ideas.vote', 'Голосование за идеи', 'ideas'),
+    ('ideas.manage', 'Управление идеями', 'ideas'),
+
+    # FAQ
+    ('faq.view', 'Просмотр FAQ', 'faq'),
+    ('faq.manage', 'Управление FAQ', 'faq'),
+
+    # Classifieds
+    ('classifieds.view', 'Просмотр объявлений', 'classifieds'),
+    ('classifieds.create', 'Создание объявлений', 'classifieds'),
+    ('classifieds.manage_own', 'Управление своими объявлениями', 'classifieds'),
+    ('classifieds.manage_all', 'Управление всеми объявлениями', 'classifieds'),
+
+    # OKR
+    ('okr.view', 'Просмотр OKR', 'okr'),
+    ('okr.create_own', 'Создание своих OKR', 'okr'),
+    ('okr.manage_team', 'Управление OKR команды', 'okr'),
+    ('okr.manage_all', 'Управление всеми OKR', 'okr'),
+
+    # Bookings
+    ('bookings.view', 'Просмотр бронирований', 'bookings'),
+    ('bookings.create', 'Создание бронирований', 'bookings'),
+    ('bookings.manage_own', 'Управление своими бронированиями', 'bookings'),
+    ('bookings.manage_all', 'Управление всеми бронированиями', 'bookings'),
+    ('bookings.manage_resources', 'Управление ресурсами', 'bookings'),
+
+    # Wiki
+    ('wiki.view', 'Просмотр базы знаний', 'wiki'),
+    ('wiki.create', 'Создание страниц', 'wiki'),
+    ('wiki.edit_own', 'Редактирование своих страниц', 'wiki'),
+    ('wiki.edit_all', 'Редактирование всех страниц', 'wiki'),
+    ('wiki.manage_spaces', 'Управление пространствами', 'wiki'),
 
     # Roles
-    ('roles.view', 'View roles', 'roles'),
-    ('roles.manage', 'Manage roles', 'roles'),
+    ('roles.view', 'Просмотр ролей', 'roles'),
+    ('roles.manage', 'Управление ролями', 'roles'),
 
     # Audit
-    ('audit.view', 'View audit log', 'audit'),
-    ('audit.export', 'Export audit log', 'audit'),
+    ('audit.view', 'Просмотр журнала аудита', 'audit'),
+    ('audit.export', 'Экспорт журнала аудита', 'audit'),
+
+    # Settings
+    ('settings.view', 'Просмотр настроек портала', 'settings'),
+    ('settings.manage', 'Управление настройками портала', 'settings'),
+]
+
+# User role permissions - basic access for all authenticated users
+USER_PERMISSIONS = [
+    # Users
+    'users.view_all', 'users.edit_own',
+    # Organization
+    'organization.view',
+    # Achievements
+    'achievements.view',
+    # News
+    'news.view', 'news.create', 'news.edit_own', 'news.delete_own',
+    # Comments
+    'comments.create', 'comments.edit_own',
+    # Skills
+    'skills.view', 'skills.manage_own', 'skills.endorse',
+    # Kudos
+    'kudos.view', 'kudos.send',
+    # Surveys
+    'surveys.view', 'surveys.respond',
+    # Ideas
+    'ideas.view', 'ideas.create', 'ideas.vote',
+    # FAQ
+    'faq.view',
+    # Classifieds
+    'classifieds.view', 'classifieds.create', 'classifieds.manage_own',
+    # OKR
+    'okr.view', 'okr.create_own',
+    # Bookings
+    'bookings.view', 'bookings.create', 'bookings.manage_own',
+    # Wiki
+    'wiki.view', 'wiki.create', 'wiki.edit_own',
 ]
 
 # Default roles with their permissions
 DEFAULT_ROLES = {
-    'Employee': {
-        'description': 'Basic employee role',
+    'Пользователь': {
+        'description': 'Базовая роль для всех пользователей',
         'is_system': True,
-        'permissions': [
-            'users.view_all', 'users.edit_own',
-            'organization.view',
-            'achievements.view', 'achievements.award',
-            'news.view', 'news.create', 'news.edit_own', 'news.delete_own',
-            'comments.create', 'comments.edit_own',
-        ]
+        'is_admin': False,
+        'permissions': USER_PERMISSIONS
     },
-    'HR': {
-        'description': 'Human Resources role',
-        'is_system': True,
-        'permissions': [
-            'users.view_all', 'users.view_private', 'users.edit_own',
-            'users.edit_all', 'users.create', 'users.archive', 'users.manage_statuses',
-            'organization.view',
-            'achievements.view', 'achievements.award',
-            'news.view', 'news.create', 'news.edit_own', 'news.delete_own',
-            'comments.create', 'comments.edit_own',
-        ]
-    },
-    'Content Manager': {
-        'description': 'Content management role',
-        'is_system': True,
-        'permissions': [
-            'users.view_all', 'users.edit_own',
-            'organization.view',
-            'achievements.view', 'achievements.award',
-            'news.view', 'news.create', 'news.edit_own', 'news.edit_all',
-            'news.delete_own', 'news.delete_all', 'news.pin',
-            'comments.create', 'comments.edit_own', 'comments.delete_all',
-        ]
-    },
-    'Achievement Admin': {
-        'description': 'Achievement management role',
-        'is_system': True,
-        'permissions': [
-            'users.view_all', 'users.edit_own',
-            'organization.view',
-            'achievements.view', 'achievements.award', 'achievements.manage',
-            'news.view', 'news.create', 'news.edit_own', 'news.delete_own',
-            'comments.create', 'comments.edit_own',
-        ]
-    },
-    'Admin': {
-        'description': 'Full administrator access',
+    'Администратор': {
+        'description': 'Полный доступ ко всем функциям',
         'is_system': True,
         'is_admin': True,
         'permissions': '__all__'  # Will get all permissions

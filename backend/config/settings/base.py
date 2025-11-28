@@ -60,6 +60,7 @@ LOCAL_APPS = [
     'apps.okr',
     'apps.bookings',
     'apps.interactions',
+    'apps.wiki',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

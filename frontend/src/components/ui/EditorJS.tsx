@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import EditorJS, { OutputData } from '@editorjs/editorjs'
 import Header from '@editorjs/header'
 import List from '@editorjs/list'
@@ -18,7 +18,7 @@ interface RichTextEditorProps {
   readOnly?: boolean
 }
 
-function RichTextEditorComponent({
+export function RichTextEditor({
   data,
   onChange,
   placeholder = 'Начните писать...',
@@ -27,18 +27,44 @@ function RichTextEditorComponent({
 }: RichTextEditorProps) {
   const editorInstance = useRef<EditorJS | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const isReady = useRef(false)
-  const dataLoaded = useRef(false)
+  const isInitialized = useRef(false)
+  const isDataLoaded = useRef(false)
+  const skipNextChange = useRef(false)
+  const onChangeRef = useRef(onChange)
 
-  // Initialize editor
+  // Keep onChange ref updated
+  onChangeRef.current = onChange
+
+  // Stable onChange handler
+  const handleChange = useCallback(async (api: EditorJS['saver']) => {
+    // Skip change events during data loading
+    if (skipNextChange.current) {
+      skipNextChange.current = false
+      return
+    }
+
+    if (onChangeRef.current) {
+      try {
+        const outputData = await api.save()
+        onChangeRef.current(outputData)
+      } catch (e) {
+        console.error('Failed to save editor data:', e)
+      }
+    }
+  }, [])
+
+  // Initialize editor once
   useEffect(() => {
-    if (!containerRef.current || editorInstance.current) return
+    if (!containerRef.current || isInitialized.current) return
+
+    isInitialized.current = true
 
     const editor = new EditorJS({
       holder: containerRef.current,
-      data: data || { blocks: [] },
+      data: { blocks: [] },
       placeholder,
       readOnly,
+      minHeight: 200,
       tools: {
         header: {
           class: Header as any,
@@ -61,18 +87,8 @@ function RichTextEditorComponent({
         marker: Marker as any,
         underline: Underline as any,
       },
-      onReady: () => {
-        isReady.current = true
-        // If we already have data with blocks, mark as loaded
-        if (data?.blocks && data.blocks.length > 0) {
-          dataLoaded.current = true
-        }
-      },
       onChange: async (api) => {
-        if (onChange) {
-          const outputData = await api.saver.save()
-          onChange(outputData)
-        }
+        handleChange(api.saver)
       },
     })
 
@@ -82,28 +98,30 @@ function RichTextEditorComponent({
       if (editorInstance.current?.destroy) {
         editorInstance.current.destroy()
         editorInstance.current = null
-        isReady.current = false
-        dataLoaded.current = false
+        isInitialized.current = false
+        isDataLoaded.current = false
       }
     }
-  }, [])
+  }, [handleChange, placeholder, readOnly])
 
   // Load data when it arrives (for edit page - data comes async)
   useEffect(() => {
     // Skip if no data or already loaded
     if (!data?.blocks || data.blocks.length === 0) return
-    if (dataLoaded.current) return
+    if (isDataLoaded.current) return
 
     const loadData = async () => {
       if (!editorInstance.current) return
 
-      // Wait for editor to be ready
       try {
         await editorInstance.current.isReady
+        // Skip the change event that will fire after render
+        skipNextChange.current = true
         await editorInstance.current.render(data)
-        dataLoaded.current = true
+        isDataLoaded.current = true
       } catch (e) {
         console.error('Failed to load editor data:', e)
+        skipNextChange.current = false
       }
     }
 
@@ -118,5 +136,4 @@ function RichTextEditorComponent({
   )
 }
 
-export const RichTextEditor = memo(RichTextEditorComponent)
 export default RichTextEditor

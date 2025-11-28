@@ -218,6 +218,22 @@ export function LoginPage() {
           >
             {loginMutation.isPending ? 'Вход...' : 'Войти'}
           </Button>
+
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ color: 'var(--cds-text-secondary)', fontSize: '0.875rem' }}>
+              Нет аккаунта?{' '}
+            </span>
+            <Link
+              to="/register"
+              style={{
+                fontSize: '0.875rem',
+                color: 'var(--cds-link-primary)',
+                textDecoration: 'none'
+              }}
+            >
+              Зарегистрироваться
+            </Link>
+          </div>
         </Stack>
       </Form>
     </Tile>

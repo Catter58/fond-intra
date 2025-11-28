@@ -1,0 +1,74 @@
+.wiki-space-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: var(--cds-text-primary);
+  height: 100%;
+
+  &:hover {
+    background: var(--cds-layer-hover-01);
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  &__icon {
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--cds-layer-02);
+    border-radius: 8px;
+    color: var(--cds-icon-primary);
+  }
+
+  &__private {
+    color: var(--cds-icon-secondary);
+  }
+
+  &__title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    margin: 0 0 0.5rem;
+    color: var(--cds-text-primary);
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    color: var(--cds-text-secondary);
+    margin: 0 0 1rem;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--cds-text-secondary);
+    margin-top: auto;
+  }
+
+  &__pages {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  &__department {
+    background: var(--cds-layer-02);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+  }
+}

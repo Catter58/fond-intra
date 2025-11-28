@@ -1,0 +1,14 @@
+.wiki-breadcrumb {
+  margin-bottom: 1rem;
+
+  .cds--breadcrumb-item {
+    a {
+      color: var(--cds-link-primary);
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

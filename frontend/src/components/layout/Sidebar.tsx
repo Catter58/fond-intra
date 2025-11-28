@@ -13,6 +13,7 @@ import {
   Catalog,
   Help,
   Bookmark,
+  Book,
 } from '@carbon/icons-react'
 import { useAuthStore } from '@/store/authStore'
 
@@ -27,6 +28,7 @@ const navItems = [
   { to: '/skills', icon: Catalog, label: 'Навыки' },
   { to: '/achievements', icon: Trophy, label: 'Достижения' },
   { to: '/news', icon: Document, label: 'Новости' },
+  { to: '/wiki', icon: Book, label: 'База знаний' },
   { to: '/organization', icon: Building, label: 'Структура' },
   { to: '/bookmarks', icon: Bookmark, label: 'Избранное' },
 ] as const

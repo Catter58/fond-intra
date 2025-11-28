@@ -18,6 +18,7 @@ function PageLoader() {
 
 // Lazy loaded pages - Auth
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
 const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage').then(m => ({ default: m.ChangePasswordPage })))
@@ -57,6 +58,13 @@ const ResourceDetailPage = lazy(() => import('@/pages/bookings/ResourceDetailPag
 const SecurityPage = lazy(() => import('@/pages/security/SecurityPage').then(m => ({ default: m.SecurityPage })))
 const BookmarksPage = lazy(() => import('@/pages/bookmarks/BookmarksPage').then(m => ({ default: m.BookmarksPage })))
 
+// Lazy loaded pages - Wiki
+const WikiPage = lazy(() => import('@/pages/wiki/WikiPage').then(m => ({ default: m.WikiPage })))
+const WikiSpacePage = lazy(() => import('@/pages/wiki/WikiSpacePage').then(m => ({ default: m.WikiSpacePage })))
+const WikiSpaceSettingsPage = lazy(() => import('@/pages/wiki/WikiSpaceSettingsPage').then(m => ({ default: m.WikiSpaceSettingsPage })))
+const WikiArticlePage = lazy(() => import('@/pages/wiki/WikiArticlePage').then(m => ({ default: m.WikiArticlePage })))
+const WikiEditPage = lazy(() => import('@/pages/wiki/WikiEditPage').then(m => ({ default: m.WikiEditPage })))
+
 // Lazy loaded pages - Admin
 const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })))
 const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })))
@@ -67,6 +75,7 @@ const AdminAchievementTypesPage = lazy(() => import('@/pages/admin/AdminAchievem
 const AdminSkillsPage = lazy(() => import('@/pages/admin/AdminSkillsPage').then(m => ({ default: m.AdminSkillsPage })))
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage').then(m => ({ default: m.AdminAuditPage })))
 const AdminFAQPage = lazy(() => import('@/pages/admin/AdminFAQPage').then(m => ({ default: m.AdminFAQPage })))
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage').then(m => ({ default: m.AdminSettingsPage })))
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -99,6 +108,7 @@ function App() {
           {/* Auth routes */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
           </Route>
@@ -145,6 +155,13 @@ function App() {
             <Route path="/bookings/resources/:id" element={<ResourceDetailPage />} />
             <Route path="/security" element={<SecurityPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
+
+            {/* Wiki routes */}
+            <Route path="/wiki" element={<WikiPage />} />
+            <Route path="/wiki/:spaceSlug" element={<WikiSpacePage />} />
+            <Route path="/wiki/:spaceSlug/settings" element={<WikiSpaceSettingsPage />} />
+            <Route path="/wiki/:spaceSlug/:pageSlug" element={<WikiArticlePage />} />
+            <Route path="/wiki/:spaceSlug/:pageSlug/edit" element={<WikiEditPage />} />
 
             {/* Admin routes */}
             <Route
@@ -224,6 +241,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminFAQPage />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <AdminRoute>
+                  <AdminSettingsPage />
                 </AdminRoute>
               }
             />
