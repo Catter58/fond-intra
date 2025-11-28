@@ -905,6 +905,17 @@ http {
 
         # API requests -> Django
         location /api/ {
+            # CORS headers
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
+            add_header Access-Control-Allow-Credentials true always;
+
+            # Handle preflight requests
+            if ($request_method = OPTIONS) {
+                return 204;
+            }
+
             proxy_pass http://127.0.0.1:8000;
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -930,6 +941,7 @@ http {
             alias /var/www/static/;
             expires 30d;
             add_header Cache-Control "public, immutable";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # Media files
@@ -937,6 +949,7 @@ http {
             alias /var/www/media/;
             expires 7d;
             add_header Cache-Control "public";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # Frontend assets
@@ -944,6 +957,7 @@ http {
             try_files $uri =404;
             expires 30d;
             add_header Cache-Control "public, immutable";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # SPA fallback
@@ -1038,6 +1052,17 @@ http {
 
         # API requests -> Django
         location /api/ {
+            # CORS headers
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-Requested-With" always;
+            add_header Access-Control-Allow-Credentials true always;
+
+            # Handle preflight requests
+            if ($request_method = OPTIONS) {
+                return 204;
+            }
+
             proxy_pass http://127.0.0.1:8000;
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -1063,6 +1088,7 @@ http {
             alias /var/www/static/;
             expires 30d;
             add_header Cache-Control "public, immutable";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # Media files
@@ -1070,6 +1096,7 @@ http {
             alias /var/www/media/;
             expires 7d;
             add_header Cache-Control "public";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # Frontend assets
@@ -1077,6 +1104,7 @@ http {
             try_files $uri =404;
             expires 30d;
             add_header Cache-Control "public, immutable";
+            add_header Access-Control-Allow-Origin * always;
         }
 
         # SPA fallback
