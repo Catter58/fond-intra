@@ -12,7 +12,7 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),
 
     # API v1
     path('api/v1/', include('config.api_urls')),

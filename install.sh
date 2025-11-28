@@ -108,11 +108,13 @@ prompt_password() {
     local var_name="$2"
     local result
 
-    # Check if variable already set
-    eval "local current_val=\${$var_name:-}"
-    if [ -n "$current_val" ]; then
-        echo "$current_val"
-        return
+    # Check if variable already set (only if var_name is provided)
+    if [ -n "$var_name" ]; then
+        eval "local current_val=\${$var_name:-}"
+        if [ -n "$current_val" ]; then
+            echo "$current_val"
+            return
+        fi
     fi
 
     read -s -p "$(echo -e "${CYAN}$prompt${NC}: ")" result </dev/tty
@@ -295,6 +297,35 @@ collect_configuration() {
             EMAIL_HOST_USER=""
             EMAIL_HOST_PASSWORD=""
         fi
+
+        echo ""
+        print_info "Domain & SSL Configuration"
+        DOMAIN=$(prompt_input "Domain name (e.g., portal.example.com, or press Enter to skip)" "" "DOMAIN")
+
+        if [ -n "$DOMAIN" ]; then
+            # Validate domain format
+            if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$ ]]; then
+                print_warning "Domain format may be invalid, but continuing..."
+            fi
+
+            # Update ALLOWED_HOSTS with domain
+            ALLOWED_HOSTS="$DOMAIN,www.$DOMAIN,localhost,127.0.0.1"
+
+            read -p "$(echo -e "${CYAN}Enable SSL with Let's Encrypt for $DOMAIN? (y/n)${NC} [${YELLOW}y${NC}]: ")" ssl_choice </dev/tty
+            if [[ ! "$ssl_choice" =~ ^[Nn]$ ]]; then
+                ENABLE_SSL=true
+                SSL_EMAIL=$(prompt_input "Email for SSL certificate notifications" "${ADMIN_EMAIL:-admin@$DOMAIN}" "SSL_EMAIL")
+                print_step "SSL will be configured for $DOMAIN"
+            else
+                ENABLE_SSL=false
+                SSL_EMAIL=""
+                print_info "SSL disabled. Site will be accessible via HTTP only."
+            fi
+        else
+            ENABLE_SSL=false
+            SSL_EMAIL=""
+            print_info "No domain specified. Site will be accessible via IP address."
+        fi
     fi
 
     SECRET_KEY=$(generate_secret_key)
@@ -466,9 +497,13 @@ RUN mkdir -p /app/backend /app/frontend /app/data/postgres /app/data/redis /app/
     && chown -R postgres:postgres /app/data/postgres /run/postgresql \
     && chown -R redis:redis /app/data/redis /var/run/redis
 
-# Copy backend requirements and install
+# Upgrade pip and install backend requirements with extended timeouts for slow connections
 COPY backend/requirements.txt /app/backend/
-RUN pip3 install --no-cache-dir -r /app/backend/requirements.txt
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir \
+    --timeout 300 \
+    --retries 5 \
+    -r /app/backend/requirements.txt
 
 # Copy backend
 COPY backend /app/backend/
@@ -881,8 +916,8 @@ http {
             proxy_read_timeout 300s;
         }
 
-        # Django admin
-        location /admin/ {
+        # Django admin (changed to /django-admin/ to avoid conflict with frontend /admin/ routes)
+        location /django-admin/ {
             proxy_pass http://127.0.0.1:8000;
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -1014,8 +1049,8 @@ http {
             proxy_read_timeout 300s;
         }
 
-        # Django admin
-        location /admin/ {
+        # Django admin (changed to /django-admin/ to avoid conflict with frontend /admin/ routes)
+        location /django-admin/ {
             proxy_pass http://127.0.0.1:8000;
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
