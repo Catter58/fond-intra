@@ -211,6 +211,16 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [origin.strip() for origin in _cors_origins.split(',') if origin.strip()]
 
+    # Also add ALLOWED_HOSTS as CORS origins (for IP-based access)
+    for host in ALLOWED_HOSTS:
+        if host and host != '*':
+            http_origin = f'http://{host}'
+            https_origin = f'https://{host}'
+            if http_origin not in CORS_ALLOWED_ORIGINS:
+                CORS_ALLOWED_ORIGINS.append(http_origin)
+            if https_origin not in CORS_ALLOWED_ORIGINS:
+                CORS_ALLOWED_ORIGINS.append(https_origin)
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'accept',
