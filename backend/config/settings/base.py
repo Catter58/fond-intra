@@ -202,9 +202,13 @@ SIMPLE_JWT = {
 # CORS Settings
 # =============================================================================
 _cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost')
+_cors_allow_all = os.environ.get('CORS_ALLOW_ALL', 'false').lower() in ('true', '1', 'yes')
 
-# Allow all origins if CORS_ALLOW_ALL is set or CORS_ALLOWED_ORIGINS contains '*'
-if os.environ.get('CORS_ALLOW_ALL', 'false').lower() in ('true', '1', 'yes') or _cors_origins.strip() == '*':
+# Allow all origins if:
+# 1. CORS_ALLOW_ALL is explicitly set to true
+# 2. CORS_ALLOWED_ORIGINS is '*' or empty
+# 3. ALLOWED_HOSTS contains '*' (wildcard)
+if _cors_allow_all or _cors_origins.strip() in ('*', '') or '*' in ALLOWED_HOSTS:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = []
 else:
